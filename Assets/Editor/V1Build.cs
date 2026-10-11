@@ -34,6 +34,7 @@ public static class V1Build
         PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
         PlayerSettings.WebGL.decompressionFallback = true;
         PlayerSettings.WebGL.dataCaching = true;
+        PlayerSettings.WebGL.template = "PROJECT:TabanlariYagla";
         Build(BuildTarget.WebGL, "Build/Web");
     }
 }
