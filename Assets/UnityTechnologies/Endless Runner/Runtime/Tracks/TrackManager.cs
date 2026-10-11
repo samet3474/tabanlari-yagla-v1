@@ -128,6 +128,7 @@ public class TrackManager : MonoBehaviour
     protected const int k_DesiredSegmentCount = 10;
     protected const float k_SegmentRemovalDistance = -30f;
     protected const float k_Acceleration = 0.2f;
+    protected const float k_ObstacleSpawnTimeout = 5f;
     
     protected void Awake()
     {
@@ -548,28 +549,57 @@ public class TrackManager : MonoBehaviour
 
     public void SpawnObstacle(TrackSegment segment)
     {
+        StartCoroutine(SpawnObstaclesThenCollectibles(segment));
+    }
+
+    // Coins avoid obstacles with Physics.CheckSphere, so they must only be placed once every obstacle of the
+    // segment has actually been instantiated (obstacles load and instantiate asynchronously through Addressables).
+    private IEnumerator SpawnObstaclesThenCollectibles(TrackSegment segment)
+    {
         if (segment.possibleObstacles.Length != 0)
         {
+            int pending = segment.obstaclePositions.Length;
+            System.Action onObstacleDone = () => pending--;
+
             for (int i = 0; i < segment.obstaclePositions.Length; ++i)
             {
                 AssetReference assetRef = segment.possibleObstacles[Random.Range(0, segment.possibleObstacles.Length)];
-                StartCoroutine(SpawnFromAssetReference(assetRef, segment, i));
+                StartCoroutine(SpawnFromAssetReference(assetRef, segment, i, onObstacleDone));
+            }
+
+            // Safety net only: every spawn reports completion even when it fails, so this should never be reached.
+            float timeout = k_ObstacleSpawnTimeout;
+            while (pending > 0 && timeout > 0.0f)
+            {
+                timeout -= Time.deltaTime;
+                yield return null;
             }
         }
 
-        StartCoroutine(SpawnCoinAndPowerup(segment));
+        // The segment may have been released while its obstacles were loading.
+        if (segment == null)
+            yield break;
+
+        yield return SpawnCoinAndPowerup(segment);
     }
 
-    private IEnumerator SpawnFromAssetReference(AssetReference reference, TrackSegment segment, int posIndex)
+    private IEnumerator SpawnFromAssetReference(AssetReference reference, TrackSegment segment, int posIndex, System.Action onDone)
     {
-        AsyncOperationHandle op = Addressables.LoadAssetAsync<GameObject>(reference);
-        yield return op; 
-        GameObject obj = op.Result as GameObject;
-        if (obj != null)
+        try
         {
-            Obstacle obstacle = obj.GetComponent<Obstacle>();
-            if (obstacle != null)
-                yield return obstacle.Spawn(segment, segment.obstaclePositions[posIndex]);
+            AsyncOperationHandle op = Addressables.LoadAssetAsync<GameObject>(reference);
+            yield return op;
+            GameObject obj = op.Result as GameObject;
+            if (obj != null)
+            {
+                Obstacle obstacle = obj.GetComponent<Obstacle>();
+                if (obstacle != null)
+                    yield return obstacle.Spawn(segment, segment.obstaclePositions[posIndex]);
+            }
+        }
+        finally
+        {
+            onDone();
         }
     }
 
