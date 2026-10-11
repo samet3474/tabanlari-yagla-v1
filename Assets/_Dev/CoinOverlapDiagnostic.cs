@@ -1,5 +1,5 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-// Faz 0.2 teşhis aracı: yalnızca geliştirme derlemesinde ve "-coinDiag" argümanıyla çalışır. Commit edilmez.
+// Teşhis aracı: yalnızca geliştirme derlemesinde ve "-coinDiag" argümanıyla çalışır; yayın derlemesine girmez.
 // Argümanlar: -coinDiag -diagSeconds <s> -diagSeed <n> -diagPhases measure|full
 using System.Collections;
 using System.Collections.Generic;
@@ -16,6 +16,7 @@ public class CoinOverlapDiagnostic : MonoBehaviour
     float m_Seconds = 240f;
     int m_Seed = 12345;
     bool m_Full;
+    bool m_Lifecycle;
 
     string m_Phase = "boot";
     readonly Dictionary<string, int> m_Errors = new Dictionary<string, int>();
@@ -47,7 +48,7 @@ public class CoinOverlapDiagnostic : MonoBehaviour
         {
             if (args[i] == "-diagSeconds") float.TryParse(args[i + 1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out d.m_Seconds);
             if (args[i] == "-diagSeed") int.TryParse(args[i + 1], out d.m_Seed);
-            if (args[i] == "-diagPhases") d.m_Full = args[i + 1] == "full";
+            if (args[i] == "-diagPhases") { d.m_Full = args[i + 1] == "full"; d.m_Lifecycle = args[i + 1] == "lifecycle"; }
         }
     }
 
@@ -92,6 +93,22 @@ public class CoinOverlapDiagnostic : MonoBehaviour
 
         var gs = GameManager.instance.FindState("Game") as GameState;
         m_TM = gs.trackManager;
+
+        if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "magnet") >= 0)
+        {
+            yield return MagnetScenario();
+            ReportErrors();
+            Finish();
+            yield break;
+        }
+
+        if (m_Lifecycle)
+        {
+            yield return Lifecycle();
+            ReportErrors();
+            Finish();
+            yield break;
+        }
 
         m_Phase = "A-olcum";
         yield return StartRun();
@@ -296,6 +313,134 @@ public class CoinOverlapDiagnostic : MonoBehaviour
         if (gs2 != null) gs2.QuitToLoadout();
         yield return new WaitForSecondsRealtime(3f);
         Out($"D menuye_donus: loadouta_dondu={inLoadout} ikinci_donus_loadout={(GameManager.instance.topState is LoadoutState)} yeni_hata_logu={m_ErrorTotal - before}");
+    }
+
+    // ---- Menüye dönüş / yeniden koşu yaşam döngüsü testleri ----
+
+    static readonly System.Reflection.FieldInfo s_SpawnedField =
+        typeof(TrackManager).GetField("_spawnedSegments", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+    int SpawnedCounter() => s_SpawnedField != null ? (int)s_SpawnedField.GetValue(m_TM) : -999;
+
+    void StartRunNoWait()
+    {
+        PlayerData.instance.tutorialDone = true;
+        m_TM.trackSeed = m_Seed;
+        m_TM.invincible = true;
+        m_TM.newSegmentCreated = OnSegmentCreated;
+        ((LoadoutState)GameManager.instance.topState).StartGame();
+    }
+
+    // Gerçek arayüz yolu: duraklat butonu Pause(), menüdeki çıkış QuitToLoadout() çağırır.
+    bool QuitViaUi(bool usePause)
+    {
+        var gs = GameManager.instance.topState as GameState;
+        if (gs == null) return false;
+        if (usePause) gs.Pause();
+        gs.QuitToLoadout();
+        return true;
+    }
+
+    string Snapshot()
+    {
+        int segActive = FindObjectsByType<TrackSegment>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Length;
+        int obsActive = FindObjectsByType<Obstacle>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Length;
+        int consActive = FindObjectsByType<Consumable>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Length;
+        int coinActive = 0, premiumActive = 0;
+        foreach (var c in FindObjectsByType<Coin>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)) { if (c.isPremium) premiumActive++; else coinActive++; }
+        int coinAll = FindObjectsByType<Coin>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
+        int parallax = m_TM.parallaxRoot != null ? m_TM.parallaxRoot.childCount : -1;
+        int orphanObs = 0; string orphanSample = "";
+        foreach (var o in FindObjectsByType<Obstacle>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            if (o.GetComponentInParent<TrackSegment>() == null) { orphanObs++; if (orphanSample.Length < 120) orphanSample += $"{o.name.Replace("(Clone)", "")}@({o.transform.position.x:F0},{o.transform.position.y:F0},{o.transform.position.z:F0}) "; }
+        int chars = FindObjectsByType<Character>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
+        return $"yetim_engel={orphanObs} [{orphanSample}] karakter_nesnesi={chars} tm_aktif={m_TM.gameObject.activeSelf} sayac={SpawnedCounter()} liste={m_TM.segments.Count} aktif_parca={segActive} aktif_engel={obsActive} aktif_guclendirme={consActive} aktif_altin={coinActive} aktif_premium={premiumActive} toplam_altin_nesnesi(pasif_dahil)={coinAll} bulut={parallax} isMoving={m_TM.isMoving} ust_durum={GameManager.instance.topState.GetName()}";
+    }
+
+    IEnumerator WaitFrames(int n) { for (int i = 0; i < n; ++i) yield return null; }
+
+    IEnumerator QuitScenario(string name, float seconds, int frames, bool usePause = true)
+    {
+        m_Phase = "L-" + name;
+        int before = m_ErrorTotal;
+        StartRunNoWait();
+        if (frames >= 0) yield return WaitFrames(frames);
+        else yield return new WaitForSecondsRealtime(seconds);
+        int segAtQuit = m_TM.segments.Count; int counterAtQuit = SpawnedCounter();
+        bool quit = QuitViaUi(usePause);
+        yield return new WaitForSecondsRealtime(2f); // yolda olan async islemler tamamlansin
+        Out($"L {name}: cikis_yapildi={quit} cikista(liste={segAtQuit} sayac={counterAtQuit}) | 2sn_sonra: {Snapshot()} | yeni_hata={m_ErrorTotal - before}");
+    }
+
+    IEnumerator Lifecycle()
+    {
+        Out($"L baslangic: {Snapshot()}");
+        yield return QuitScenario("normal-20s", 20f, -1);
+        yield return QuitScenario("geri-sayim-1.5s", 1.5f, -1);
+        yield return QuitScenario("hemen-0kare", 0, 0);
+        yield return QuitScenario("hemen-1kare", 0, 1);
+        yield return QuitScenario("hemen-5kare", 0, 5);
+        for (int f = 2; f <= 8; ++f)
+            yield return QuitScenario("kare-taramasi-" + f, 0, f);
+        for (int i = 0; i < 6; ++i)
+            yield return (i % 2 == 0) ? QuitScenario("tekrar-" + i + "-0kare", 0, 0) : QuitScenario("tekrar-" + i + "-geri-sayim", 1.5f, -1);
+
+        yield return MagnetScenario();
+
+        // Dogrulama kosusu: on kalan parca sayisi, hatalar ve altin/engel cakismasi
+        yield return ValidationAndDirect();
+    }
+
+    // Miknatis listesinde onceki kosudan altin kalmasi (miknatis aktifken menuye donus)
+    IEnumerator MagnetScenario()
+    {
+        {
+            m_Phase = "L-miknatis-bayat-ref";
+            int b0 = m_ErrorTotal;
+            StartRunNoWait();
+            float w0 = 0; while (!m_TM.isMoving && w0 < 30f) { w0 += Time.unscaledDeltaTime; yield return null; }
+            yield return new WaitForSecondsRealtime(2f);
+            int added = 0;
+            var mc = m_TM.characterController.characterCollider.magnetCoins;
+            for (int i = 1; i < m_TM.segments.Count && added < 5; ++i)
+                foreach (Transform c in m_TM.segments[i].collectibleTransform) { if (added >= 5) break; mc.Add(c.gameObject); added++; }
+            QuitViaUi(true);
+            yield return new WaitForSecondsRealtime(2f);
+            StartRunNoWait();
+            w0 = 0; while (!m_TM.isMoving && w0 < 30f) { w0 += Time.unscaledDeltaTime; yield return null; }
+            yield return new WaitForSecondsRealtime(5f);
+            Out($"L miknatis-bayat-ref: eklenen={added} liste_simdi={mc.Count} yeni_hata={m_ErrorTotal - b0}");
+            QuitViaUi(true);
+            yield return new WaitForSecondsRealtime(2f);
+        }
+    }
+
+    IEnumerator ValidationAndDirect()
+    {
+        m_Phase = "L-dogrulama";
+        int before = m_ErrorTotal;
+        m_Segments = 0; m_Coins = 0; m_CoinsStaticOverlap = 0; m_CoinsMovingOverlap = 0; m_StaticOverlapByType.Clear();
+        StartRunNoWait();
+        float w = 0; while (!m_TM.isMoving && w < 30f) { w += Time.unscaledDeltaTime; yield return null; }
+        m_Measuring = true;
+        int minAhead = int.MaxValue, maxAhead = 0; float t = 0;
+        while (t < 60f) { t += Time.unscaledDeltaTime; int c = m_TM.segments.Count; if (c < minAhead) minAhead = c; if (c > maxAhead) maxAhead = c; yield return null; }
+        m_Measuring = false;
+        yield return new WaitForSecondsRealtime(3f);
+        Out($"L dogrulama-60s: kosu_basladi={(w < 30f)} onde_parca(min={minAhead} max={maxAhead}) sayac={SpawnedCounter()} olculen_parca={m_Segments} altin={m_Coins} sabit_engel_cakisma={m_CoinsStaticOverlap} hareketli={m_CoinsMovingOverlap} mesafe={m_TM.worldDistance:F0}m yeni_hata={m_ErrorTotal - before}");
+        QuitViaUi(true);
+        yield return new WaitForSecondsRealtime(2f);
+        Out($"L dogrulama-sonrasi: {Snapshot()}");
+
+        // Faz 0.2 testindeki yol: duraklatmadan dogrudan QuitToLoadout (gercek arayuzde yok)
+        yield return QuitScenario("direkt-cikis-pausesiz-20s", 20f, -1, false);
+        m_Phase = "L-direkt-sonrasi-kosu";
+        before = m_ErrorTotal;
+        StartRunNoWait();
+        yield return new WaitForSecondsRealtime(10f);
+        Out($"L direkt-sonrasi-kosu-10s: {Snapshot()} yeni_hata={m_ErrorTotal - before}");
+        QuitViaUi(true);
+        yield return new WaitForSecondsRealtime(2f);
     }
 
     void ReportErrors()

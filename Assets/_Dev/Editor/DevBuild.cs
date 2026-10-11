@@ -1,4 +1,4 @@
-// Faz 0.2 teşhis derlemesi (geliştirme derlemesi). Commit edilmez.
+// Teşhis için geliştirme derlemesi (yalnızca editör; yayın derlemesine girmez).
 using UnityEditor;
 using UnityEngine;
 
