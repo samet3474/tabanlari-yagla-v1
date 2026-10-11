@@ -99,6 +99,11 @@
         },
       };
 
+      // PlayerData.Save() düz FileStream ile save.bin yazıyor; bu ayar kapalıyken dosya yalnızca bellekteki
+      // sanal dosya sisteminde kalıyor ve IndexedDB'ye ancak Unity'nin başka bir iç senkronizasyonuyla
+      // tesadüfen ulaşıyordu. Açıkken persistentDataPath'teki her dosya kapanışında IndexedDB'ye yazılır.
+      config.autoSyncPersistentDataPath = true;
+
       window.addEventListener("unhandledrejection", function (e) {
         if (isAudioDecodeError(e.reason && e.reason.message ? e.reason.message : e.reason)) e.preventDefault();
       });
