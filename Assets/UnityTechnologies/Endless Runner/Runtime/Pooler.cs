@@ -45,4 +45,15 @@ public class Pooler
 		obj.SetActive(false);
 		m_FreeInstances.Push(obj);
 	}
+
+	// Destroys the free instances. Instances currently in use are not tracked by the pool and are left alone.
+	public void Clear()
+	{
+		while (m_FreeInstances.Count > 0)
+		{
+			GameObject obj = m_FreeInstances.Pop();
+			if (obj != null)
+				Object.Destroy(obj);
+		}
+	}
 }

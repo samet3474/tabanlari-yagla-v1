@@ -103,6 +103,8 @@ public class TrackManager : MonoBehaviour
 
     protected List<TrackSegment> m_Segments = new List<TrackSegment>();
     protected List<TrackSegment> m_PastSegments = new List<TrackSegment>();
+    // Segment instantiations still in flight; End() releases them since their spawn coroutine is stopped with the run.
+    protected List<AsyncOperationHandle> m_LoadingSegments = new List<AsyncOperationHandle>();
     protected int m_SafeSegementLeft;
 
     protected ThemeData m_CurrentThemeData;
@@ -238,6 +240,8 @@ public class TrackManager : MonoBehaviour
 
             m_SafeSegementLeft = m_IsTutorial ? 0 : k_StartingSafeSegments;
 
+            ReleaseOrphanObstacles();
+
             Coin.coinPool = new Pooler(currentTheme.collectiblePrefab, k_StartingCoinPoolSize);
 
             PlayerData.instance.StartRunMissions(this);
@@ -259,10 +263,15 @@ public class TrackManager : MonoBehaviour
 
     public void End()
     {
+        m_IsMoving = false;
+
+        // Attracted coins are destroyed with their segment below; the character is re-enabled before Init() on the
+        // next run, so a stale list would be iterated in CharacterCollider.Update.
+        characterController.characterCollider.magnetCoins.Clear();
+
         foreach (TrackSegment seg in m_Segments)
         {
             Addressables.ReleaseInstance(seg.gameObject);
-            _spawnedSegments--;
         }
 
         for (int i = 0; i < m_PastSegments.Count; ++i)
@@ -270,8 +279,29 @@ public class TrackManager : MonoBehaviour
             Addressables.ReleaseInstance(m_PastSegments[i].gameObject);
         }
 
+        // Deactivating this object below stops the SpawnNewSegment coroutines, so segments still loading would
+        // otherwise appear later with no owner and stay counted in _spawnedSegments forever.
+        for (int i = 0; i < m_LoadingSegments.Count; ++i)
+        {
+            AsyncOperationHandle op = m_LoadingSegments[i];
+            if (!op.IsValid())
+                continue;
+
+            if (op.IsDone)
+                ReleaseSegmentInstance(op);
+            else
+                op.Completed += ReleaseSegmentInstance;
+        }
+
+        m_LoadingSegments.Clear();
         m_Segments.Clear();
         m_PastSegments.Clear();
+        _spawnedSegments = 0;
+
+        // Coins attached to the released segments are destroyed with them; the free ones would leak since
+        // the next run creates a new pool.
+        if (Coin.coinPool != null)
+            Coin.coinPool.Clear();
 
         characterController.End();
 
@@ -500,10 +530,14 @@ public class TrackManager : MonoBehaviour
         if (segmentUse == m_PreviousSegment) segmentUse = (segmentUse + 1) % m_CurrentThemeData.zones[m_CurrentZone].prefabList.Length;
 
         AsyncOperationHandle segmentToUseOp = m_CurrentThemeData.zones[m_CurrentZone].prefabList[segmentUse].InstantiateAsync(_offScreenSpawnPos, Quaternion.identity);
+        m_LoadingSegments.Add(segmentToUseOp);
         yield return segmentToUseOp;
+        RemoveLoadingSegment(segmentToUseOp);
         if (segmentToUseOp.Result == null || !(segmentToUseOp.Result is GameObject))
         {
             Debug.LogWarning(string.Format("Unable to load segment {0}.", m_CurrentThemeData.zones[m_CurrentZone].prefabList[segmentUse].Asset.name));
+            // This spawn was counted in Update but will never be added to m_Segments.
+            _spawnedSegments--;
             yield break;
         }
         TrackSegment newSegment = (segmentToUseOp.Result as GameObject).GetComponent<TrackSegment>();
@@ -546,6 +580,40 @@ public class TrackManager : MonoBehaviour
         if (newSegmentCreated != null) newSegmentCreated.Invoke(newSegment);
     }
 
+
+    void RemoveLoadingSegment(AsyncOperationHandle op)
+    {
+        for (int i = 0; i < m_LoadingSegments.Count; ++i)
+        {
+            if (m_LoadingSegments[i].Equals(op))
+            {
+                m_LoadingSegments.RemoveAt(i);
+                return;
+            }
+        }
+    }
+
+    static void ReleaseSegmentInstance(AsyncOperationHandle op)
+    {
+        GameObject obj = op.Result as GameObject;
+        if (obj != null)
+            Addressables.ReleaseInstance(obj);
+    }
+
+    // Obstacle instantiations still in flight when a run ends finish after their spawn coroutine was stopped, so they
+    // never get parented to a segment and would stay on the track of the next run.
+    void ReleaseOrphanObstacles()
+    {
+        Obstacle[] obstacles = FindObjectsByType<Obstacle>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < obstacles.Length; ++i)
+        {
+            if (obstacles[i].GetComponentInParent<TrackSegment>(true) != null)
+                continue;
+
+            if (!Addressables.ReleaseInstance(obstacles[i].gameObject))
+                Destroy(obstacles[i].gameObject);
+        }
+    }
 
     public void SpawnObstacle(TrackSegment segment)
     {
