@@ -181,6 +181,8 @@ public class TutorialAutoTest : MonoBehaviour
         yield return S5_DeathAndGameOverFlows();
         yield return S6_MenuReturnAndRestart();
         yield return S7_QuitMidJumpAndSlide();
+        yield return S8_MovesBeforePrompt();
+        yield return S9_EarlyMoveStillPrompts();
 
         m_Phase = "son";
         Out($"OZET gecti={m_Pass} kaldi={m_Fail} hata_logu={m_Errors}");
@@ -245,6 +247,145 @@ public class TutorialAutoTest : MonoBehaviour
         int coins = FindObjectsByType<Coin>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
         Out($"TEMIZLIK {when}: sayac={Spawned()} liste={m_TM.segments.Count} parca_nesnesi={segs} yetim_engel={orphanObs} altin_nesnesi={coins} isMoving={m_TM.isMoving}");
         Check(Spawned() == 0 && m_TM.segments.Count == 0 && segs == 0 && !m_TM.isMoving, $"{when}: sayac/liste/parca sifir, hareket durdu");
+    }
+
+    // ---- Yönerge zamanlaması ve "hareketi zaten yaptı" senaryoları (S8, S9) ----
+
+    static readonly FieldInfo s_GsObstacleIndex = typeof(GameState).GetField("m_CurrentSegmentObstacleIndex", k_Inst);
+
+    // GameState'in kullandığı engel: o anki segmentteki sıradaki engel. Yoksa float.MaxValue.
+    float DistanceToNextObstacle()
+    {
+        var seg = m_TM.currentSegment;
+        int idx = s_GsObstacleIndex != null ? (int)s_GsObstacleIndex.GetValue(m_GS) : 0;
+        if (seg == null || idx >= seg.obstaclePositions.Length) return float.MaxValue;
+        return seg.obstaclePositions[idx] * seg.worldLength - m_TM.currentSegmentDistance;
+    }
+
+    // Sıradaki engel en fazla 'max' m uzakta olana kadar bekler.
+    IEnumerator WaitObstacleWithin(float max, float timeout = 30f)
+    {
+        float w = 0;
+        while (DistanceToNextObstacle() > max && Top() == "Game" && w < timeout) { w += Time.unscaledDeltaTime; yield return null; }
+    }
+
+    IEnumerator BotUntilLevel(int level, float timeout = 120f)
+    {
+        botEnabled = true;
+        float w = 0;
+        while (m_TM.isTutorial && m_TM.characterController.currentTutorialLevel < level && Top() == "Game" && w < timeout) { w += Time.unscaledDeltaTime; yield return null; }
+        botEnabled = false;
+    }
+
+    // Sıradaki engel sayılana (geçilene ya da çarpılana) kadar izler: yönerge açıldı mı, kaç m kala, engel geçildi mi?
+    IEnumerator WatchObstacle(System.Action<bool, float, bool> done)
+    {
+        int cleared0 = Cleared();
+        int idx0 = s_GsObstacleIndex != null ? (int)s_GsObstacleIndex.GetValue(m_GS) : 0;
+        var seg0 = m_TM.currentSegment;
+        bool promptSeen = false; float promptDist = -1f; float w = 0;
+        while (Top() == "Game" && w < 20f)
+        {
+            if (!promptSeen && PromptVisible()) { promptSeen = true; promptDist = DistanceToNextObstacle(); }
+            int idx = s_GsObstacleIndex != null ? (int)s_GsObstacleIndex.GetValue(m_GS) : 0;
+            if (m_TM.currentSegment != seg0 || idx != idx0) break;
+            w += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        done(promptSeen, promptDist, Cleared() != cleared0);
+    }
+
+    IEnumerator S8_MovesBeforePrompt()
+    {
+        m_Phase = "S8-yonerge-oncesi-hareket";
+        PlayerData.NewSave();
+        yield return StartFromLoadout();
+        yield return WaitMoving();
+        var chr = m_TM.characterController;
+        Check(m_TM.isTutorial && chr.currentTutorialLevel == 0, "tutorial basladi (asama 0)");
+
+        // Şerit: ilk engel ortada tek başına; oyuncu yönerge mesafesinden (8 m) önce sağa geçer.
+        yield return WaitObstacleWithin(11f);
+        Out($"serit hareketi engele {DistanceToNextObstacle():F1} m kala");
+        chr.ChangeLane(1);
+        bool p = false, ok = false; float d = 0;
+        yield return WatchObstacle((a, b, c) => { p = a; d = b; ok = c; });
+        Check(!p, "serit: oyuncu yonergeden once bos seride gecti -> yonerge acilmadi");
+        Check(ok, "serit: engel gecildi (sayac artti)");
+
+        yield return BotUntilLevel(1);
+        Check(chr.currentTutorialLevel == 1, "asama 1'e gecildi");
+
+        // Zıplama: engeli aşacak mesafede (4,3 m; yönerge 3,9 m) yönergeden önce zıplar.
+        yield return WaitObstacleWithin(4.3f);
+        Out($"zipla engele {DistanceToNextObstacle():F1} m kala");
+        chr.Jump();
+        yield return WatchObstacle((a, b, c) => { p = a; d = b; ok = c; });
+        Check(!p, "zipla: engeli asacak ziplama zaten suruyordu -> yonerge acilmadi");
+        Check(ok, "zipla: engel gecildi (carpma yok)");
+
+        yield return BotUntilLevel(2);
+        Check(chr.currentTutorialLevel == 2, "asama 2'ye gecildi");
+
+        // Kayma: 6,2 m'de (yönerge 5,5 m) kayar; 7 m'lik kayma engeli aşar.
+        yield return WaitObstacleWithin(6.2f);
+        Out($"kay engele {DistanceToNextObstacle():F1} m kala");
+        chr.Slide();
+        yield return WatchObstacle((a, b, c) => { p = a; d = b; ok = c; });
+        Check(!p, "kay: engeli asacak kayma zaten suruyordu -> yonerge acilmadi");
+        Check(ok, "kay: engel gecildi (carpma yok)");
+
+        yield return PlayUntilTutorialDone(180f);
+        botEnabled = false;
+        Check(!m_TM.isTutorial && Top() == "Game", "tutorial tamamlandi");
+        yield return QuitViaPauseMenu();
+        CheckClean("S8 cikis sonrasi");
+    }
+
+    IEnumerator S9_EarlyMoveStillPrompts()
+    {
+        m_Phase = "S9-erken-hareket-ve-zamanlama";
+        PlayerData.NewSave();
+        yield return StartFromLoadout();
+        yield return WaitMoving();
+        var chr = m_TM.characterController;
+
+        // Şerit: oyuncu ortada kalır -> yönerge açılmalı, engelden ~8 m önce (eskiden ~2 m).
+        bool p = false, ok = false; float d = 0;
+        botEnabled = true; // yönergeyi onaylar
+        yield return WatchObstacle((a, b, c) => { p = a; d = b; ok = c; });
+        Out($"serit yonergesi engele {d:F1} m kala acildi");
+        Check(p && d > 6.5f && d <= 8.2f, $"serit: yonerge zamaninda acildi ({d:F1} m, beklenen ~8 m)");
+        Check(ok, "serit: yonergeden sonra engel gecildi");
+
+        yield return BotUntilLevel(1);
+
+        // Zıplama: çok erken zıplar (9 m) -> bu zıplama engeli aşamaz; yönerge açılmalı ve zıplamayı bitirmeli.
+        yield return WaitObstacleWithin(9f);
+        chr.Jump();
+        float w = 0;
+        while (!PromptVisible() && Top() == "Game" && w < 10f) { w += Time.unscaledDeltaTime; yield return null; }
+        bool jumpingAtPrompt = chr.isJumping;
+        d = DistanceToNextObstacle();
+        Out($"zipla yonergesi engele {d:F1} m kala acildi, ziplama suruyor mu={jumpingAtPrompt}");
+        Check(PromptVisible() && d > 3.4f && d <= 4.0f, $"zipla: erken ziplamaya ragmen yonerge zamaninda acildi ({d:F1} m, beklenen ~3,9 m)");
+        Check(!jumpingAtPrompt, "zipla: engeli asamayacak erken ziplama yonergede bitirildi");
+        botEnabled = true; // yönergeyi onaylar ve zıplar
+        yield return WatchObstacle((a, b, c) => { ok = c; });
+        Check(ok, "zipla: yonergedeki ziplama engeli asti (carpma yok)");
+
+        yield return BotUntilLevel(2);
+        botEnabled = true;
+        yield return WatchObstacle((a, b, c) => { p = a; d = b; ok = c; });
+        Out($"kay yonergesi engele {d:F1} m kala acildi");
+        Check(p && d > 5.0f && d <= 5.6f, $"kay: yonerge zamaninda acildi ({d:F1} m, beklenen ~5,5 m)");
+        Check(ok, "kay: yonergedeki kayma engeli asti (carpma yok)");
+
+        yield return PlayUntilTutorialDone(180f);
+        botEnabled = false;
+        Check(!m_TM.isTutorial && Top() == "Game", "tutorial tamamlandi");
+        yield return QuitViaPauseMenu();
+        CheckClean("S9 cikis sonrasi");
     }
 
     IEnumerator S1_FirstTutorialToNormalRun()

@@ -23,10 +23,12 @@ public class TutorialStepMetrics : MonoBehaviour
     static readonly FieldInfo s_CicLane = typeof(CharacterInputController).GetField("m_CurrentLane", k_Inst);
     static readonly FieldInfo s_CicJumpStart = typeof(CharacterInputController).GetField("m_JumpStart", k_Inst);
     static readonly FieldInfo s_CicSlideStart = typeof(CharacterInputController).GetField("m_SlideStart", k_Inst);
+    static readonly FieldInfo s_GsDisplay = typeof(GameState).GetField("m_DisplayTutorial", k_Inst);
+    static readonly FieldInfo s_GsCount = typeof(GameState).GetField("m_CountObstacles", k_Inst);
 
     const int k_ObstacleLayerMask = 1 << 9; // TrackManager.SpawnCoinAndPowerup ile aynı engel katmanı
 
-    bool m_Active, m_Prompt, m_Flag;
+    bool m_Active, m_Prompt, m_Flag, m_Display, m_Hit;
     int m_Level = -1, m_Cleared = -1, m_Segments = -1;
     float m_LastEventTime;
 
@@ -116,6 +118,23 @@ public class TutorialStepMetrics : MonoBehaviour
 
         if (chr.currentTutorialLevel != m_Level) { m_Level = chr.currentTutorialLevel; Event($"seviye={m_Level}"); }
         if (cleared != m_Cleared) { if (m_Cleared >= 0) Event($"gecilen={cleared}/3"); m_Cleared = cleared; }
+        // Eğitimde çarpma (can gitmez, engel "geçilmedi" sayılır): o anki durumla birlikte.
+        bool hit = chr.characterCollider.tutorialHitObstacle;
+        if (hit && !m_Hit)
+        {
+            int idx = s_GsObstacleIndex != null ? (int)s_GsObstacleIndex.GetValue(gs) : 0;
+            var seg = tm.currentSegment;
+            string next = seg != null && idx < seg.obstaclePositions.Length ? $"{seg.obstaclePositions[idx] * seg.worldLength - tm.currentSegmentDistance:F1}m" : "segmentte yok";
+            float sl = chr.isSliding && s_CicSlideStart != null ? (tm.worldDistance - (float)s_CicSlideStart.GetValue(chr)) / (chr.slideLength * (1f + tm.speedRatio)) : -1f;
+            float jr = chr.isJumping && s_CicJumpStart != null ? (tm.worldDistance - (float)s_CicJumpStart.GetValue(chr)) / (chr.jumpLength * (1f + tm.speedRatio)) : -1f;
+            Log($"CARPMA sv={chr.currentTutorialLevel} sayim={(s_GsCount != null ? s_GsCount.GetValue(gs) : "?")} siradakiEngel={next} serit={(s_CicLane != null ? s_CicLane.GetValue(chr) : "?")} kayma={sl:F2} ziplama={jr:F2} kutuY={chr.characterCollider.transform.localPosition.y:F2}");
+        }
+        m_Hit = hit;
+
+        // Yönerge açılmadan "gösterilecek" bayrağı düştüyse adım atlandı (oyuncu hareketi zaten yapmış sayıldı).
+        bool display = s_GsDisplay != null && (bool)s_GsDisplay.GetValue(gs);
+        if (m_Display && !display && !prompt && !m_Prompt) Event("yonerge-atlandi (oyuncu zaten yapmis sayildi) " + Situation(gs, tm, chr));
+        m_Display = display;
         if (prompt && !m_Prompt) Event("yonerge-acildi " + Situation(gs, tm, chr));
         if (m_Prompt && flag != m_Flag && !flag) Event("dogrulandi");
         if (!prompt && m_Prompt) Event("yonerge-kapandi");
