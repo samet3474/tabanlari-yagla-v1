@@ -209,6 +209,10 @@ public class GameState : AState
                     m_CountObstacles = true;
                     m_NextValidSegment = null;
                     m_DisplayTutorial = true;
+                    // The hit flag is only cleared when a counted obstacle is passed, so a hit on the uncounted obstacles
+                    // between steps used to stay set and make the new step's first obstacle count as hit even when the
+                    // player did the prompted move correctly. Counting starts here: start it clean.
+                    trackManager.characterController.characterCollider.tutorialHitObstacle = false;
 
                     tutorialValidatedObstacles.text = $"{m_TutorialClearedObstacle}/{k_ObstacleToClear}";
                 }
