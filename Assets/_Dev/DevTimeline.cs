@@ -24,8 +24,8 @@ public class DevTimeline : MonoBehaviour
     float m_NextButtonScan;
 
     // izlenen değerler (değişince günlüğe yazılır)
-    int m_TutLevel = -1, m_Cleared = -1, m_Lane = -1;
-    bool m_IsTutorial, m_Prompt, m_Paused, m_PauseMenu, m_Jumping, m_Sliding, m_MemDone, m_DiskDone;
+    int m_TutLevel = -2, m_Lane = -1;
+    bool m_IsTutorial, m_Paused, m_PauseMenu, m_Jumping, m_Sliding, m_MemDone, m_DiskDone;
     string m_DiskInfo = "?"; float m_NextDiskRead;
 
     readonly Dictionary<int, Vector2> m_TouchStart = new Dictionary<int, Vector2>();
@@ -34,9 +34,6 @@ public class DevTimeline : MonoBehaviour
     static readonly BindingFlags k_Inst = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
     static FieldInfo F(System.Type t, string n) => t.GetField(n, k_Inst);
     static readonly FieldInfo s_GsIsTutorial = F(typeof(GameState), "m_IsTutorial");
-    static readonly FieldInfo s_GsCleared = F(typeof(GameState), "m_TutorialClearedObstacle");
-    static readonly FieldInfo s_GsCount = F(typeof(GameState), "m_CountObstacles");
-    static readonly FieldInfo s_GsPrompt = F(typeof(GameState), "m_TutorialPromptVisible");
     static readonly FieldInfo s_CicLane = F(typeof(CharacterInputController), "m_CurrentLane");
     static readonly FieldInfo s_TmSpawned = F(typeof(TrackManager), "_spawnedSegments");
 
@@ -168,18 +165,14 @@ public class DevTimeline : MonoBehaviour
         if (gs == null || tm == null || chr == null) return;
 
         bool isTut = s_GsIsTutorial != null && (bool)s_GsIsTutorial.GetValue(gs);
-        int cleared = s_GsCleared != null ? (int)s_GsCleared.GetValue(gs) : -1;
-        bool prompt = s_GsPrompt != null && (bool)s_GsPrompt.GetValue(gs);
         bool paused = AudioListener.pause;
         bool pauseMenu = gs.pauseMenu != null && gs.pauseMenu.gameObject.activeSelf;
 
         if (isTut != m_IsTutorial) { m_IsTutorial = isTut; Log("TUTORIAL " + (isTut ? "basladi" : "bitti/kapali")); }
         if (state == "Game" && isTut)
         {
-            if (chr.currentTutorialLevel != m_TutLevel) { m_TutLevel = chr.currentTutorialLevel; Log("TUTORIAL asama=" + m_TutLevel); }
-            if (cleared != m_Cleared) { m_Cleared = cleared; Log($"TUTORIAL gecilen={cleared}/3"); }
+            if (gs.tutorialStep != m_TutLevel) { m_TutLevel = gs.tutorialStep; Log($"TUTORIAL adim={m_TutLevel} izin={chr.tutorialAllowedMove}"); }
         }
-        if (prompt != m_Prompt) { m_Prompt = prompt; Log("TUTORIAL komut ekrani " + (prompt ? "acik" : "kapandi")); }
         if (paused != m_Paused || pauseMenu != m_PauseMenu)
         {
             m_Paused = paused; m_PauseMenu = pauseMenu;
@@ -233,7 +226,7 @@ public class DevTimeline : MonoBehaviour
         var tm = gs != null ? gs.trackManager : null;
         string top = gm != null && gm.topState != null ? gm.topState.GetName() : "-";
         bool pauseMenu = gs != null && gs.pauseMenu != null && gs.pauseMenu.gameObject.activeInHierarchy;
-        string head = $"DEV {(gm != null && gm.topState != null ? gm.topState.GetName() : "-")} | tut={m_IsTutorial} asama={m_TutLevel} gecilen={m_Cleared} | bellek done={(PlayerData.instance != null && PlayerData.instance.tutorialDone)} disk {m_DiskInfo}";
+        string head = $"DEV {(gm != null && gm.topState != null ? gm.topState.GetName() : "-")} | tut={m_IsTutorial} adim={m_TutLevel} | bellek done={(PlayerData.instance != null && PlayerData.instance.tutorialDone)} disk {m_DiskInfo}";
         if (tm != null) head += $" | hareket={tm.isMoving} parca={tm.segments.Count} sayac={(s_TmSpawned != null ? s_TmSpawned.GetValue(tm) : "?")} hiz={tm.speed:F1}";
 
         float lh = m_Style.fontSize + 4;

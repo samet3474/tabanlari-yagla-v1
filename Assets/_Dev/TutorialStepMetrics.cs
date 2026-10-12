@@ -1,38 +1,23 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD || TY_DEVTOOLS
 // Eğitim adımı ölçümleri: yalnızca geliştirme derlemesinde veya TY_DEVTOOLS sembollü test derlemesinde derlenir; DevTimeline
 // açıkken (web'de her zaman, masaüstünde "-timeline") çalışır. Satırlar "TL|" önekiyle ve ekrandaki katmanda.
-// SALT OKUR: oyun alanlarını yalnızca okur (yansıma), hiçbir şey yazmaz; fizik sorgusu (CheckSphere) yan etkisizdir.
+// SALT OKUR: oyunun durumunu yalnızca okur, hiçbir şey yazmaz.
 //
-//   ADIM yonerge-acildi  sv, beklenen hareket, engele kalan mesafe (m) ve süre (sn), oyuncunun şeridi, engelli şeritler,
-//                        zıplıyor/kayıyor mu, "oyuncu zaten güvende mi" (doğru şeritte ya da engeli aşacak harekette)
-//   ADIM dogrulandi      tutorialWaitingForValidation T->F oldu (doğru hareket algılandı)
-//   ADIM yonerge-kapandi / gecilen / seviye / bitti   + önceki olaydan beri geçen süre
+//   ADIM egitim-basladi / adim=N yonerge (beklenen hareket) / adim=N hareket-basladi (tepki süresi) /
+//        adim=N tamam (yönergeden beri süre) / bitti (ilk yönergeden ve koşu başından beri toplam süre)
 //   KARE  her olayda: önceki olaydan beri kare sayısı, ortalama/en uzun kare (ms), >33 ms ve >50 ms kare sayısı,
 //         çöp toplama (GC) sayısı farkı, yönetilen bellek (MB)
-//   SICRAMA  50 ms'yi aşan tek kare (o karede segment sayısı / yönerge değiştiyse yazılır)
-using System.Reflection;
+//   SICRAMA  50 ms'yi aşan tek kare (o karede segment sayısı değiştiyse yazılır)
+//   GECIS  eğitim bittiğinde: öndeki parçalar, ilk engelin mesafesi ve süresi; sonra ilk engel/altın görülünce
 using UnityEngine;
 
 public class TutorialStepMetrics : MonoBehaviour
 {
-    static readonly BindingFlags k_Inst = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-    static readonly FieldInfo s_GsPrompt = typeof(GameState).GetField("m_TutorialPromptVisible", k_Inst);
-    static readonly FieldInfo s_GsCleared = typeof(GameState).GetField("m_TutorialClearedObstacle", k_Inst);
-    static readonly FieldInfo s_GsObstacleIndex = typeof(GameState).GetField("m_CurrentSegmentObstacleIndex", k_Inst);
-    static readonly FieldInfo s_GsIsTutorial = typeof(GameState).GetField("m_IsTutorial", k_Inst);
-    static readonly FieldInfo s_CicLane = typeof(CharacterInputController).GetField("m_CurrentLane", k_Inst);
-    static readonly FieldInfo s_CicJumpStart = typeof(CharacterInputController).GetField("m_JumpStart", k_Inst);
-    static readonly FieldInfo s_CicSlideStart = typeof(CharacterInputController).GetField("m_SlideStart", k_Inst);
-    static readonly FieldInfo s_GsDisplay = typeof(GameState).GetField("m_DisplayTutorial", k_Inst);
-    static readonly FieldInfo s_GsCount = typeof(GameState).GetField("m_CountObstacles", k_Inst);
+    bool m_Active, m_Moving, m_Started, m_WatchAfter;
+    int m_Step = -2, m_Segments = -1;
+    float m_LastEventTime, m_StepShownTime, m_FirstPromptTime, m_RunStartTime, m_DoneTime;
 
-    const int k_ObstacleLayerMask = 1 << 9; // TrackManager.SpawnCoinAndPowerup ile aynı engel katmanı
-
-    bool m_Active, m_Prompt, m_Flag, m_Display, m_Hit;
-    int m_Level = -1, m_Cleared = -1, m_Segments = -1;
-    float m_LastEventTime;
-
-    // Olaylar arası kare istatistiği (gerçek zaman; yönerge sırasında Time.timeScale = 0).
+    // Olaylar arası kare istatistiği (gerçek zaman).
     int m_Frames, m_Over33, m_Over50, m_GcAtEvent;
     float m_SumDt, m_MaxDt, m_LastFrameTime;
 
@@ -69,6 +54,8 @@ public class TutorialStepMetrics : MonoBehaviour
         ResetStats();
     }
 
+    static readonly string[] k_StepNames = { "SAGA", "SOLA", "YUKARI", "ASAGI" };
+
     void Update()
     {
         float now = Time.realtimeSinceStartup;
@@ -79,23 +66,32 @@ public class TutorialStepMetrics : MonoBehaviour
         var gs = gm != null && gm.topState != null && gm.topState.GetName() == "Game" ? gm.FindState("Game") as GameState : null;
         var tm = gs != null ? gs.trackManager : null;
         var chr = tm != null ? tm.characterController : null;
-        bool tutorial = chr != null && s_GsIsTutorial != null && (bool)s_GsIsTutorial.GetValue(gs);
+        if (chr == null || chr.character == null) { m_Active = false; m_WatchAfter = false; return; }
 
-        if (!tutorial)
+        if (m_WatchAfter) WatchAfterTutorial(tm, now);
+
+        if (!gs.isTutorialRun)
         {
-            if (m_Active) { Event("bitti/kapali"); m_Active = false; }
+            if (m_Active)
+            {
+                m_Active = false;
+                Event($"bitti toplam: ilk yonergeden {now - m_FirstPromptTime:F2}s, kosu basindan {now - m_RunStartTime:F2}s");
+                LogTransition(tm);
+                m_WatchAfter = true;
+                m_DoneTime = now;
+            }
             return;
         }
         if (!m_Active)
         {
-            m_Active = true; m_Level = -1; m_Cleared = -1; m_Prompt = false; m_Flag = chr.tutorialWaitingForValidation;
+            m_Active = true; m_Step = -2; m_Moving = false; m_WatchAfter = false;
+            m_FirstObstacleSeen = m_FirstCoinSeen = -1f;
             m_Segments = tm.segments.Count;
             m_LastEventTime = now;
             ResetStats();
             Log("ADIM egitim-basladi");
         }
 
-        // Kare istatistiği
         if (dt > 0f)
         {
             m_Frames++; m_SumDt += dt; if (dt > m_MaxDt) m_MaxDt = dt;
@@ -103,82 +99,82 @@ public class TutorialStepMetrics : MonoBehaviour
             if (dt > 0.050f)
             {
                 m_Over50++;
-                string ctx = "";
-                if (tm.segments.Count != m_Segments) ctx += $" segment {m_Segments}->{tm.segments.Count}";
-                bool p = s_GsPrompt != null && (bool)s_GsPrompt.GetValue(gs);
-                if (p != m_Prompt) ctx += " yonerge-degisti";
-                Log($"SICRAMA {1000f * dt:F0}ms sv={chr.currentTutorialLevel}{ctx}");
+                string ctx = tm.segments.Count != m_Segments ? $" segment {m_Segments}->{tm.segments.Count}" : "";
+                Log($"SICRAMA {1000f * dt:F0}ms adim={gs.tutorialStep}{ctx}");
             }
         }
         m_Segments = tm.segments.Count;
 
-        bool prompt = s_GsPrompt != null && (bool)s_GsPrompt.GetValue(gs);
-        bool flag = chr.tutorialWaitingForValidation;
-        int cleared = s_GsCleared != null ? (int)s_GsCleared.GetValue(gs) : -1;
+        if (tm.isMoving && !m_Moving) { m_Moving = true; m_RunStartTime = now; }
 
-        if (chr.currentTutorialLevel != m_Level) { m_Level = chr.currentTutorialLevel; Event($"seviye={m_Level}"); }
-        if (cleared != m_Cleared) { if (m_Cleared >= 0) Event($"gecilen={cleared}/3"); m_Cleared = cleared; }
-        // Eğitimde çarpma (can gitmez, engel "geçilmedi" sayılır): o anki durumla birlikte.
-        bool hit = chr.characterCollider.tutorialHitObstacle;
-        if (hit && !m_Hit)
+        int step = gs.tutorialStep;
+        if (step != m_Step)
         {
-            int idx = s_GsObstacleIndex != null ? (int)s_GsObstacleIndex.GetValue(gs) : 0;
-            var seg = tm.currentSegment;
-            string next = seg != null && idx < seg.obstaclePositions.Length ? $"{seg.obstaclePositions[idx] * seg.worldLength - tm.currentSegmentDistance:F1}m" : "segmentte yok";
-            float sl = chr.isSliding && s_CicSlideStart != null ? (tm.worldDistance - (float)s_CicSlideStart.GetValue(chr)) / (chr.slideLength * (1f + tm.speedRatio)) : -1f;
-            float jr = chr.isJumping && s_CicJumpStart != null ? (tm.worldDistance - (float)s_CicJumpStart.GetValue(chr)) / (chr.jumpLength * (1f + tm.speedRatio)) : -1f;
-            Log($"CARPMA sv={chr.currentTutorialLevel} sayim={(s_GsCount != null ? s_GsCount.GetValue(gs) : "?")} siradakiEngel={next} serit={(s_CicLane != null ? s_CicLane.GetValue(chr) : "?")} kayma={sl:F2} ziplama={jr:F2} kutuY={chr.characterCollider.transform.localPosition.y:F2}");
+            if (m_Step >= 0 && m_Step < k_StepNames.Length)
+                Event($"adim={m_Step} tamam ({k_StepNames[m_Step]}) yonergeden beri {now - m_StepShownTime:F2}s serit={chr.currentLane}");
+            m_Step = step;
+            m_Started = false;
+            if (step >= 0 && step < k_StepNames.Length)
+            {
+                m_StepShownTime = now;
+                if (step == 0) m_FirstPromptTime = now;
+                Event($"adim={step} yonerge beklenen={k_StepNames[step]} izin={chr.tutorialAllowedMove} serit={chr.currentLane} zipliyor={chr.isJumping} kayiyor={chr.isSliding}");
+            }
         }
-        m_Hit = hit;
 
-        // Yönerge açılmadan "gösterilecek" bayrağı düştüyse adım atlandı (oyuncu hareketi zaten yapmış sayıldı).
-        bool display = s_GsDisplay != null && (bool)s_GsDisplay.GetValue(gs);
-        if (m_Display && !display && !prompt && !m_Prompt) Event("yonerge-atlandi (oyuncu zaten yapmis sayildi) " + Situation(gs, tm, chr));
-        m_Display = display;
-        if (prompt && !m_Prompt) Event("yonerge-acildi " + Situation(gs, tm, chr));
-        if (m_Prompt && flag != m_Flag && !flag) Event("dogrulandi");
-        if (!prompt && m_Prompt) Event("yonerge-kapandi");
-        m_Prompt = prompt; m_Flag = flag;
+        if (step >= 0 && step < k_StepNames.Length && !m_Started)
+        {
+            bool started = step == 0 ? chr.currentLane == 2 : step == 1 ? chr.currentLane == 1 : step == 2 ? chr.isJumping : chr.isSliding;
+            if (started)
+            {
+                m_Started = true;
+                Log($"ADIM adim={step} hareket-basladi tepki={now - m_StepShownTime:F2}s");
+            }
+        }
     }
 
-    // Yönerge açıldığı andaki durum: engele kalan mesafe/süre, oyuncunun şeridi ve engelli şeritler.
-    string Situation(GameState gs, TrackManager tm, CharacterInputController chr)
+    // Eğitim bittiği an: ileride ilk engel nerede, kaç saniye sonra gelir, öndeki parçaların engel/altın durumu.
+    void LogTransition(TrackManager tm)
     {
-        var seg = tm.currentSegment;
-        int idx = s_GsObstacleIndex != null ? (int)s_GsObstacleIndex.GetValue(gs) : 0;
-        if (seg == null || idx >= seg.obstaclePositions.Length) return "(engel bilgisi yok)";
-
-        float t = seg.obstaclePositions[idx];
-        float dist = t * seg.worldLength - tm.currentSegmentDistance;
-        float secs = tm.speed > 0.01f ? dist / tm.speed : -1f;
-
-        seg.GetPointAt(t, out Vector3 pos, out Quaternion rot);
-        string blocked = "";
-        for (int lane = 0; lane < 3; ++lane)
+        float start = -tm.currentSegmentDistance;
+        string segs = "";
+        for (int i = 0; i < tm.segments.Count; ++i)
         {
-            Vector3 p = pos + (lane - 1) * tm.laneOffset * (rot * Vector3.right) + Vector3.up * 0.5f;
-            blocked += Physics.CheckSphere(p, 0.4f, k_ObstacleLayerMask) ? "X" : "_";
+            var seg = tm.segments[i];
+            int obstacles = seg.objectRoot.GetComponentsInChildren<Obstacle>(true).Length;
+            segs += $" [{start:F0}m engel={obstacles}]";
+            start += seg.worldLength;
         }
-        int myLane = s_CicLane != null ? (int)s_CicLane.GetValue(chr) : -1;
+        Log($"GECIS hiz={tm.speed:F1} parca={tm.segments.Count}{segs}");
+    }
 
-        string move = chr.currentTutorialLevel == 0 ? "SERIT" : chr.currentTutorialLevel == 1 ? "ZIPLA" : chr.currentTutorialLevel == 2 ? "KAY" : "BITIS";
-        string safe = "?";
-        if (chr.currentTutorialLevel == 0 && myLane >= 0 && myLane < 3)
-            safe = blocked[myLane] == '_' ? "EVET (oyuncu zaten bos seritte)" : "hayir";
-        else if (chr.currentTutorialLevel == 1)
-        {
-            float j = chr.jumpLength * (1f + tm.speedRatio);
-            float r = chr.isJumping && s_CicJumpStart != null ? (tm.worldDistance + dist - (float)s_CicJumpStart.GetValue(chr)) / j : -1f;
-            safe = chr.isJumping ? $"zipliyor (engelde atlayis orani={r:F2})" : "hayir";
-        }
-        else if (chr.currentTutorialLevel == 2)
-        {
-            float s = chr.slideLength * (1f + tm.speedRatio);
-            float r = chr.isSliding && s_CicSlideStart != null ? (tm.worldDistance + dist - (float)s_CicSlideStart.GetValue(chr)) / s : -1f;
-            safe = chr.isSliding ? $"kayiyor (engelde kayma orani={r:F2})" : "hayir";
-        }
+    float m_FirstObstacleSeen = -1f, m_FirstCoinSeen = -1f;
 
-        return $"beklenen={move} mesafe={dist:F1}m sure={secs:F2}s hiz={tm.speed:F1} segment={seg.worldLength:F1}m oyuncuSerit={myLane} engel=[{blocked}] guvende={safe}";
+    void WatchAfterTutorial(TrackManager tm, float now)
+    {
+        if (now - m_DoneTime > 30f) { m_WatchAfter = false; return; }
+        Transform pivot = tm.characterController.transform;
+        if (m_FirstObstacleSeen < 0f)
+        {
+            float nearest = float.MaxValue;
+            for (int i = 0; i < tm.segments.Count; ++i)
+                foreach (var o in tm.segments[i].objectRoot.GetComponentsInChildren<Obstacle>())
+                {
+                    float z = pivot.InverseTransformPoint(o.transform.position).z;
+                    if (z > 0f && z < nearest) nearest = z;
+                }
+            if (nearest < float.MaxValue)
+            {
+                m_FirstObstacleSeen = now;
+                Log($"GECIS ilk engel olustu/goruldu: {nearest:F0} m onde, egitim bitisinden {now - m_DoneTime:F2}s sonra (oyuncuya ~{nearest / Mathf.Max(tm.speed, 0.1f):F1}s)");
+            }
+        }
+        if (m_FirstCoinSeen < 0f && FindAnyObjectByType<Coin>() != null)
+        {
+            m_FirstCoinSeen = now;
+            Log($"GECIS ilk altin olustu: egitim bitisinden {now - m_DoneTime:F2}s sonra");
+        }
+        if (m_FirstObstacleSeen >= 0f && m_FirstCoinSeen >= 0f) m_WatchAfter = false;
     }
 }
 #endif

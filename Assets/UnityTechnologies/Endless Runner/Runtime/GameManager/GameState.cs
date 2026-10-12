@@ -77,43 +77,29 @@ public class GameState : AState
 
     protected int k_MaxLives = 3;
 
-    protected bool m_IsTutorial; //Tutorial is a special run that don't chance section until the tutorial step is "validated".
-    protected int m_TutorialClearedObstacle = 0;
-    protected bool m_CountObstacles = true;
-    protected bool m_DisplayTutorial;
-    protected int m_CurrentSegmentObstacleIndex = 0;
-    protected TrackSegment m_NextValidSegment = null;
-    protected int k_ObstacleToClear = 3;
-    protected bool m_TutorialPromptVisible; // A tutorial prompt (not the pause menu) is what currently pauses the run.
+    // First run only: the run itself teaches the four moves, one prompt each, on a track with no obstacles
+    // (TrackManager spawns tutorial segments empty), then carries on as a normal run.
+    protected bool m_IsTutorial;
+    protected int m_TutorialStep;           // -1 until the run starts moving; k_TutorialSteps.Length once all are done
+    protected bool m_TutorialMoveStarted;   // the current step's move was seen on the character
     protected bool m_TutorialCompleted;
-    protected Coroutine m_HideTutorialMessage;
+    protected TutorialOverlay m_TutorialOverlay;
 
-    protected const float k_TutorialCompletedMessageTime = 2.0f;
+    // The order the moves are taught in. Right then left brings the player back to the middle lane.
+    protected static readonly CharacterInputController.MoveInput[] k_TutorialSteps =
+    {
+        CharacterInputController.MoveInput.Right,
+        CharacterInputController.MoveInput.Left,
+        CharacterInputController.MoveInput.Up,
+        CharacterInputController.MoveInput.Down,
+    };
 
-    // When a tutorial prompt opens, measured as distance (m) left to the obstacle. It used to be "10% of the segment
-    // length", i.e. 1.7-2.7 m (0.2 s at tutorial speed): the obstacle was already at the character's feet.
-    // The prompt freezes the run and the requested move starts right where it froze, so each distance is where that
-    // move, started there, still clears the obstacle with margin:
-    //  - lane: a lane change takes ~0.1 s, so it can be asked early, while the obstacle is still well ahead;
-    //  - jump: the jump arc is sin(ratio * PI) * jumpHeight over jumpLength; at 65% the obstacle (with its depth and the
-    //          character's) falls into the high part of the arc (ratio ~0.58-0.72);
-    //  - slide: the slide lasts slideLength from where it starts; leave room for obstacle/character depth at its end.
-    protected const float k_LanePromptDistance = 8.0f;
-    protected const float k_JumpPromptRatio = 0.65f;
-    protected const float k_SlidePromptMargin = 1.5f;
+    // A lane change counts once the character is (nearly) on the new lane, a jump once it is back on the ground.
+    protected const float k_TutorialArrivalTolerance = 0.02f;
 
-    // A prompt is skipped when the player already made the move it would ask for (e.g. changed to a free lane before
-    // the "change lane" prompt): asking again would request a pointless or even harmful move.
-    // Jump: the obstacle must fall in the part of the current jump that is high enough (sin(PI * ratio) * jumpHeight
-    // stays above the low barrier, with obstacle/character depth taken off both ends).
-    protected const float k_JumpClearMinRatio = 0.25f;
-    protected const float k_JumpClearMaxRatio = 0.75f;
-    // Slide: the slide must still be on when the far side of the obstacle (its depth plus the character's) is reached.
-    protected const float k_SlideClearMargin = 0.5f;
-    // Lane occupancy test at the obstacle, same obstacle layer and probe size TrackManager uses for pickups.
-    protected const int k_ObstacleLayerMask = 1 << 9;
-    protected const float k_ObstacleProbeRadius = 0.4f;
-    protected const float k_ObstacleProbeHeight = 0.5f;
+    public int tutorialStep { get { return m_TutorialStep; } }
+    public int tutorialStepCount { get { return k_TutorialSteps.Length; } }
+    public bool isTutorialRun { get { return m_IsTutorial; } }
 
     public override void Enter(AState from)
     {
@@ -170,54 +156,16 @@ public class GameState : AState
 
         m_IsTutorial = !PlayerData.instance.tutorialDone;
         trackManager.isTutorial = m_IsTutorial;
+        // Left over from the old obstacle-counting tutorial; nothing listens to segment changes any more.
+        trackManager.newSegmentCreated = null;
+        trackManager.currentSegementChanged = null;
 
-        if (m_HideTutorialMessage != null)
-        {
-            StopCoroutine(m_HideTutorialMessage);
-            m_HideTutorialMessage = null;
-        }
+        if (m_TutorialOverlay == null)
+            m_TutorialOverlay = TutorialOverlay.Create(wholeUI, tutorialValidatedObstacles.font, k_TutorialSteps.Length);
+        m_TutorialOverlay.Hide();
 
-        if (!m_IsTutorial)
-        {
-            // The tutorial callbacks would otherwise keep running (and changing tutorial state) during normal runs.
-            trackManager.newSegmentCreated = null;
-            trackManager.currentSegementChanged = null;
-        }
-        else
-        {
+        if (m_IsTutorial)
             ResetTutorialProgress();
-
-            tutorialValidatedObstacles.gameObject.SetActive(true);
-            tutorialValidatedObstacles.text = $"0/{k_ObstacleToClear}";
-
-            m_DisplayTutorial = true;
-            trackManager.newSegmentCreated = segment =>
-            {
-                if (trackManager.currentZone != 0 && !m_CountObstacles && m_NextValidSegment == null)
-                {
-                    m_NextValidSegment = segment;
-                }
-            };
-
-            trackManager.currentSegementChanged = segment =>
-            {
-                m_CurrentSegmentObstacleIndex = 0;
-
-                if (!m_CountObstacles && trackManager.currentSegment == m_NextValidSegment)
-                {
-                    trackManager.characterController.currentTutorialLevel += 1;
-                    m_CountObstacles = true;
-                    m_NextValidSegment = null;
-                    m_DisplayTutorial = true;
-                    // The hit flag is only cleared when a counted obstacle is passed, so a hit on the uncounted obstacles
-                    // between steps used to stay set and make the new step's first obstacle count as hit even when the
-                    // player did the prompted move correctly. Counting starts here: start it clean.
-                    trackManager.characterController.characterCollider.tutorialHitObstacle = false;
-
-                    tutorialValidatedObstacles.text = $"{m_TutorialClearedObstacle}/{k_ObstacleToClear}";
-                }
-            };
-        }
 
         m_Finished = false;
         m_PowerupIcons.Clear();
@@ -321,7 +269,7 @@ public class GameState : AState
             }
 
             if (m_IsTutorial)
-                TutorialCheckObstacleClear();
+                TutorialUpdate();
 
             UpdateUI();
 
@@ -350,11 +298,8 @@ public class GameState : AState
 
 		pauseButton.gameObject.SetActive(false);
         pauseMenu.gameObject.SetActive (displayMenu);
+		// Also hides the tutorial prompt, which lives under wholeUI.
 		wholeUI.gameObject.SetActive(false);
-		// The tutorial counter is not parented under wholeUI, so hiding that group is not enough to
-		// keep it from drawing on top of the pause menu.
-		if (displayMenu)
-			tutorialValidatedObstacles.gameObject.SetActive(false);
 		m_WasMoving = trackManager.isMoving;
 		trackManager.StopMove();
 	}
@@ -365,8 +310,6 @@ public class GameState : AState
 		pauseButton.gameObject.SetActive(true);
 		pauseMenu.gameObject.SetActive (false);
 		wholeUI.gameObject.SetActive(true);
-		if (m_IsTutorial)
-			tutorialValidatedObstacles.gameObject.SetActive(true);
 		if (m_WasMoving)
 		{
 			trackManager.StartMove(false);
@@ -568,183 +511,113 @@ public class GameState : AState
 #endif
 
 
-    void TutorialCheckObstacleClear()
+    // One step at a time: show its prompt, let only its move through, and go on as soon as the character has really
+    // done that move (on the new lane, back on the ground after the jump, up again after the slide).
+    void TutorialUpdate()
     {
-        if (trackManager.segments.Count == 0)
+        CharacterInputController chr = trackManager.characterController;
+
+        if (m_TutorialStep < 0)
+        {
+            // Countdown: the player has no control yet and stays in the middle lane.
+            if (!trackManager.isMoving)
+                return;
+            ShowTutorialStep(0);
+        }
+
+        if (m_TutorialStep >= k_TutorialSteps.Length)
             return;
 
-        // Paused by the player (pause button or focus loss): leave the run paused until they choose Resume.
+        CharacterInputController.MoveInput move = k_TutorialSteps[m_TutorialStep];
+
+        // No moves while the pause menu is up; the step's move comes back with the run.
         if (pauseMenu.gameObject.activeSelf)
+        {
+            if (!m_TutorialMoveStarted)
+                chr.tutorialAllowedMove = CharacterInputController.MoveInput.None;
+            return;
+        }
+
+        if (!m_TutorialMoveStarted)
+        {
+            m_TutorialMoveStarted = TutorialMoveStarted(chr, move);
+            // The input is consumed on use; if it did not start the move, accept it again.
+            chr.tutorialAllowedMove = m_TutorialMoveStarted ? CharacterInputController.MoveInput.None : move;
+            if (!m_TutorialMoveStarted)
+                return;
+        }
+
+        if (!TutorialMoveFinished(chr, move))
             return;
 
-        if (m_TutorialPromptVisible && AudioListener.pause && !trackManager.characterController.tutorialWaitingForValidation)
+        m_TutorialOverlay.MarkDone(m_TutorialStep);
+        if (m_TutorialStep + 1 < k_TutorialSteps.Length)
+            ShowTutorialStep(m_TutorialStep + 1);
+        else
+            FinishTutorialSteps();
+    }
+
+    static bool TutorialMoveStarted(CharacterInputController chr, CharacterInputController.MoveInput move)
+    {
+        switch (move)
         {
-            m_DisplayTutorial = false;
-            DisplayTutorial(false);
-        }
-
-        float ratio = trackManager.currentSegmentDistance / trackManager.currentSegment.worldLength;
-        float nextObstaclePosition = m_CurrentSegmentObstacleIndex < trackManager.currentSegment.obstaclePositions.Length ? trackManager.currentSegment.obstaclePositions[m_CurrentSegmentObstacleIndex] : float.MaxValue;
-
-        if (m_CountObstacles && ratio > nextObstaclePosition + 0.05f)
-        {
-            m_CurrentSegmentObstacleIndex += 1;
-
-            if (!trackManager.characterController.characterCollider.tutorialHitObstacle)
-            {
-                m_TutorialClearedObstacle += 1;
-                tutorialValidatedObstacles.text = $"{m_TutorialClearedObstacle}/{k_ObstacleToClear}";
-            }
-
-            trackManager.characterController.characterCollider.tutorialHitObstacle = false;
-
-            if (m_TutorialClearedObstacle == k_ObstacleToClear)
-            {
-                m_TutorialClearedObstacle = 0;
-                m_CountObstacles = false;
-                m_NextValidSegment = null;
-                trackManager.ChangeZone();
-
-                tutorialValidatedObstacles.text = Loc.Get("tutorial.passed", "Passed!");
-
-                if (trackManager.currentZone == 0)
-                {//we looped, mean we finished the tutorial.
-                    CompleteTutorial();
-                }
-            }
-        }
-        // Only once the run is actually moving: on short segments the obstacle is already within prompt distance on the
-        // first frame, during the countdown, while its prefab may still be loading (Addressables) and has no collider yet.
-        else if (m_DisplayTutorial && trackManager.isMoving && nextObstaclePosition <= 1.0f)
-        {
-            float distanceToObstacle = nextObstaclePosition * trackManager.currentSegment.worldLength - trackManager.currentSegmentDistance;
-            if (distanceToObstacle <= TutorialPromptDistance())
-            {
-                if (TutorialStepAlreadyDone(nextObstaclePosition, distanceToObstacle))
-                    m_DisplayTutorial = false; // nothing to ask: the step continues with the obstacle count as usual
-                else
-                    DisplayTutorial(true);
-            }
+            case CharacterInputController.MoveInput.Right: return chr.currentLane == 2;
+            case CharacterInputController.MoveInput.Left: return chr.currentLane == 1;
+            case CharacterInputController.MoveInput.Up: return chr.isJumping;
+            case CharacterInputController.MoveInput.Down: return chr.isSliding;
+            default: return false;
         }
     }
 
-    // True when the player's current state already avoids the upcoming obstacle the way this step teaches.
-    bool TutorialStepAlreadyDone(float obstacleT, float distanceToObstacle)
+    static bool TutorialMoveFinished(CharacterInputController chr, CharacterInputController.MoveInput move)
     {
-        CharacterInputController chr = trackManager.characterController;
-        float speedScale = 1.0f + trackManager.speedRatio;
-        switch (chr.currentTutorialLevel)
+        switch (move)
         {
-            case 0:
-            {
-                Vector3 pos;
-                Quaternion rot;
-                trackManager.currentSegment.GetPointAt(obstacleT, out pos, out rot);
-                bool anyBlocked = false;
-                bool playerLaneBlocked = false;
-                for (int lane = 0; lane < 3; ++lane)
-                {
-                    Vector3 lanePos = pos + (lane - 1) * trackManager.laneOffset * (rot * Vector3.right) + Vector3.up * k_ObstacleProbeHeight;
-                    bool blocked = Physics.CheckSphere(lanePos, k_ObstacleProbeRadius, k_ObstacleLayerMask);
-                    anyBlocked |= blocked;
-                    if (lane == chr.currentLane)
-                        playerLaneBlocked = blocked;
-                }
-                // No obstacle found in any lane means it is not there yet (still loading): show the prompt rather than skip.
-                return anyBlocked && !playerLaneBlocked;
-            }
-            case 1:
-            {
-                if (!chr.isJumping)
-                    return false;
-                float ratioAtObstacle = (trackManager.worldDistance + distanceToObstacle - chr.jumpStartDistance) / (chr.jumpLength * speedScale);
-                return ratioAtObstacle >= k_JumpClearMinRatio && ratioAtObstacle <= k_JumpClearMaxRatio;
-            }
-            case 2:
-            {
-                if (!chr.isSliding)
-                    return false;
-                float slideEnd = chr.slideStartDistance + chr.slideLength * speedScale;
-                return trackManager.worldDistance + distanceToObstacle + k_SlideClearMargin <= slideEnd;
-            }
+            case CharacterInputController.MoveInput.Right:
+            case CharacterInputController.MoveInput.Left:
+            case CharacterInputController.MoveInput.Up:
+                // On the target lane and on the ground.
+                return !chr.isJumping && chr.offsetFromTarget.sqrMagnitude <= k_TutorialArrivalTolerance * k_TutorialArrivalTolerance;
+            case CharacterInputController.MoveInput.Down:
+                return !chr.isSliding;
             default:
                 return false;
         }
     }
 
-    // Distance to the obstacle (m) at which the current tutorial step's prompt opens; see the constants above.
-    float TutorialPromptDistance()
+    void ShowTutorialStep(int step)
     {
-        CharacterInputController chr = trackManager.characterController;
-        // Same speed scaling as the jump/slide themselves (CharacterInputController.Jump/Slide).
-        float speedScale = 1.0f + trackManager.speedRatio;
-        switch (chr.currentTutorialLevel)
+        m_TutorialStep = step;
+        m_TutorialMoveStarted = false;
+
+        CharacterInputController.MoveInput move = k_TutorialSteps[step];
+        trackManager.characterController.tutorialAllowedMove = move;
+
+        string text;
+        Vector2 direction;
+        switch (move)
         {
-            case 1: return chr.jumpLength * speedScale * k_JumpPromptRatio;
-            case 2: return Mathf.Max(chr.slideLength * speedScale - k_SlidePromptMargin, 0.0f);
-            default: return k_LanePromptDistance;
+            case CharacterInputController.MoveInput.Right: text = Loc.Get("tutorial.right", "SAĞA KAYDIR"); direction = Vector2.right; break;
+            case CharacterInputController.MoveInput.Left: text = Loc.Get("tutorial.left", "SOLA KAYDIR"); direction = Vector2.left; break;
+            case CharacterInputController.MoveInput.Up: text = Loc.Get("tutorial.up", "YUKARI KAYDIR"); direction = Vector2.up; break;
+            default: text = Loc.Get("tutorial.down", "AŞAĞI KAYDIR"); direction = Vector2.down; break;
         }
+        m_TutorialOverlay.ShowStep(step, text, direction);
     }
 
-    void DisplayTutorial(bool value)
+    void FinishTutorialSteps()
     {
-        // The prompt is modal and freezes the run, so the player must not be able to stack a second
-        // pause on top of it: Pause() would early-out on AudioListener.pause and the tutorial's own
-        // Resume() would then tear down the pause menu behind the player's back.
-        pauseButton.gameObject.SetActive(!value);
-        m_TutorialPromptVisible = value;
-
-        if(value)
-            Pause(false);
-        else
-        {
-            Resume();
-        }
-
-        switch (trackManager.characterController.currentTutorialLevel)
-        {
-            case 0:
-                sideSlideTuto.SetActive(value);
-                trackManager.characterController.tutorialWaitingForValidation = value;
-                break;
-            case 1:
-                upSlideTuto.SetActive(value);
-                // A jump still in progress here would not clear the obstacle (TutorialStepAlreadyDone said so), and
-                // Jump() does nothing while jumping: end it so the jump this prompt asks for actually starts.
-                if (value)
-                    trackManager.characterController.StopJumping();
-                trackManager.characterController.tutorialWaitingForValidation = value;
-                break;
-            case 2:
-                downSlideTuto.SetActive(value);
-                // Same for a slide that would end before the obstacle.
-                if (value)
-                    trackManager.characterController.StopSliding();
-                trackManager.characterController.tutorialWaitingForValidation = value;
-                break;
-            case 3:
-                finishTuto.SetActive(value);
-                trackManager.characterController.StopSliding();
-                trackManager.characterController.tutorialWaitingForValidation = value;
-                break;
-            default:
-                break;
-        }
+        m_TutorialStep = k_TutorialSteps.Length;
+        m_TutorialOverlay.ShowReady(Loc.Get("tutorial.ready", "HAZIRSIN!"));
+        CompleteTutorial();
     }
 
-
-    // Still bound to the end-of-tutorial panel's button in the scene. The panel is no longer shown, but if it ever is,
-    // finishing the tutorial keeps the player in the run instead of sending them to the menu.
+    // Still bound to the old end-of-tutorial panel's button in the scene. The panel is no longer shown, but if it ever
+    // is, finishing the tutorial keeps the player in the run instead of sending them to the menu.
     public void FinishTutorial()
     {
         finishTuto.SetActive(false);
-        bool pausedByPrompt = m_TutorialPromptVisible;
-        m_TutorialPromptVisible = false;
-
         CompleteTutorial();
-
-        if (pausedByPrompt && AudioListener.pause)
-            Resume();
     }
 
     // Saves the tutorial as done and turns the current run into a normal endless run, without going through the menu.
@@ -755,39 +628,23 @@ public class GameState : AState
 
         m_TutorialCompleted = true;
         m_IsTutorial = false;
+        trackManager.characterController.tutorialAllowedMove = CharacterInputController.MoveInput.None;
 
         PlayerData.instance.tutorialDone = true;
         PlayerData.instance.Save();
 
-        trackManager.newSegmentCreated = null;
-        trackManager.currentSegementChanged = null;
         trackManager.ContinueAsNormalRun();
-
-        tutorialValidatedObstacles.text = Loc.Get("tutorial.great", "HARİKA!");
-        tutorialValidatedObstacles.gameObject.SetActive(true);
-        m_HideTutorialMessage = StartCoroutine(HideTutorialMessage());
-    }
-
-    IEnumerator HideTutorialMessage()
-    {
-        yield return new WaitForSeconds(k_TutorialCompletedMessageTime);
-        tutorialValidatedObstacles.gameObject.SetActive(false);
-        m_HideTutorialMessage = null;
     }
 
     // Tutorial progress lives on objects that persist between runs, so an abandoned or replayed tutorial must start clean.
     void ResetTutorialProgress()
     {
-        m_TutorialClearedObstacle = 0;
-        m_CountObstacles = true;
-        m_NextValidSegment = null;
-        m_CurrentSegmentObstacleIndex = 0;
-        m_TutorialPromptVisible = false;
+        m_TutorialStep = -1;
+        m_TutorialMoveStarted = false;
         m_TutorialCompleted = false;
 
         CharacterInputController chrCtrl = trackManager.characterController;
-        chrCtrl.currentTutorialLevel = 0;
-        chrCtrl.tutorialWaitingForValidation = false;
+        chrCtrl.tutorialAllowedMove = CharacterInputController.MoveInput.None;
         chrCtrl.characterCollider.tutorialHitObstacle = false;
     }
 }

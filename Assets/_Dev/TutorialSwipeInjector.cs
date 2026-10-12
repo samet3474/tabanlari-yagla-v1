@@ -2,40 +2,35 @@
 // Eğitim girdi teşhisi için yapay kaydırma üretir: yalnızca TY_DEVTOOLS sembollü WEB test derlemesinde ve adreste
 // "?kaydirtest=..." varken çalışır (oyunun dokunmatik kolu yalnızca web/mobil derlemede derleniyor).
 // Sanal bir Touchscreen aygıtına gerçek dokunma olayları gönderir; oyun bunları gerçek parmak gibi okur
-// (CharacterInputController -> TutorialMoveCheck -> GameState). Oyun koduna ve alanlarına dokunmaz.
+// (CharacterInputController dokunmatik kolu -> HandleMoveInput -> GameState). Oyun koduna ve alanlarına dokunmaz.
 //
-// Senaryolar (eğitimin her seviyesinde: 0 şerit, 1 zıpla, 2 kay):
-//   kaydirtest=egik  Yönerge açıkken DOĞRU yöne kaydırır ama ilk ~%1,5'lik kısım öbür eksene kayar
-//                    (gerçek parmağın başlangıçtaki küçük sapması). 1,5 sn sonra temiz bir kaydırma yapar.
-//   kaydirtest=once  Yönerge AÇILMADAN önce o seviyenin doğru hareketini yapar; yönerge açılınca 1,5 sn bekleyip
-//                    temiz kaydırma yapar.
-//   kaydirtest=dogru Yönerge açıkken yalnızca temiz kaydırma (karşılaştırma için).
-// Sonuçları TutorialInputProbe yazar ("KAYDIR", "KAYDIR-SON", "YONERGE", "OZET").
-// Not: bu modda eğitim boyunca çarpışma yok sayılır (yalnızca engellerin geçilmesi için; girdi yolunu etkilemez).
+// Senaryolar (eğitimin her adımında: sağ, sol, yukarı, aşağı):
+//   kaydirtest=dogru   Yönerge göründükten 0,6 sn sonra temiz, doğru kaydırma.
+//   kaydirtest=yanlis  Önce YANLIŞ yöne kaydırır (adım ilerlememeli, karakter yerinde kalmalı), 1 sn sonra doğru yöne.
+//   kaydirtest=egik    Doğru yöne ama ilk ~%1,5'lik kısmı öbür eksene kayan kaydırma (parmağın başlangıç sapması),
+//                      1,5 sn sonra adım geçmediyse temiz kaydırma.
+//   kaydirtest=hizli   Kalan doğru kaydırmaları yönergeyi beklemeden art arda (~7 kare arayla) yapar; erken gelenler
+//                      yok sayılmalı, hiçbir adım atlanmamalı. Sonra kalan adımları "dogru" gibi tamamlar.
+// Sonuçları TutorialInputProbe ("KAYDIR") ve TutorialStepMetrics ("ADIM") yazar.
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
 
 public class TutorialSwipeInjector : MonoBehaviour
 {
-    static readonly BindingFlags k_Inst = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-    static readonly FieldInfo s_GsPrompt = typeof(GameState).GetField("m_TutorialPromptVisible", k_Inst);
-    static readonly FieldInfo s_CicLane = typeof(CharacterInputController).GetField("m_CurrentLane", k_Inst);
-
     string m_Mode;
     Touchscreen m_Screen;
     int m_TouchId = 100;
 
-    // Sıradaki kaydırmanın kare kare konumları (null: kaydırma yok).
+    // Sıradaki kaydırmaların kare kare dokunma olayları (phase None: o kare dokunma yok).
     readonly Queue<(Vector2 pos, UnityEngine.InputSystem.TouchPhase phase)> m_Steps = new Queue<(Vector2, UnityEngine.InputSystem.TouchPhase)>();
     float m_WaitUntil;
-    bool m_LastPrompt;
-    int m_PromptLevel = -1;
-    int m_PreDoneLevel = -1;
-    int m_TiltDoneLevel = -1;
-    bool m_CleanPending;
+    int m_SeenStep = -2;
+    int m_Phase;          // adım içinde: 0 ilk kaydırma bekliyor, 1 ikinci kaydırma bekliyor, 2 bitti
+    bool m_BurstDone;
+
+    static readonly Vector2[] k_StepDirs = { Vector2.right, Vector2.left, Vector2.up, Vector2.down };
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Boot()
@@ -67,23 +62,15 @@ public class TutorialSwipeInjector : MonoBehaviour
         if (m_Screen != null && m_Screen.added) InputSystem.RemoveDevice(m_Screen);
     }
 
-    // Doğru yön: 0 -> boş şeride yatay, 1 -> yukarı, 2 -> aşağı.
-    static Vector2 CorrectDir(int level, CharacterInputController chr)
-    {
-        if (level == 1) return Vector2.up;
-        if (level == 2) return Vector2.down;
-        int lane = s_CicLane != null ? (int)s_CicLane.GetValue(chr) : 1;
-        return lane >= 2 ? Vector2.left : Vector2.right;
-    }
+    static Vector2 WrongDir(Vector2 dir) => dir == Vector2.up ? Vector2.down : dir == Vector2.right ? Vector2.left : Vector2.up;
 
     void QueueSwipe(Vector2 dir, bool tilted, string why)
     {
         float w = Screen.width;
         Vector2 start = new Vector2(Screen.width * 0.5f, Screen.height * 0.45f);
         Vector2 wrong = new Vector2(Mathf.Abs(dir.y), Mathf.Abs(dir.x)); // öbür eksen
-        if (dir.x < 0 || dir.y < 0) wrong = -wrong;                       // sapma yönü sabit olmasın diye harekete bağlı
+        if (dir.x < 0 || dir.y < 0) wrong = -wrong;
 
-        m_Steps.Clear();
         m_Steps.Enqueue((start, UnityEngine.InputSystem.TouchPhase.Began));
         Vector2 p = start;
         if (tilted)
@@ -98,16 +85,17 @@ public class TutorialSwipeInjector : MonoBehaviour
             m_Steps.Enqueue((p, UnityEngine.InputSystem.TouchPhase.Moved));
         }
         m_Steps.Enqueue((p, UnityEngine.InputSystem.TouchPhase.Ended));
-        m_TouchId++;
         Log($"KAYDIRTEST {why}: yon=({dir.x:F0},{dir.y:F0}) {(tilted ? "EGIK baslangic" : "temiz")}");
     }
 
     void Update()
     {
-        // Sıradaki dokunma adımını gönder (kare başına bir olay; oyun bir sonraki karede okur).
+        // Sıradaki dokunma olayını gönder (kare başına bir olay; oyun bir sonraki karede okur). Her kaydırma ayrı dokunma.
         if (m_Steps.Count > 0)
         {
             var s = m_Steps.Dequeue();
+            if (s.phase == UnityEngine.InputSystem.TouchPhase.None) return;
+            if (s.phase == UnityEngine.InputSystem.TouchPhase.Began) m_TouchId++;
             InputSystem.QueueStateEvent(m_Screen, new TouchState { touchId = m_TouchId, phase = s.phase, position = s.pos });
             return;
         }
@@ -115,59 +103,47 @@ public class TutorialSwipeInjector : MonoBehaviour
         var gm = GameManager.instance;
         if (gm == null || gm.topState == null || gm.topState.GetName() != "Game") return;
         var gs = gm.FindState("Game") as GameState;
-        var chr = gs != null && gs.trackManager != null ? gs.trackManager.characterController : null;
-        if (chr == null) return;
+        if (gs == null || !gs.isTutorialRun || !gs.trackManager.isMoving) return;
 
-        // Yalnızca bu test modunda: eğitim boyunca çarpışma yok sayılır (B'nin web botu gibi), yoksa üretici yalnızca
-        // yönergelerde hareket ettiği için engeller "geçildi" sayılmaz ve 1-2. seviyelere ulaşılmaz. Girdi algılamayı ve
-        // tutorialWaitingForValidation mantığını etkilemez.
-        if (gs.trackManager.isTutorial != chr.IsCheatInvincible())
+        int step = gs.tutorialStep;
+        if (step < 0 || step >= gs.tutorialStepCount) return;
+        float now = Time.realtimeSinceStartup;
+
+        if (m_Mode == "hizli" && !m_BurstDone)
         {
-            chr.CheatInvincible(gs.trackManager.isTutorial);
-            Log("KAYDIRTEST carpisma yok sayma " + (gs.trackManager.isTutorial ? "ACIK (yalnizca egitim)" : "kapali"));
-        }
-
-        if (!gs.trackManager.isTutorial || !gs.trackManager.isMoving && !AudioListener.pause) return;
-
-        bool prompt = s_GsPrompt != null && (bool)s_GsPrompt.GetValue(gs);
-        int level = chr.currentTutorialLevel;
-        if (level > 2) return;
-        float now = Time.realtimeSinceStartup; // yönerge sırasında Time.timeScale = 0
-
-        if (prompt && !m_LastPrompt)
-        {
-            m_PromptLevel = level;
-            m_WaitUntil = now + (m_Mode == "egik" ? 0.5f : 1.5f);
-            m_CleanPending = m_Mode != "egik";
-        }
-        m_LastPrompt = prompt;
-        if (now < m_WaitUntil) return;
-
-        if (prompt)
-        {
-            if (m_Mode == "egik" && m_TiltDoneLevel != level)
+            m_BurstDone = true;
+            for (int i = step; i < k_StepDirs.Length; ++i)
             {
-                m_TiltDoneLevel = level;
-                QueueSwipe(CorrectDir(level, chr), true, $"sv={level} yonerge acik, dogru yone EGIK kaydirma");
-                m_WaitUntil = now + 1.5f;
-                m_CleanPending = true;
-                return;
+                QueueSwipe(k_StepDirs[i], false, $"adim={step} art arda kaydirma {i + 1}/{k_StepDirs.Length}");
+                for (int k = 0; k < 7; ++k) m_Steps.Enqueue((Vector2.zero, UnityEngine.InputSystem.TouchPhase.None));
             }
-            if (m_CleanPending)
-            {
-                m_CleanPending = false;
-                QueueSwipe(CorrectDir(level, chr), false, $"sv={level} yonerge acik, temiz kaydirma");
-                m_WaitUntil = now + 1.5f;
-            }
+            m_SeenStep = -2;
             return;
         }
 
-        // Yönerge kapalı ve koşu sürüyor: "once" modunda bu seviyenin doğru hareketini yönergeden önce bir kez yap.
-        if (m_Mode == "once" && m_PreDoneLevel != level && m_PromptLevel != level && gs.trackManager.isMoving)
+        if (step != m_SeenStep)
         {
-            m_PreDoneLevel = level;
-            QueueSwipe(CorrectDir(level, chr), false, $"sv={level} yonerge ACILMADAN once dogru hareket");
-            m_WaitUntil = now + 0.5f;
+            m_SeenStep = step;
+            m_Phase = 0;
+            m_WaitUntil = now + 0.6f;
+        }
+        if (now < m_WaitUntil || m_Phase >= 2) return;
+
+        Vector2 dir = k_StepDirs[step];
+        if (m_Phase == 0 && m_Mode == "yanlis")
+        {
+            QueueSwipe(WrongDir(dir), false, $"adim={step} YANLIS yone kaydirma (adim ilerlememeli)");
+            m_Phase = 1; m_WaitUntil = now + 1.0f;
+        }
+        else if (m_Phase == 0 && m_Mode == "egik")
+        {
+            QueueSwipe(dir, true, $"adim={step} dogru yone EGIK kaydirma");
+            m_Phase = 1; m_WaitUntil = now + 1.5f;
+        }
+        else
+        {
+            QueueSwipe(dir, false, $"adim={step} dogru yone temiz kaydirma");
+            m_Phase = 2;
         }
     }
 }
