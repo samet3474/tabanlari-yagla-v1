@@ -56,6 +56,11 @@ public class CharacterInputController : MonoBehaviour
     // Tutorial: the only move input the current step accepts (None: none at all). Any other swipe is ignored, so a wrong
     // move cannot change the player's lane or pose while a step waits. Normal runs accept every move.
     [HideInInspector] public MoveInput tutorialAllowedMove;
+    // Tutorial: keep the accepted move instead of doing it at once; the tutorial does it (ReleaseTutorialMove) when the
+    // obstacle is where that move clears it, so a jump or slide swiped a little early is not wasted.
+    [HideInInspector] public bool tutorialHoldMove;
+    public MoveInput tutorialHeldMove { get { return m_TutorialHeldMove; } }
+    protected MoveInput m_TutorialHeldMove;
 
     protected int m_Coins;
     protected int m_Premium;
@@ -233,8 +238,37 @@ public class CharacterInputController : MonoBehaviour
             if (move == MoveInput.None || move != tutorialAllowedMove)
                 return;
             tutorialAllowedMove = MoveInput.None;
+            if (tutorialHoldMove)
+            {
+                m_TutorialHeldMove = move;
+                return;
+            }
         }
 
+        PerformMove(move);
+    }
+
+    public void ReleaseTutorialMove()
+    {
+        MoveInput move = m_TutorialHeldMove;
+        m_TutorialHeldMove = MoveInput.None;
+        PerformMove(move);
+    }
+
+    public void ClearTutorialMove()
+    {
+        m_TutorialHeldMove = MoveInput.None;
+    }
+
+    // Tutorial retry: puts the character back on the lane the step starts from.
+    public void SetTutorialLane(int lane)
+    {
+        m_CurrentLane = Mathf.Clamp(lane, 0, 2);
+        m_TargetPosition = new Vector3((m_CurrentLane - 1) * trackManager.laneOffset, 0, 0);
+    }
+
+    protected void PerformMove(MoveInput move)
+    {
         switch (move)
         {
             case MoveInput.Left: ChangeLane(-1); break;
