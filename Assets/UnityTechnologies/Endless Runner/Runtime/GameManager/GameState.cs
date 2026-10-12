@@ -84,6 +84,11 @@ public class GameState : AState
     protected int m_CurrentSegmentObstacleIndex = 0;
     protected TrackSegment m_NextValidSegment = null;
     protected int k_ObstacleToClear = 3;
+    protected bool m_TutorialPromptVisible; // A tutorial prompt (not the pause menu) is what currently pauses the run.
+    protected bool m_TutorialCompleted;
+    protected Coroutine m_HideTutorialMessage;
+
+    protected const float k_TutorialCompletedMessageTime = 2.0f;
 
     public override void Enter(AState from)
     {
@@ -141,8 +146,22 @@ public class GameState : AState
         m_IsTutorial = !PlayerData.instance.tutorialDone;
         trackManager.isTutorial = m_IsTutorial;
 
-        if (m_IsTutorial)
+        if (m_HideTutorialMessage != null)
         {
+            StopCoroutine(m_HideTutorialMessage);
+            m_HideTutorialMessage = null;
+        }
+
+        if (!m_IsTutorial)
+        {
+            // The tutorial callbacks would otherwise keep running (and changing tutorial state) during normal runs.
+            trackManager.newSegmentCreated = null;
+            trackManager.currentSegementChanged = null;
+        }
+        else
+        {
+            ResetTutorialProgress();
+
             tutorialValidatedObstacles.gameObject.SetActive(true);
             tutorialValidatedObstacles.text = $"0/{k_ObstacleToClear}";
 
@@ -305,7 +324,7 @@ public class GameState : AState
 		wholeUI.gameObject.SetActive(false);
 		// The tutorial counter is not parented under wholeUI, so hiding that group is not enough to
 		// keep it from drawing on top of the pause menu.
-		if (displayMenu && m_IsTutorial)
+		if (displayMenu)
 			tutorialValidatedObstacles.gameObject.SetActive(false);
 		m_WasMoving = trackManager.isMoving;
 		trackManager.StopMove();
@@ -525,7 +544,11 @@ public class GameState : AState
         if (trackManager.segments.Count == 0)
             return;
 
-        if (AudioListener.pause && !trackManager.characterController.tutorialWaitingForValidation)
+        // Paused by the player (pause button or focus loss): leave the run paused until they choose Resume.
+        if (pauseMenu.gameObject.activeSelf)
+            return;
+
+        if (m_TutorialPromptVisible && AudioListener.pause && !trackManager.characterController.tutorialWaitingForValidation)
         {
             m_DisplayTutorial = false;
             DisplayTutorial(false);
@@ -557,8 +580,7 @@ public class GameState : AState
 
                 if (trackManager.currentZone == 0)
                 {//we looped, mean we finished the tutorial.
-                    trackManager.characterController.currentTutorialLevel = 3;
-                    DisplayTutorial(true);
+                    CompleteTutorial();
                 }
             }
         }
@@ -572,6 +594,7 @@ public class GameState : AState
         // pause on top of it: Pause() would early-out on AudioListener.pause and the tutorial's own
         // Resume() would then tear down the pause menu behind the player's back.
         pauseButton.gameObject.SetActive(!value);
+        m_TutorialPromptVisible = value;
 
         if(value)
             Pause(false);
@@ -605,11 +628,61 @@ public class GameState : AState
     }
 
 
+    // Still bound to the end-of-tutorial panel's button in the scene. The panel is no longer shown, but if it ever is,
+    // finishing the tutorial keeps the player in the run instead of sending them to the menu.
     public void FinishTutorial()
     {
+        finishTuto.SetActive(false);
+        bool pausedByPrompt = m_TutorialPromptVisible;
+        m_TutorialPromptVisible = false;
+
+        CompleteTutorial();
+
+        if (pausedByPrompt && AudioListener.pause)
+            Resume();
+    }
+
+    // Saves the tutorial as done and turns the current run into a normal endless run, without going through the menu.
+    void CompleteTutorial()
+    {
+        if (m_TutorialCompleted)
+            return;
+
+        m_TutorialCompleted = true;
+        m_IsTutorial = false;
+
         PlayerData.instance.tutorialDone = true;
         PlayerData.instance.Save();
 
-        QuitToLoadout();
+        trackManager.newSegmentCreated = null;
+        trackManager.currentSegementChanged = null;
+        trackManager.ContinueAsNormalRun();
+
+        tutorialValidatedObstacles.text = "HARIKA!";
+        tutorialValidatedObstacles.gameObject.SetActive(true);
+        m_HideTutorialMessage = StartCoroutine(HideTutorialMessage());
+    }
+
+    IEnumerator HideTutorialMessage()
+    {
+        yield return new WaitForSeconds(k_TutorialCompletedMessageTime);
+        tutorialValidatedObstacles.gameObject.SetActive(false);
+        m_HideTutorialMessage = null;
+    }
+
+    // Tutorial progress lives on objects that persist between runs, so an abandoned or replayed tutorial must start clean.
+    void ResetTutorialProgress()
+    {
+        m_TutorialClearedObstacle = 0;
+        m_CountObstacles = true;
+        m_NextValidSegment = null;
+        m_CurrentSegmentObstacleIndex = 0;
+        m_TutorialPromptVisible = false;
+        m_TutorialCompleted = false;
+
+        CharacterInputController chrCtrl = trackManager.characterController;
+        chrCtrl.currentTutorialLevel = 0;
+        chrCtrl.tutorialWaitingForValidation = false;
+        chrCtrl.characterCollider.tutorialHitObstacle = false;
     }
 }
