@@ -37,7 +37,7 @@ public class ShopItemList : ShopList
 
                     itm.buyButton.image.sprite = itm.buyButtonSprite;
 
-                    itm.nameText.text = c.GetConsumableName();
+                    itm.nameText.text = Loc.ConsumableName(c);
                     itm.pricetext.text = c.GetPrice().ToString();
 
                     if (c.GetPremiumCost() > 0)

@@ -7,16 +7,29 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
     <meta name="apple-mobile-web-app-title" content="{{{ PRODUCT_NAME }}}">
-    <meta name="theme-color" content="#231f20">
+    <meta name="theme-color" content="#1B2550">
     <title>{{{ PRODUCT_NAME }}}</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="apple-touch-icon" href="TemplateData/favicon.ico">
+    <!-- manifest start_url/scope are relative ("./"), so they resolve to the page's own folder (/tabanlari-yagla-v1/);
+         the web save folder is derived from that path, so it must not change. No service worker on purpose. -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="32x32" href="TemplateData/icons/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="TemplateData/icons/apple-touch-icon-180.png">
+    <link rel="apple-touch-startup-image" href="TemplateData/acilis-iphone13-1170x2532.png"
+          media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
     <link rel="stylesheet" href="TemplateData/style.css">
     <style>
-      html, body { margin: 0; background: #231f20; overscroll-behavior: none; }
+      html, body { margin: 0; background: #1B2550; overscroll-behavior: none; }
       body.ty-desktop { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
       #unity-container.unity-mobile { touch-action: none; }
+      #unity-canvas { background: #1B2550; }
       #unity-footer { display: none; }
+      /* Loading screen: game logo instead of the Unity logo (style.css is left unchanged). */
+      #unity-logo { width: 280px; height: 158px; background: url('TemplateData/brand-logo.png') no-repeat center / contain; }
+      #unity-progress-bar-empty { margin: 14px auto 0; }
+      /* Shown only when a phone is held sideways; the game is designed for portrait. */
+      #ty-rotate { display: none; position: fixed; inset: 0; z-index: 10; align-items: center; justify-content: center;
+                   background: #1B2550; color: #FFE45C; font: bold 20px/1.4 system-ui, -apple-system, sans-serif; text-align: center; padding: 24px; }
+      @media (orientation: landscape) and (max-height: 500px) { .unity-mobile ~ #ty-rotate, body.ty-mobile #ty-rotate { display: flex; } }
     </style>
   </head>
   <body>
@@ -30,6 +43,7 @@
       </div>
       <div id="unity-warning"> </div>
     </div>
+    <div id="ty-rotate">Daha iyi oynamak için telefonunu dik tut.</div>
     <script>
       // Safari, Unity'nin callback ile çağırdığı decodeAudioData'nın promise'ini de reddediyor.
       // Unity hatayı callback'te zaten işliyor; yakalanmamış promise reddi oyunu durdurmasın diye
@@ -115,6 +129,7 @@
         document.getElementsByTagName('head')[0].appendChild(meta);
         document.querySelector("#unity-container").className = "unity-mobile";
         canvas.className = "unity-mobile";
+        document.body.classList.add("ty-mobile");
 
         // Telefon ekranları 3x yoğunlukta; tam çözünürlükte çizmek kare hızını düşürür.
         config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);

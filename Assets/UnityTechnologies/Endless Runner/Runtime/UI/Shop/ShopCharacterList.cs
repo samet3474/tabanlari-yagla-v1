@@ -34,7 +34,7 @@ public class ShopCharacterList : ShopList
                     ShopItemListItem itm = newEntry.GetComponent<ShopItemListItem>();
 
                     itm.icon.sprite = c.icon;
-                    itm.nameText.text = c.characterName;
+                    itm.nameText.text = Loc.CharacterName(c.characterName);
                     itm.pricetext.text = c.cost.ToString();
 
                     itm.buyButton.image.sprite = itm.buyButtonSprite;

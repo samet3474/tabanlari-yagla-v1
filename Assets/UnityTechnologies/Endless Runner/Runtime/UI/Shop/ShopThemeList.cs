@@ -33,7 +33,7 @@ public class ShopThemeList : ShopList
 
                     ShopItemListItem itm = newEntry.GetComponent<ShopItemListItem>();
 
-                    itm.nameText.text = theme.themeName;
+                    itm.nameText.text = Loc.ThemeName(theme.themeName);
                     itm.pricetext.text = theme.cost.ToString();
                     itm.icon.sprite = theme.themeIcon;
 
