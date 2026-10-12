@@ -609,8 +609,8 @@ public class TrackManager : MonoBehaviour
         newSegment.transform.localScale = new Vector3((Random.value > 0.5f ? -1 : 1), 1, 1);
         newSegment.objectRoot.localScale = new Vector3(1.0f / newSegment.transform.localScale.x, 1, 1);
 
-        // Tutorial segments stay empty: nothing on the track can hit the player while the moves are being taught.
-        // ContinueAsNormalRun fills the ones still far ahead when the tutorial ends.
+        // Tutorial segments get no random obstacles or coins: GameState places the tutorial's own obstacles one at a time
+        // (SpawnObstacleAt). ContinueAsNormalRun fills the segments still far ahead when the tutorial ends.
         if (!m_IsTutorial)
         {
             if (m_SafeSegementLeft <= 0)
@@ -657,6 +657,61 @@ public class TrackManager : MonoBehaviour
             if (!Addressables.ReleaseInstance(obstacles[i].gameObject))
                 Destroy(obstacles[i].gameObject);
         }
+    }
+
+    // Places one obstacle prefab at a track distance (m from the run start, same scale as worldDistance) and lane
+    // (-1 left, 0 middle, 1 right), the way SimpleBarricade and AllLaneObstacle place theirs: on the segment's path,
+    // shifted by laneOffset, parented to the segment's objectRoot (so it moves and is released with the segment).
+    // Returns false when no spawned segment covers that distance yet; onSpawned gets null if loading failed or the
+    // segment went away meanwhile.
+    public bool SpawnObstacleAt(object obstacleKey, float trackDistance, int lane, System.Action<GameObject> onSpawned)
+    {
+        float segmentStart = m_TotalWorldDistance - m_CurrentSegmentDistance;
+        for (int i = 0; i < m_Segments.Count; ++i)
+        {
+            TrackSegment segment = m_Segments[i];
+            if (trackDistance < segmentStart + segment.worldLength)
+            {
+                float t = (trackDistance - segmentStart) / segment.worldLength;
+                StartCoroutine(SpawnObstacleAtRoutine(obstacleKey, segment, t, lane, onSpawned));
+                return true;
+            }
+            segmentStart += segment.worldLength;
+        }
+        return false;
+    }
+
+    IEnumerator SpawnObstacleAtRoutine(object obstacleKey, TrackSegment segment, float t, int lane, System.Action<GameObject> onSpawned)
+    {
+        Vector3 position;
+        Quaternion rotation;
+        segment.GetPointAt(t, out position, out rotation);
+
+        AsyncOperationHandle<GameObject> op = Addressables.InstantiateAsync(obstacleKey, position, rotation);
+        yield return op;
+        GameObject obj = op.Result;
+        if (obj == null)
+        {
+            Debug.LogWarning(string.Format("Unable to load obstacle {0}.", obstacleKey));
+            onSpawned(null);
+            yield break;
+        }
+        if (segment == null)
+        {
+            Addressables.ReleaseInstance(obj);
+            onSpawned(null);
+            yield break;
+        }
+
+        obj.transform.position += obj.transform.right * lane * laneOffset;
+        obj.transform.SetParent(segment.objectRoot, true);
+
+        //TODO : remove that hack related to #issue7
+        Vector3 oldPos = obj.transform.position;
+        obj.transform.position += Vector3.back;
+        obj.transform.position = oldPos;
+
+        onSpawned(obj);
     }
 
     public void SpawnObstacle(TrackSegment segment)
