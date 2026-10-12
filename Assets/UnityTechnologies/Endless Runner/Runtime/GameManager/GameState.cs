@@ -90,6 +90,18 @@ public class GameState : AState
 
     protected const float k_TutorialCompletedMessageTime = 2.0f;
 
+    // When a tutorial prompt opens, measured as distance (m) left to the obstacle. It used to be "10% of the segment
+    // length", i.e. 1.7-2.7 m (0.2 s at tutorial speed): the obstacle was already at the character's feet.
+    // The prompt freezes the run and the requested move starts right where it froze, so each distance is where that
+    // move, started there, still clears the obstacle with margin:
+    //  - lane: a lane change takes ~0.1 s, so it can be asked early, while the obstacle is still well ahead;
+    //  - jump: the jump arc is sin(ratio * PI) * jumpHeight over jumpLength; at 65% the obstacle (with its depth and the
+    //          character's) falls into the high part of the arc (ratio ~0.58-0.72);
+    //  - slide: the slide lasts slideLength from where it starts; leave room for obstacle/character depth at its end.
+    protected const float k_LanePromptDistance = 8.0f;
+    protected const float k_JumpPromptRatio = 0.65f;
+    protected const float k_SlidePromptMargin = 1.5f;
+
     public override void Enter(AState from)
     {
         m_CountdownRectTransform = countdownText.GetComponent<RectTransform>();
@@ -584,8 +596,26 @@ public class GameState : AState
                 }
             }
         }
-        else if (m_DisplayTutorial && ratio > nextObstaclePosition - 0.1f)
-            DisplayTutorial(true);
+        else if (m_DisplayTutorial && nextObstaclePosition <= 1.0f)
+        {
+            float distanceToObstacle = nextObstaclePosition * trackManager.currentSegment.worldLength - trackManager.currentSegmentDistance;
+            if (distanceToObstacle <= TutorialPromptDistance())
+                DisplayTutorial(true);
+        }
+    }
+
+    // Distance to the obstacle (m) at which the current tutorial step's prompt opens; see the constants above.
+    float TutorialPromptDistance()
+    {
+        CharacterInputController chr = trackManager.characterController;
+        // Same speed scaling as the jump/slide themselves (CharacterInputController.Jump/Slide).
+        float speedScale = 1.0f + trackManager.speedRatio;
+        switch (chr.currentTutorialLevel)
+        {
+            case 1: return chr.jumpLength * speedScale * k_JumpPromptRatio;
+            case 2: return Mathf.Max(chr.slideLength * speedScale - k_SlidePromptMargin, 0.0f);
+            default: return k_LanePromptDistance;
+        }
     }
 
     void DisplayTutorial(bool value)
