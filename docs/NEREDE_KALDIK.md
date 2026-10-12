@@ -3,7 +3,7 @@
 > Her aşamanın sonunda güncellenir. Projeye ara verip döndüğünde **önce bu dosyayı oku.**
 > Ayrıntılı geçmiş: [GELISTIRME_NOTLARI.md](GELISTIRME_NOTLARI.md) (bu dosya ondan daha güncel).
 
-**Son güncelleme:** 2026-10-12. Eğitim düzeltmeleri (`egitim-duzeltme` dalı) /test/ adresinde; iPhone testi bekleniyor.
+**Son güncelleme:** 2026-10-12 (akşam). **Yeni eğitim tasarımı** (`egitim-yeni` dalı) /test/ adresinde; iPhone testi bekleniyor.
 
 ---
 
@@ -41,10 +41,10 @@ git diff --stat canli-v1-yayin HEAD -- dev test-ad test-dil                     
 | Konu | Durum |
 |---|---|
 | Canlı oyun (kök adres) | Eski A sürümü. **Değiştirilmedi** (kanıt: canli-v1-yayin ile kök ağaçları aynı). |
-| Test adayı | `egitim-duzeltme` dalı. **/test/ adresinde.** İçerik: Aşama 1 + Türkçe arayüz + B eğitim akışı + eğitim düzeltmeleri. |
-| Eğitim düzeltmeleri | Sorun A ve B düzeltildi. Ayrıca doğru yapılan ilk hareketin sayılmaması hatası düzeltildi. Windows otomatik testleri 61/61. **iPhone testi bekleniyor.** |
-| Seviyeler arası bekleme (~9 sn) | Ölçüldü; mantık kaynaklı (performans değil). **Düzeltilmedi**, karar bekliyor (6. bölüm). |
-| Dokunma yönünün erken seçilmesi | Mekanizma kanıtlı (yapay dokunma), gerçek cihaz sıklığı bilinmiyor. **Değiştirilmedi**; iPhone ölçümü bekliyor. |
+| Test adayı | `egitim-yeni` dalı (`378c04a`). **/test/ adresinde.** İçerik: Aşama 1 + Türkçe arayüz + B (menüye dönmeden normal koşu) + **yeni eğitim**. |
+| Yeni eğitim | SAĞA → SOLA → YUKARI → AŞAĞI → HAZIRSIN. Her hareket bir kez, engelsiz pist, beklemesiz. Windows otomatik testleri **78/78**, hata kaydı 0. **iPhone testi bekleniyor.** |
+| Eski eğitimin sorunları (A, B, C, ~9 sn bekleme) | Yeni tasarımda bu akış yok (üçer engel, oyunu durduran yönerge, seviye geçişi kaldırıldı). Eski düzeltmeler `egitim-duzeltme` dalında duruyor. |
+| Dokunma yönünün erken seçilmesi | Değiştirilmedi. Yeni eğitimde yanlış yön adımı ilerletmez ve karakteri oynatmaz; iPhone'da `/test/olcum/` ile "FARKLI EKSEN" sayısına bakılmalı. |
 | Gerçek iPhone 13 testi | **Yapılmadı.** |
 
 ## 2. Adresler
@@ -52,7 +52,7 @@ git diff --stat canli-v1-yayin HEAD -- dev test-ad test-dil                     
 | Adres | İçerik | Kayıt klasörü (IndexedDB) |
 |---|---|---|
 | https://samet3474.github.io/tabanlari-yagla-v1/ | **Canlı oyun** (A sürümü) | `/idbfs/4ebc64a6…` |
-| https://samet3474.github.io/tabanlari-yagla-v1/test/ | **Test adayı** (`egitim-duzeltme`), normal derleme | `/idbfs/7e1905a8…` |
+| https://samet3474.github.io/tabanlari-yagla-v1/test/ | **Test adayı** (`egitim-yeni`), normal derleme | `/idbfs/7e1905a8…` |
 | https://samet3474.github.io/tabanlari-yagla-v1/test/olcum/ | Aynı aday, **ölçüm derlemesi** (ekranda adım/kare kayıtları) | `/idbfs/f90ba6cc…` |
 | https://samet3474.github.io/tabanlari-yagla-v1/test-dil/ | Eski test: Aşama 1 + Türkçe (= önceki /test/) | `/idbfs/5e701c6c…` |
 | https://samet3474.github.io/tabanlari-yagla-v1/test-ad/ | Eski test: yalnızca Aşama 1 | `/idbfs/811705a2…` |
@@ -63,6 +63,9 @@ Kayıt klasörü = sondaki `/` olmadan klasör adresinin MD5 özeti; her adresin
 Ölçüm adresinde:
 - `?kayitsil=1` → eğitimi baştan başlatır.
 - İki parmakla dokunma → ölçüm katmanını açıp kapatır.
+- `?kaydirtest=dogru|yanlis|egik|hizli` → yapay kaydırmalarla eğitimi oynatır (tarayıcı paneli görünür olmalı; gizliyken 1 kare/sn).
+
+Not: /test/ eğitimini bir kez bitiren tarayıcıda eğitim tekrar açılmaz. Yeniden görmek için /test/olcum/?kayitsil=1 kullan.
 
 ## 3. Dallar, commit'ler ve geri dönüş noktaları
 
@@ -70,12 +73,13 @@ Kayıt klasörü = sondaki `/` olmadan klasör adresinin MD5 özeti; her adresin
 |---|---|---|
 | `main` | (yalnızca not commit'leri) | Canlı oyunun kaynağı; oyun kodu `canli-v1-kaynak` ile aynı |
 | `gelistirme` | `638289b` | Ana geliştirme dalı: main + Aşama 1 + Türkçe arayüz |
-| `egitim-duzeltme` | `502d3c7` | gelistirme + B + eğitim düzeltmeleri. **/test/'te.** |
+| `egitim-yeni` | `378c04a` | egitim-duzeltme + yeni eğitim tasarımı. **/test/'te.** |
+| `egitim-duzeltme` | `502d3c7` | gelistirme + B + eski eğitimin düzeltmeleri (egitim-yeni'nin içinde) |
 | `ad-marka` | `4c9244a` | Aşama 1 (gelistirme'nin içinde) |
 | `dil-turkce` | `638289b` | Türkçe arayüz (= gelistirme) |
 | `b-tutorial-test` | `d5f0f2f` | B (eğitim akışı) — egitim-duzeltme'nin içinde |
 | `b-egitim-olcum` | `2188d73` | B + girdi teşhis araçları — egitim-duzeltme'nin içinde |
-| `gh-pages` | `8bbf337` | Yayın: kök (canlı), /dev/, /test-ad/, /test-dil/, /test/, /test/olcum/ |
+| `gh-pages` | `5d9bd72` | Yayın: kök (canlı), /dev/, /test-ad/, /test-dil/, /test/, /test/olcum/ |
 
 Geri dönüş etiketleri (hepsi GitHub'da):
 
@@ -83,13 +87,20 @@ Geri dönüş etiketleri (hepsi GitHub'da):
 |---|---|---|
 | `canli-v1-kaynak` | `0638f38` | Canlı oyunun kaynağı |
 | `canli-v1-yayin` | gh-pages `b2bf7c0` | Kökü canlı oyun olan yayın |
+| `test-yedek-egitim-duzeltme` | gh-pages `8bbf337` | Yeni eğitimden önceki /test/ (eski eğitim + düzeltmeler) |
+| `egitim-yeni-oncesi` | `502d3c7` | Yeni eğitimden önceki kaynak |
 | `test-yedek-2026-10-12` | gh-pages `330d9ed` | Eğitim düzeltmesi öncesi /test/ (= /test-dil/) |
 | `yayin-A` | gh-pages `c543b23` | Daha eski yayın |
 | `asama1-oncesi`, `dil-oncesi`, `egitim-olcum-oncesi` | `97135aa`, `4c9244a`, `d5f0f2f` | Aşama öncesi noktalar |
 
 ## 4. Son yapılanlar (en yeni üstte)
 
-1. **Eğitim düzeltmeleri** (`egitim-duzeltme`). Commit'ler (eskiden yeniye):
+1. **Yeni eğitim tasarımı** (`egitim-yeni`). Commit'ler (eskiden yeniye):
+   - `ddb5a5f` — Eğitim ekranı (`TutorialOverlay`): yarı saydam yönerge şeridi, kayan altın ok, adım noktaları.
+   - `882c260` — Eğitim pisti engelsiz; eğitim bitince sisin ötesindeki (50 m+) parçalara engel ve altın konur.
+   - `378c04a` — Yeni akış ve girdi kapısı (`HandleMoveInput`), "HAZIRSIN!", test araçları.
+   - /test/ ve /test/olcum/ yayında (gh-pages `5d9bd72`).
+2. **Eski eğitimin düzeltmeleri** (`egitim-duzeltme`; yeni tasarımla akışı değişti). Commit'ler (eskiden yeniye):
    - `5759135` — B akışı ve teşhis araçları birleştirildi.
    - `f824961` — "GEÇTİN!" ve "HARİKA!" dil tablosuna taşındı.
    - `09a4f4b` — Adım ölçer eklendi (yalnızca test derlemesi).
@@ -99,11 +110,23 @@ Geri dönüş etiketleri (hepsi GitHub'da):
    - `cbb6cc1` — Çarpma bayrağı sıfırlanıyor; doğru ilk hareket artık sayılıyor.
    - `75e3ca3`, `20f14d6`, `502d3c7` — Test araçları.
    - /test/ ve /test/olcum/ yayında (gh-pages `8bbf337`).
-2. **Geliştirme/test düzeni kuruldu.** Etiketler, `gelistirme` dalı, `/test/` adresi.
-3. **Eğitim dokunma sorunu ölçüldü** (`b-egitim-olcum`).
-4. **Türkçe arayüz** (`638289b`) ve **Aşama 1 — ad ve marka** (`4c9244a`).
+3. **Geliştirme/test düzeni kuruldu.** Etiketler, `gelistirme` dalı, `/test/` adresi.
+4. **Eğitim dokunma sorunu ölçüldü** (`b-egitim-olcum`).
+5. **Türkçe arayüz** (`638289b`) ve **Aşama 1 — ad ve marka** (`4c9244a`).
 
-## 5. Eğitim — doğrulanan nedenler ve sonuçlar
+## 5a. Yeni eğitim — nasıl çalışıyor (egitim-yeni)
+
+- İlk koşu (kayıtta `tutorialDone=false`) eğitimdir. Geri sayımda kontrol yok, karakter ortada.
+- Koşu başlayınca adımlar: **SAĞA KAYDIR → SOLA KAYDIR → YUKARI KAYDIR → AŞAĞI KAYDIR → HAZIRSIN!**
+- Her adımda yalnızca o hareket kabul edilir (`CharacterInputController.tutorialAllowedMove`); yanlış kaydırma yok sayılır, karakter yerinde kalır.
+- Adım, karakter hareketi gerçekten bitirince geçer: yeni şeride varınca / zıplamadan yere inince / kayma bitince.
+- Pist eğitim boyunca engelsiz ve altınsız; koşu durmaz, hız sabit 10 m/sn.
+- Son adımdan sonra 1,6 sn "HAZIRSIN!", kayıt yazılır, aynı koşu normal koşu olarak sürer (menü yok, sahne yüklenmez).
+- Geçiş: 50 m'den uzaktaki parçalara engel/altın konur; ilk engel bitişten ~6–8 sn sonra gelir (ayar: `TrackManager.k_TutorialFillDistance`).
+- Süre (Windows, oto-test): 0,5 sn tepkiyle dört adım 3,7 sn; 1,0 sn tepkiyle 5,7 sn. Geri sayım 3,3 sn + HAZIRSIN 1,6 sn ayrı.
+- Performans (Windows): en uzun kare 20 ms, 50 ms'yi aşan kare yok, eğitim boyunca GC ~0.
+
+## 5. Eski eğitim — doğrulanan nedenler ve sonuçlar (egitim-duzeltme; yeni tasarımda bu akış yok)
 
 | Sorun | Doğrulanmış neden | Düzeltme | Önce → Sonra (Windows ölçümü) |
 |---|---|---|---|
@@ -114,24 +137,20 @@ Geri dönüş etiketleri (hepsi GitHub'da):
 
 ## 6. Bekleyen kararlar ve onaylar
 
-- [ ] **/test/ adresini iPhone 13'te dene.** Özellikle şunları kontrol et:
-  - Yönergeden önce sağa/sola geçince eğitim ne yapıyor?
-  - Yönerge yeterince erken açılıyor mu?
-  - Doğru hareket ilk seferde sayılıyor mu?
-- [ ] **iPhone ölçümü:** `/test/olcum/?kayitsil=1` ile eğitimi oyna. Takılma anında ekran görüntüsü al: KARE/SICRAMA satırları kare sürelerini, KAYDIR satırları dokunmaların nasıl algılandığını gösterir.
-- [ ] **Seviyeler arası ~9 sn bekleme** için seçim:
-  - (a) Her adımda 3 yerine 2 engel: ~2,7 sn kısalır, tasarım değişikliği.
-  - (b) Geçişte görünmeyen uzak segmentleri yenilemek: ~2,7 sn; sis sınırında görsel risk.
-  - (c) Olduğu gibi bırakmak.
-- [ ] **Sert duraklama ve müziğin kesilmesi:** kısa yavaş çekim veya müziği kısma seçenekleri (ayrı iş, ölçümden sonra).
+- [ ] **Yeni eğitimi iPhone 13'te dene** (/test/; eğitimi görmek için ilk kez açılan tarayıcı ya da /test/olcum/?kayitsil=1). Kontrol et:
+  - Ok ve yazı okunaklı mı, ekranı kapatıyor mu?
+  - Kaydırmalar ilk seferde algılanıyor mu, yanlış yön karakteri oynatıyor mu?
+  - HAZIRSIN sonrası ilk engele kadarki ~6–8 sn boş yol uzun mu? (kısaltmak için `k_TutorialFillDistance` 50 → 35 m; engeller sisin önünde belirir)
+- [ ] **iPhone ölçümü:** `/test/olcum/?kayitsil=1`. Takılma anında ekran görüntüsü: ADIM/KARE/SICRAMA satırları adım zamanlarını ve kare sürelerini, KAYDIR satırları dokunmaların nasıl algılandığını gösterir.
+- [ ] **Ayarlardan eğitimi yeniden başlatma** (isteğe bağlı, bu aşamada yapılmadı).
 - [ ] **Dokunma yönünün erken seçilmesi:** iPhone ölçümünde "FARKLI EKSEN" sayısı görülürse eşik/karar düzeltmesi (ayrı iş).
 - [ ] **Canlıya geçiş:** yalnızca /test/ onaylanınca, ayrıca açık onayla (0. bölüm).
 - [ ] **Önbellek iyileştirmesi** (Name Files As Hashes) — ayrı test değişikliği olarak.
 
 ## 7. Sıradaki adım (döndüğünde buradan başla)
 
-1. /test/ ve /test/olcum/ için iPhone sonuçlarını ilet.
-2. 6. bölümdeki kararlardan hangisiyle devam edileceğini seç.
+1. Yeni eğitim için /test/ ve /test/olcum/ iPhone sonuçlarını ilet.
+2. Onaylanırsa canlıya geçiş (0. bölüm), ayrıca açık onayla.
 3. Sonra: Aşama 2 (performans/bellek), İstanbul temalı yeni ana menü, Android APK.
 
 ## 8. Başka bilgisayarda devam etmek
@@ -139,13 +158,13 @@ Geri dönüş etiketleri (hepsi GitHub'da):
 ```bash
 git clone https://github.com/samet3474/tabanlari-yagla-v1.git
 cd tabanlari-yagla-v1
-git checkout egitim-duzeltme   # /test/'teki sürüm (en güncel)
+git checkout egitim-yeni   # /test/'teki sürüm (en güncel)
 ```
 
 - Git LFS kurulu olmalı. Unity 6000.3.26f1.
 - Otomatik eğitim testleri: Windows geliştirme derlemesi (`DevBuild.BuildWindowsDev`), sonra `TabanlariYaglaDev.exe -tutorialTest -timeline -batchmode`.
   - Pencere odağını kaybedince oyun duraklar ve testler takılır; bu yüzden `-batchmode` önerilir.
-  - S3 duraklatma testini ayrıca pencereli çalıştır.
+  - Senaryolar S1–S10 (`Assets/_Dev/TutorialAutoTest.cs`); son çalıştırma 78/78.
 - Yayın dalı için ayrı klasör: `git clone --branch gh-pages --single-branch https://github.com/samet3474/tabanlari-yagla-v1.git v1-pages`
 - Unity her açılışta `AddressableAssetsData/link.xml` dosyasını siler; bu normal. `git restore` ile geri al.
 - `addressables_content_state.bin` ve `TabanlariYagla-V1.slnx` derleme çıktısıdır, commit'e katılmaz.
