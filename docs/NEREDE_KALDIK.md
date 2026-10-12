@@ -7,6 +7,65 @@
 
 ---
 
+## ⏸ DEVAM EDEN İŞ — Ana menü prototipi (YARIM, 2026-10-12'de durduruldu)
+
+> Bu bölüm yalnızca `ana-menu-prototip` dalındadır. `main`'deki not, kullanıcının "main'e dokunma" talimatı nedeniyle güncellenmedi.
+> **Prototip tamamlanmadı ve doğrulanmadı.** Canlı oyun, `main`, gh-pages ve `/test/` değişmedi.
+
+**Dal:** `ana-menu-prototip`, `main` `31565f6`'dan açıldı. Yarım iş commit `f1aad35`'te.
+**Yedek:** `test-yedek-ana-menu-oncesi` → gh-pages `e8777e3` (prototip öncesi `/test/` = canlı derleme). GitHub'da.
+
+**Hedef:** Loadout menüsünü yeniden düzenlemek:
+- Üstte logo ve altın sayacı.
+- Ortada sabit açılı 3D karakter, arkasında Start sahnesinin animasyonlu sokağı.
+- Altta büyük OYNA ve Karakterler/Görevler/Mağaza/Ayarlar şeridi.
+- Güvenli alan desteği ve farklı telefon oranlarına uyum.
+
+Oyun akışı ve `PlayerData` değişmeyecek.
+
+**Lisans:** Kullanıcı onayladı. Yalnızca projede zaten kullanılan varlıklar kullanılıyor: Unity Asset Store EULA kapsamındaki Endless Runner modelleri ve ikonları, Luckiest Guy yazı tipi (Apache 2.0), Unity'nin varsayılan gökyüzü malzemesi (Default-Skybox) ve projeye ait logo. Yeni yapay zekâ varlığı yok; eklenmeden önce ticari koşullar bildirilip onay alınacak.
+
+### Yapılanlar (commit `f1aad35`)
+| Dosya | Durum |
+|---|---|
+| `Runtime/GameManager/LoadoutState.cs` | Menü sahnesi alanları, `ShowMenuScene()`, `GoToCharacterStore()`. Karakter dönmüyor, menü noktasına göre yerleşiyor. Alanlar boşsa eski menü aynen çalışır. Editörde derlendi; oyunda **denenmedi**. |
+| `Runtime/UI/Shop/ShopUI.cs` | `openCharacterListOnStart`: mağaza karakter sekmesiyle açılır. Derlendi, **denenmedi**. |
+| `_TabanlariYagla/Menu/SafeAreaFitter.cs`, `Plugins/WebGL/SafeArea.jslib` | Güvenli alan: yerelde `Screen.safeArea`, web'de CSS `env(safe-area-inset-*)`. Editörde derlendi; WebGL'de ve cihazda **denenmedi**. |
+| `_TabanlariYagla/Menu/MenuCoinCounter.cs` | Altın sayacı (`PlayerData.coins`). Derlendi, **denenmedi**. |
+| `_TabanlariYagla/Editor/MenuUygula.cs` | Editör aracı (`Uygula`, `Onizle`). `Uygula` çıkış 0 ile çalıştı: prefabı oluşturdu ve Main sahnesini kaydetti; Start sahnesini kaydetmedi. `Onizle` önizleme PNG'leri üretti. |
+| `_TabanlariYagla/Menu/MenuBackdrop.prefab` | Start ortamının kopyası, menü kamerası ve karakter noktası. |
+| `Scenes/Main.unity` | Araçla kaydedildi: arka plan, LoadoutState bağlantıları, yeni arayüz yerleşimi. **Oyunda veya derlemede görülmedi.** |
+| `Localization/.../tr.txt` | `ui.characters KARAKTERLER` |
+| `_Dev/MenuShots.cs` | Çok ekranlı denetim ve ekran görüntüsü aracı (yalnızca test derlemesi). **Hiç derlenmedi, çalıştırılmadı** (.meta dosyası yok). |
+
+### Önemli: sahne ile araç arasındaki fark
+- **Durum:** Önizlemeye göre kamera ve karakter değerleri araçta güncellendi: kamera (-0.93, 1.3, 6.34), açı (8, -164, 0), FOV 45; karakter (-2.03, 0, 2.5). Ancak araç bu değerlerle **yeniden çalıştırılmadı**. Kaydedilmiş `Main.unity` ve `MenuBackdrop.prefab` hâlâ ilk denemenin kamera değerlerini taşıyor.
+- **Çözüm:** Cumartesi ilk adım.
+
+### Yapılmayanlar
+- Windows ve WebGL derlemesi.
+- Eğitim otomatik testleri (S1–S11).
+- Çok ekran denetimi ve ekran görüntüleri.
+- `/test/` yayını.
+
+### Olası sorunlar (doğrulanmadı)
+- **Önizlemede T-poz:** Önizlemede karakter T-pozunda ve tüm şapkalar açık; bu önizlemeye özgü olmalı (oyunda animatör ve aksesuar ayarı çalışır).
+- **Işık:** Start'ın ışık haritası ve yansıma probu taşınmadı; ortam gerçek zamanlı ışıkla çiziliyor. Önizlemede iyi görünüyor.
+- **Karakterler düğmesi:** Mağaza düğmesinin kopyası; bağlantısı (`GoToCharacterStore`) araçla kuruldu ama tıklanarak denenmedi.
+- **Pencerelerin sığması:** Ayarlar, Görevler ve Sıralama pencereleri 720 genişliğe göre; dar ekranda (~540) sığmayabilir.
+- **Kamera:** Menüde oyun kamerası kapatılıyor; eğitim ve oyun testleri koşunun doğru kamerayla başladığını doğrulamalı.
+
+### Cumartesi devam: ilk adım
+1. Unity kapalıyken aracı güncel değerlerle yeniden çalıştır:
+   `Unity.exe -batchmode -projectPath <proje> -executeMethod MenuUygula.Uygula -logFile <log>`
+   Logda `MENU| TAMAM` görülmeli. Sonra `link.xml` ve `.slnx` dosyalarını `git restore` ile geri al.
+2. Windows test derlemesini al. Sırayla:
+   - Eğitim testleri (`-tutorialTest -timeline -batchmode`); beklenen 96/96.
+   - Pencereli `-menuShots <klasör> <ad> [üst alt sol sağ]` ile 360x640, 390x844 (+ iPhone güvenli payı), 360x800, 412x915, 375x667, 430x932 ölçüleri.
+3. Hatalar düzelince WebGL derlemeleri, yalnızca `/test/` ve `/test/olcum/` yayını, rapor. Canlı için ayrıca onay gerekir.
+
+---
+
 ## 0. Çalışma düzeni (kalıcı kural)
 
 **Çalışan sürümü koru, geliştirmeleri test et, onaydan sonra güncelle.**
