@@ -66,7 +66,7 @@ public class Leaderboard : MonoBehaviour
 		    if (PlayerData.instance.highscores.Count > currentHighScore)
 		    {
 		        hs.gameObject.SetActive(true);
-		        hs.playerName.text = PlayerData.instance.highscores[currentHighScore].name;
+		        hs.playerName.text = Loc.PlayerName(PlayerData.instance.highscores[currentHighScore].name);
 		        hs.number.text = (localStart + i + 1).ToString();
 		        hs.score.text = PlayerData.instance.highscores[currentHighScore].score.ToString();
 

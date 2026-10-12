@@ -1,0 +1,109 @@
+# Tabanları Yağla - oyuncuya gösterilen metinler (anahtar<TAB>metin)
+# Kimlikler (karakter/tema/aksesuar adları) kayıt anahtarı ve Addressables adresidir; burada yalnızca ekranda görünen karşılıkları var.
+# Değerler doğru Türkçe BÜYÜK harfle yazılır: oyunun yazı tipi (Luckiest Guy) her harfi büyük gibi çizer ama küçük "i"yi
+# noktasız gösterir; kodda kültüre bağlı ToUpper() kullanılmaz. Doğru yazım: SOKAK KEDİSİ (İ), MIKNATIS (I).
+
+# Karakterler
+char.Trash Cat	SOKAK KEDİSİ
+char.Rubbish Raccoon	RAKUN
+
+# Temalar
+theme.Day	GÜNDÜZ
+theme.NightTime	GECE
+theme.Tutorial	EĞİTİM
+
+# Aksesuarlar
+accessory.Party Hat	PARTİ ŞAPKASI
+accessory.Safety	BARET
+accessory.Smart	FÖTR VE KRAVAT
+accessory.None	YOK
+
+# Güçlendirmeler (Consumable.ConsumableType)
+consumable.COIN_MAG	MIKNATIS
+consumable.SCORE_MULTIPLAYER	2X PUAN
+consumable.INVINCIBILITY	YENİLMEZLİK
+consumable.EXTRALIFE	EKSTRA CAN
+
+# Oyuncu (düzenlenebilir isim alanının varsayılanı; oyuncu adı olduğu için olduğu gibi kalır)
+player.defaultName	Oyuncu
+
+# --- Arayüz (LocText bileşenli sahne/prefab etiketleri ve koddan yazılan metinler) ---
+# "\n" satır sonudur. {0} yerine sayı gelir (görevler).
+
+# Genel düğmeler
+ui.play	OYNA
+ui.playAgain	TEKRAR OYNA
+ui.loading	YÜKLENİYOR...
+ui.store	MAĞAZA
+ui.missions	GÖREVLER
+ui.leaderboard	SIRALAMA
+ui.settings	AYARLAR
+ui.mainMenu	ANA MENÜ
+ui.resume	DEVAM ET
+ui.back	GERİ
+ui.yes	EVET
+ui.no	HAYIR
+ui.enterName	ADINI YAZ
+
+# Hazırlık ekranı
+loadout.tutorialPrompt	EĞİTİME BAŞLAMAK İÇİN DOKUN
+
+# Ayarlar ve Hakkında
+settings.master	GENEL SES
+settings.music	MÜZİK
+settings.sfx	EFEKTLER
+settings.deleteData	VERİLERİ SİL
+settings.about	HAKKINDA
+settings.confirmTitle	EMİN MİSİN?
+settings.deleteQuery	SATIN ALDIĞIN TÜM EŞYALAR VE PARALAR SİLİNECEK. DEVAM EDİLSİN Mİ?
+about.title	HAKKINDA
+about.body	TABANLARI YAĞLA\nSÜRÜM 1.0\n\nİSTANBUL SOKAKLARINDA GEÇEN SONSUZ KOŞU OYUNU.\n\nUNITY İLE GELİŞTİRİLDİ. UNITY TECHNOLOGIES'İN ENDLESS RUNNER ÖRNEK PROJESİ TEMEL ALINMIŞTIR.\n\nYAZI TİPİ: LUCKIEST GUY (APACHE LİSANSI 2.0).
+
+# Mağaza
+# Onaylanan "GÜÇLENDİRMELER" 390 px genişlikte sekmeye sığmadı (ölçüldü); kural gereği kısa biçim.
+shop.tab.items	GÜÇLER
+shop.tab.characters	KARAKTERLER
+shop.tab.accessories	AKSESUARLAR
+shop.tab.themes	TEMALAR
+# Onaylanan "SATIN AL" mağaza düğmesinde iki satıra bölünüp kırpıldı (ölçüldü); kural gereği kısa biçim.
+shop.buy	AL
+shop.owned	ALINDI
+shop.premiumTitle	PREMİUM MAĞAZA
+
+# Görevler
+mission.claim	ÖDÜLÜ AL
+mission.new	YENİ GÖREV
+mission.watchAd	REKLAM İZLE
+mission.singleRun	TEK KOŞUDA {0} M KOŞ
+mission.pickup	{0} ALTIN TOPLA
+mission.barrierJump	{0} ENGELİN ÜSTÜNDEN ATLA
+mission.slide	{0} M KAY
+mission.multiplier	X{0} ÇARPANA ULAŞ
+
+# Koşu ekranı
+hud.score	PUAN :
+pause.title	DURAKLATILDI
+death.title	BİR ŞANS DAHA?
+death.endRun	OYUNU BİTİR
+death.balance	BAKİYE
+death.watchVideo	VİDEO İZLE
+
+# Oyun sonu ve sıralama
+gameOver.title	OYUN BİTTİ
+leaderboard.next	İLERİ
+leaderboard.prev	GERİ
+
+# Eski eğitim panelleri (sahnede duruyor, yeni eğitimde gösterilmiyor)
+tutorial.jump	ZIPLAMAK İÇİN\nYUKARI KAYDIR
+tutorial.lane	ŞERİT DEĞİŞTİRMEK İÇİN\nSAĞA SOLA KAYDIR
+tutorial.slide	EĞİLMEK İÇİN\nAŞAĞI KAYDIR
+tutorial.done	TEBRİKLER! ARTIK OYNAMAYI BİLİYORSUN!
+tutorial.toMenu	ANA MENÜ
+# Eğitim: adım başına tek yönerge ve gerçek engel (GameState.ShowTutorialPrompt)
+tutorial.right	SAĞA KAYDIR
+tutorial.left	SOLA KAYDIR
+tutorial.up	YUKARI KAYDIR
+tutorial.down	AŞAĞI KAYDIR
+tutorial.ready	HAZIRSIN!
+tutorial.good	GÜZEL!
+tutorial.retry	TEKRAR DENE!

@@ -34,7 +34,7 @@ public class ShopCharacterList : ShopList
                     ShopItemListItem itm = newEntry.GetComponent<ShopItemListItem>();
 
                     itm.icon.sprite = c.icon;
-                    itm.nameText.text = c.characterName;
+                    itm.nameText.text = Loc.CharacterName(c.characterName);
                     itm.pricetext.text = c.cost.ToString();
 
                     itm.buyButton.image.sprite = itm.buyButtonSprite;
@@ -84,7 +84,7 @@ public class ShopCharacterList : ShopList
 		{
 			itm.buyButton.interactable = false;
 			itm.buyButton.image.sprite = itm.disabledButtonSprite;
-			itm.buyButton.transform.GetChild(0).GetComponent<UnityEngine.UI.Text>().text = "Owned";
+			itm.buyButton.transform.GetChild(0).GetComponent<UnityEngine.UI.Text>().text = Loc.Get("shop.owned", "Owned");
 		}
 	}
 

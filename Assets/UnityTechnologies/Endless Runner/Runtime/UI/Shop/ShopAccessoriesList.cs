@@ -49,7 +49,7 @@ public class ShopAccessoriesList : ShopList
             GameObject header = op.Result;
             header.transform.SetParent(listRoot, false);
             ShopItemListItem itmHeader = header.GetComponent<ShopItemListItem>();
-            itmHeader.nameText.text = c.characterName;
+            itmHeader.nameText.text = Loc.CharacterName(c.characterName);
 
             prefabItem.InstantiateAsync().Completed += (innerOp) =>
             {
@@ -76,7 +76,7 @@ public class ShopAccessoriesList : ShopList
 
 		    string compoundName = c.characterName + ":" + accessory.accessoryName;
 
-		    itm.nameText.text = accessory.accessoryName;
+		    itm.nameText.text = Loc.AccessoryName(accessory.accessoryName);
 		    itm.pricetext.text = accessory.cost.ToString();
 		    itm.icon.sprite = accessory.accessoryIcon;
 		    itm.buyButton.image.sprite = itm.buyButtonSprite;
@@ -149,7 +149,7 @@ public class ShopAccessoriesList : ShopList
 		{
 			itm.buyButton.interactable = false;
 			itm.buyButton.image.sprite = itm.disabledButtonSprite;
-			itm.buyButton.transform.GetChild(0).GetComponent<UnityEngine.UI.Text>().text = "Owned";
+			itm.buyButton.transform.GetChild(0).GetComponent<UnityEngine.UI.Text>().text = Loc.Get("shop.owned", "Owned");
 		}
 	}
 

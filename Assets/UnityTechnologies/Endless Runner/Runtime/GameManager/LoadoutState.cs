@@ -97,7 +97,7 @@ public class LoadoutState : AState
         }
 
         runButton.interactable = false;
-        runButton.GetComponentInChildren<Text>().text = "Loading...";
+        runButton.GetComponentInChildren<Text>().text = Loc.Get("ui.loading", "Loading...");
 
         if(m_PowerupToUse != Consumable.ConsumableType.NONE)
         {
@@ -159,7 +159,7 @@ public class LoadoutState : AState
             if(interactable)
             {
                 runButton.interactable = true;
-                runButton.GetComponentInChildren<Text>().text = "Run!";
+                runButton.GetComponentInChildren<Text>().text = Loc.Get("ui.play", "Run!");
 
                 //we can always enabled, as the parent will be disabled if tutorial is already done
                 tutorialPrompt.SetActive(true);
@@ -228,7 +228,7 @@ public class LoadoutState : AState
             yield return null;
         }
 
-        themeNameDisplay.text = t.themeName;
+        themeNameDisplay.text = Loc.ThemeName(t.themeName);
 		themeIcon.sprite = t.themeIcon;
 
 		skyMeshFilter.sharedMesh = t.skyMesh;
@@ -291,7 +291,7 @@ public class LoadoutState : AState
                         Addressables.ReleaseInstance(m_Character);
 
                     m_Character = newChar;
-                    charNameDisplay.text = c.characterName;
+                    charNameDisplay.text = Loc.CharacterName(c.characterName);
 
                     m_Character.transform.localPosition = Vector3.right * 1000;
                     //animator will take a frame to initialize, during which the character will be in a T-pose.
@@ -316,13 +316,13 @@ public class LoadoutState : AState
 
         if (PlayerData.instance.usedAccessory == -1)
         {
-            accesoryNameDisplay.text = "None";
+            accesoryNameDisplay.text = Loc.Get("accessory.None", "None");
 			accessoryIconDisplay.enabled = false;
 		}
         else
         {
 			accessoryIconDisplay.enabled = true;
-			accesoryNameDisplay.text = c.accessories[PlayerData.instance.usedAccessory].accessoryName;
+			accesoryNameDisplay.text = Loc.AccessoryName(c.accessories[PlayerData.instance.usedAccessory].accessoryName);
 			accessoryIconDisplay.sprite = c.accessories[PlayerData.instance.usedAccessory].accessoryIcon;
         }
     }

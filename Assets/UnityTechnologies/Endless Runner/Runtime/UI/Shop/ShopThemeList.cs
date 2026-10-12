@@ -33,7 +33,7 @@ public class ShopThemeList : ShopList
 
                     ShopItemListItem itm = newEntry.GetComponent<ShopItemListItem>();
 
-                    itm.nameText.text = theme.themeName;
+                    itm.nameText.text = Loc.ThemeName(theme.themeName);
                     itm.pricetext.text = theme.cost.ToString();
                     itm.icon.sprite = theme.themeIcon;
 
@@ -84,7 +84,7 @@ public class ShopThemeList : ShopList
 		{
 			itm.buyButton.interactable = false;
 			itm.buyButton.image.sprite = itm.disabledButtonSprite;
-			itm.buyButton.transform.GetChild(0).GetComponent<UnityEngine.UI.Text>().text = "Owned";
+			itm.buyButton.transform.GetChild(0).GetComponent<UnityEngine.UI.Text>().text = Loc.Get("shop.owned", "Owned");
 		}
 	}
 

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine.AddressableAssets;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 // Aliased because UnityEngine.Touch and UnityEngine.InputSystem.EnhancedTouch.Touch would otherwise be ambiguous.
 using ETouch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
@@ -33,6 +35,10 @@ public class CharacterInputController : MonoBehaviour
 	public List<Consumable> consumables { get { return m_ActiveConsumables; } }
 	public bool isJumping { get { return m_Jumping; } }
 	public bool isSliding { get { return m_Sliding; } }
+	// Read-only state for the tutorial: the lane being moved to, and how far the character still is from that lane and
+	// from the ground, so a step can check that the requested move really happened and finished.
+	public int currentLane { get { return m_CurrentLane; } }
+	public Vector3 offsetFromTarget { get { return characterCollider.transform.localPosition - m_TargetPosition; } }
 
 	[Header("Controls")]
 	public float jumpLength = 2.0f;     // Distance jumped
@@ -45,8 +51,16 @@ public class CharacterInputController : MonoBehaviour
 	public AudioClip powerUpUseSound;
 	public AudioSource powerupSource;
 
-    [HideInInspector] public int currentTutorialLevel;
-    [HideInInspector] public bool tutorialWaitingForValidation;
+    public enum MoveInput { None, Left, Right, Up, Down }
+
+    // Tutorial: the only move input the current step accepts (None: none at all). Any other swipe is ignored, so a wrong
+    // move cannot change the player's lane or pose while a step waits. Normal runs accept every move.
+    [HideInInspector] public MoveInput tutorialAllowedMove;
+    // Tutorial: keep the accepted move instead of doing it at once; the tutorial does it (ReleaseTutorialMove) when the
+    // obstacle is where that move clears it, so a jump or slide swiped a little early is not wasted.
+    [HideInInspector] public bool tutorialHoldMove;
+    public MoveInput tutorialHeldMove { get { return m_TutorialHeldMove; } }
+    protected MoveInput m_TutorialHeldMove;
 
     protected int m_Coins;
     protected int m_Premium;
@@ -96,6 +110,36 @@ public class CharacterInputController : MonoBehaviour
 #if !UNITY_STANDALONE
     protected Vector2 m_StartingTouch;
 	protected bool m_IsSwiping = false;
+
+    static PointerEventData s_UIPointerData;
+    static EventSystem s_UIPointerEventSystem;
+    static readonly List<RaycastResult> s_UIRaycastResults = new List<RaycastResult>();
+
+    protected static bool IsOverInteractableUI(Vector2 screenPosition)
+    {
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem == null)
+            return false;
+
+        if (s_UIPointerData == null || s_UIPointerEventSystem != eventSystem)
+        {
+            s_UIPointerData = new PointerEventData(eventSystem);
+            s_UIPointerEventSystem = eventSystem;
+        }
+        s_UIPointerData.Reset();
+        s_UIPointerData.position = screenPosition;
+
+        s_UIRaycastResults.Clear();
+        eventSystem.RaycastAll(s_UIPointerData, s_UIRaycastResults);
+        for (int i = 0; i < s_UIRaycastResults.Count; ++i)
+        {
+            Selectable selectable = s_UIRaycastResults[i].gameObject.GetComponentInParent<Selectable>();
+            if (selectable != null && selectable.IsInteractable())
+                return true;
+        }
+
+        return false;
+    }
 #endif
 
     // Cheating functions, use for testing
@@ -138,6 +182,15 @@ public class CharacterInputController : MonoBehaviour
 	public void End()
 	{
         CleanConsumable();
+
+        // A run can end mid-jump or mid-slide (quit from the pause menu). The next run re-enables this object before its
+        // character is loaded, so stale flags would touch a missing animator and keep the slide collider shrunk.
+        if (m_Sliding)
+        {
+            m_Sliding = false;
+            characterCollider.Slide(false);
+        }
+        m_Jumping = false;
     }
 
     public void CleanConsumable()
@@ -176,42 +229,72 @@ public class CharacterInputController : MonoBehaviour
         }
     }
 
-    protected bool TutorialMoveCheck(int tutorialLevel)
+    // Every swipe/arrow key goes through here. In the tutorial only the move the current step asks for gets through,
+    // once: it is consumed on use, and the tutorial hands it back only if it did not start the move.
+    public void HandleMoveInput(MoveInput move)
     {
-        tutorialWaitingForValidation = currentTutorialLevel != tutorialLevel;
+        if (TrackManager.instance.isTutorial)
+        {
+            if (move == MoveInput.None || move != tutorialAllowedMove)
+                return;
+            tutorialAllowedMove = MoveInput.None;
+            if (tutorialHoldMove)
+            {
+                m_TutorialHeldMove = move;
+                return;
+            }
+        }
 
-        return (!TrackManager.instance.isTutorial || currentTutorialLevel >= tutorialLevel);
+        PerformMove(move);
+    }
+
+    public void ReleaseTutorialMove()
+    {
+        MoveInput move = m_TutorialHeldMove;
+        m_TutorialHeldMove = MoveInput.None;
+        PerformMove(move);
+    }
+
+    public void ClearTutorialMove()
+    {
+        m_TutorialHeldMove = MoveInput.None;
+    }
+
+    // Tutorial retry: puts the character back on the lane the step starts from.
+    public void SetTutorialLane(int lane)
+    {
+        m_CurrentLane = Mathf.Clamp(lane, 0, 2);
+        m_TargetPosition = new Vector3((m_CurrentLane - 1) * trackManager.laneOffset, 0, 0);
+    }
+
+    protected void PerformMove(MoveInput move)
+    {
+        switch (move)
+        {
+            case MoveInput.Left: ChangeLane(-1); break;
+            case MoveInput.Right: ChangeLane(1); break;
+            case MoveInput.Up: Jump(); break;
+            case MoveInput.Down: Slide(); break;
+        }
     }
 
 	protected void Update ()
     {
 #if UNITY_EDITOR || UNITY_STANDALONE
         // Use key input in editor or standalone
-        // disabled if it's tutorial and not thecurrent right tutorial level (see func TutorialMoveCheck)
 
         // Keyboard.current is null when no keyboard device is connected, so it has to be checked every frame.
         Keyboard keyboard = Keyboard.current;
         if (keyboard != null)
         {
-            if (keyboard.leftArrowKey.wasPressedThisFrame && TutorialMoveCheck(0))
-            {
-                ChangeLane(-1);
-            }
-            else if (keyboard.rightArrowKey.wasPressedThisFrame && TutorialMoveCheck(0))
-            {
-                ChangeLane(1);
-            }
-            else if (keyboard.upArrowKey.wasPressedThisFrame && TutorialMoveCheck(1))
-            {
-                Jump();
-            }
-            else if (keyboard.downArrowKey.wasPressedThisFrame && TutorialMoveCheck(2))
-            {
-                if (!m_Sliding)
-                {
-                    Slide();
-                }
-            }
+            if (keyboard.leftArrowKey.wasPressedThisFrame)
+                HandleMoveInput(MoveInput.Left);
+            else if (keyboard.rightArrowKey.wasPressedThisFrame)
+                HandleMoveInput(MoveInput.Right);
+            else if (keyboard.upArrowKey.wasPressedThisFrame)
+                HandleMoveInput(MoveInput.Up);
+            else if (keyboard.downArrowKey.wasPressedThisFrame)
+                HandleMoveInput(MoveInput.Down);
         }
 #else
         // Use touch input on mobile
@@ -230,27 +313,9 @@ public class CharacterInputController : MonoBehaviour
 				if(diff.magnitude > 0.01f) //we set the swip distance to trigger movement to 1% of the screen width
 				{
 					if(Mathf.Abs(diff.y) > Mathf.Abs(diff.x))
-					{
-						if(TutorialMoveCheck(2) && diff.y < 0)
-						{
-							Slide();
-						}
-						else if(TutorialMoveCheck(1))
-						{
-							Jump();
-						}
-					}
-					else if(TutorialMoveCheck(0))
-					{
-						if(diff.x < 0)
-						{
-							ChangeLane(-1);
-						}
-						else
-						{
-							ChangeLane(1);
-						}
-					}
+						HandleMoveInput(diff.y < 0 ? MoveInput.Down : MoveInput.Up);
+					else
+						HandleMoveInput(diff.x < 0 ? MoveInput.Left : MoveInput.Right);
 						
 					m_IsSwiping = false;
 				}
@@ -261,7 +326,8 @@ public class CharacterInputController : MonoBehaviour
 			if(touch.phase == UnityEngine.InputSystem.TouchPhase.Began)
 			{
 				m_StartingTouch = touch.screenPosition;
-				m_IsSwiping = true;
+				// A touch that starts on a button (pause, inventory) is a UI tap, not a swipe.
+				m_IsSwiping = !IsOverInteractableUI(touch.screenPosition);
 			}
 			else if(touch.phase == UnityEngine.InputSystem.TouchPhase.Ended)
 			{

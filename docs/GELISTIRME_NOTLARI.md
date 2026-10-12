@@ -119,3 +119,10 @@ Yerel ek yedekler (yalnızca ev bilgisayarında): `Documents\Unity\_yedekler\` (
    - **Yeni ana menü:** Subway Surfers'ın profesyonel mobil menü düzeni ve kullanım hissi referans, tasarım ve görseller özgün. İstanbul sokakları, tarihî binalar, kırmızı tramvay teması; karakter, büyük OYNA butonu, altın göstergeleri, görevler, ödüller, karakter seçimi, mağaza ve ayarlar tek tutarlı arayüzde.
 5. Her aşamada ayrı test maddeleri: **iPhone Safari**, **farklı ekran boyutları**, **performans (ölçülmüş FPS/bellek)**, **dokunmatik kontroller**.
 6. Sonra: Android APK.
+
+## Ayrı iş: iPhone'da tutorial sırasında takılma (ertelendi)
+
+- **Durum:** Kullanıcı iPhone 13'te tutorial oynarken takılma yaşadı. Neden henüz araştırılmadı; ad/marka ve Türkçe arayüz aşamalarından bağımsız, ayrı bir iş olarak bekliyor.
+- **İlgili dal:** `b-tutorial-test` (tutorial akışı düzeltmeleri). Bu iş bitene kadar B `main`'e alınmayacak.
+- **B birleştirilirken yapılacak dil işi:** `GameState.cs` içindeki sabit `"Passed!"` ve B'nin eklediği `"HARIKA!"` metinleri `Loc`/`tr.txt` tablosuna taşınacak (doğru yazım: `HARİKA!`). Türkçe arayüz aşamasında B ile çakışmamak için `GameState.cs`'e bilerek dokunulmadı.
+- **Başlarken:** `/dev/` sürümünde (`?kayitsil=1`) otomatik açılan zaman çizelgesiyle takılma anının ekran görüntüsü alınmalı; ölçmeden düzeltme yapılmamalı.

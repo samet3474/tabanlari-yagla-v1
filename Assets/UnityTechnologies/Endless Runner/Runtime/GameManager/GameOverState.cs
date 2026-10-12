@@ -25,7 +25,7 @@ public class GameOverState : AState
     {
         canvas.gameObject.SetActive(true);
 
-		miniLeaderboard.playerEntry.inputName.text = PlayerData.instance.previousName;
+		miniLeaderboard.playerEntry.inputName.text = Loc.PlayerName(PlayerData.instance.previousName);
 		
 		miniLeaderboard.playerEntry.score.text = trackManager.score.ToString();
 		miniLeaderboard.Populate();
@@ -132,7 +132,7 @@ public class GameOverState : AState
     {
 		if(miniLeaderboard.playerEntry.inputName.text == "")
 		{
-			miniLeaderboard.playerEntry.inputName.text = "Trash Cat";
+			miniLeaderboard.playerEntry.inputName.text = Loc.Get("player.defaultName", "Oyuncu");
 		}
 		else
 		{

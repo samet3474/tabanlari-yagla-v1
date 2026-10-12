@@ -45,7 +45,7 @@ public class PlayerData
     public List<HighscoreEntry> highscores = new List<HighscoreEntry>();
     public List<MissionBase> missions = new List<MissionBase>();
 
-	public string previousName = "Trash Cat";
+	public string previousName = Loc.Get("player.defaultName", "Oyuncu"); // only the default for new saves; saved names are kept
 
     public bool licenceAccepted;
     public bool tutorialDone;

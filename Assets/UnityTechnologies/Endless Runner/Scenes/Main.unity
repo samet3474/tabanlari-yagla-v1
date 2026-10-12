@@ -288,6 +288,7 @@ GameObject:
   - component: {fileID: 6858983}
   - component: {fileID: 6858985}
   - component: {fileID: 6858984}
+  - component: {fileID: 6858986}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -356,6 +357,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6858982}
   m_CullTransparentMesh: 0
+--- !u!114 &6858986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6858982}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.mainMenu
 --- !u!1 &23242377
 GameObject:
   m_ObjectHideFlags: 0
@@ -638,7 +652,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_IgnoreLayout: 0
-  m_MinWidth: 460
+  m_MinWidth: 0
   m_MinHeight: -1
   m_PreferredWidth: 300
   m_PreferredHeight: -1
@@ -762,6 +776,16 @@ PrefabInstance:
     - target: {fileID: 1000011217217016, guid: ac361d43768a861498da8046b83b94f5, type: 3}
       propertyPath: m_Name
       value: Score (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_Alignment
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_HorizontalOverflow
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 224000011673475834, guid: ac361d43768a861498da8046b83b94f5,
         type: 3}
@@ -1348,6 +1372,7 @@ GameObject:
   - component: {fileID: 87177690}
   - component: {fileID: 87177689}
   - component: {fileID: 87177688}
+  - component: {fileID: 87177691}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -1431,6 +1456,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 87177686}
   m_CullTransparentMesh: 0
+--- !u!114 &87177691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 87177686}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: pause.title
 --- !u!1 &105448109
 GameObject:
   m_ObjectHideFlags: 0
@@ -1442,6 +1480,7 @@ GameObject:
   - component: {fileID: 105448110}
   - component: {fileID: 105448112}
   - component: {fileID: 105448111}
+  - component: {fileID: 105448113}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -1490,7 +1529,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 64
+    m_FontSize: 50
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -1510,6 +1549,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 105448109}
   m_CullTransparentMesh: 0
+--- !u!114 &105448113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 105448109}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: tutorial.jump
 --- !u!224 &137514648 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 224000013969192492, guid: a53fe2875371488408daf0df7d69a981,
@@ -2190,6 +2242,7 @@ GameObject:
   - component: {fileID: 216085446}
   - component: {fileID: 216085448}
   - component: {fileID: 216085447}
+  - component: {fileID: 216085449}
   m_Layer: 5
   m_Name: Placeholder
   m_TagString: Untagged
@@ -2258,6 +2311,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 216085445}
   m_CullTransparentMesh: 0
+--- !u!114 &216085449
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 216085445}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.enterName
 --- !u!1001 &218180429
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2269,6 +2335,16 @@ PrefabInstance:
     - target: {fileID: 1000011217217016, guid: ac361d43768a861498da8046b83b94f5, type: 3}
       propertyPath: m_Name
       value: Score (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_Alignment
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_HorizontalOverflow
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 224000011673475834, guid: ac361d43768a861498da8046b83b94f5,
         type: 3}
@@ -2510,10 +2586,10 @@ MonoBehaviour:
     m_BestFit: 0
     m_MinSize: 2
     m_MaxSize: 56
-    m_Alignment: 4
+    m_Alignment: 5
     m_AlignByGeometry: 0
     m_RichText: 1
-    m_HorizontalOverflow: 0
+    m_HorizontalOverflow: 1
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 999999999
@@ -2536,6 +2612,7 @@ GameObject:
   - component: {fileID: 264326009}
   - component: {fileID: 264326011}
   - component: {fileID: 264326010}
+  - component: {fileID: 264326012}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -2604,6 +2681,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 264326008}
   m_CullTransparentMesh: 0
+--- !u!114 &264326012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 264326008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: leaderboard.next
 --- !u!1 &267877885
 GameObject:
   m_ObjectHideFlags: 0
@@ -2655,7 +2745,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_IgnoreLayout: 0
-  m_MinWidth: 460
+  m_MinWidth: 0
   m_MinHeight: -1
   m_PreferredWidth: 300
   m_PreferredHeight: -1
@@ -2722,6 +2812,7 @@ GameObject:
   - component: {fileID: 275161919}
   - component: {fileID: 275161918}
   - component: {fileID: 275161917}
+  - component: {fileID: 275161920}
   m_Layer: 5
   m_Name: TitleText
   m_TagString: Untagged
@@ -2796,7 +2887,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 'About
+  m_Text: 'HAKKINDA
 
 '
 --- !u!222 &275161919
@@ -2807,6 +2898,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 275161915}
   m_CullTransparentMesh: 0
+--- !u!114 &275161920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 275161915}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: about.title
 --- !u!4 &282491579 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4164161110307184, guid: 8cede34fb26a722408198e0d27628ae9,
@@ -2898,10 +3002,10 @@ MonoBehaviour:
     m_BestFit: 0
     m_MinSize: 2
     m_MaxSize: 56
-    m_Alignment: 4
+    m_Alignment: 5
     m_AlignByGeometry: 0
     m_RichText: 1
-    m_HorizontalOverflow: 0
+    m_HorizontalOverflow: 1
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 999999999
@@ -2998,6 +3102,7 @@ GameObject:
   - component: {fileID: 341183450}
   - component: {fileID: 341183452}
   - component: {fileID: 341183451}
+  - component: {fileID: 341183453}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -3066,6 +3171,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 341183449}
   m_CullTransparentMesh: 0
+--- !u!114 &341183453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 341183449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.missions
 --- !u!1 &360101520
 GameObject:
   m_ObjectHideFlags: 0
@@ -3186,7 +3304,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &375939467
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3350,9 +3468,9 @@ RectTransform:
   - {fileID: 1810179381}
   m_Father: {fileID: 869760748}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0}
-  m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 80, y: 115}
+  m_AnchorMin: {x: 0.625, y: 0}
+  m_AnchorMax: {x: 0.625, y: 0}
+  m_AnchoredPosition: {x: 0, y: 115}
   m_SizeDelta: {x: 125, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &377205193
@@ -3619,6 +3737,7 @@ GameObject:
   - component: {fileID: 390181002}
   - component: {fileID: 390181001}
   - component: {fileID: 390181000}
+  - component: {fileID: 390181003}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -3702,6 +3821,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 390180998}
   m_CullTransparentMesh: 0
+--- !u!114 &390181003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 390180998}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: death.title
 --- !u!1 &418704409
 GameObject:
   m_ObjectHideFlags: 0
@@ -3713,6 +3845,7 @@ GameObject:
   - component: {fileID: 418704410}
   - component: {fileID: 418704412}
   - component: {fileID: 418704411}
+  - component: {fileID: 418704413}
   m_Layer: 5
   m_Name: TitleText
   m_TagString: Untagged
@@ -3781,6 +3914,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 418704409}
   m_CullTransparentMesh: 0
+--- !u!114 &418704413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 418704409}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: settings.confirmTitle
 --- !u!1 &428968435
 GameObject:
   m_ObjectHideFlags: 0
@@ -3870,6 +4016,7 @@ GameObject:
   - component: {fileID: 434205412}
   - component: {fileID: 434205411}
   - component: {fileID: 434205413}
+  - component: {fileID: 434205414}
   m_Layer: 5
   m_Name: Title
   m_TagString: Untagged
@@ -3953,6 +4100,19 @@ MonoBehaviour:
   m_EffectColor: {r: 0.3647059, g: 0.34901962, b: 0.40392157, a: 1}
   m_EffectDistance: {x: 4, y: -6}
   m_UseGraphicAlpha: 1
+--- !u!114 &434205414
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 434205409}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.settings
 --- !u!1 &439145910
 GameObject:
   m_ObjectHideFlags: 0
@@ -3964,6 +4124,7 @@ GameObject:
   - component: {fileID: 439145911}
   - component: {fileID: 439145913}
   - component: {fileID: 439145912}
+  - component: {fileID: 439145914}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -4032,6 +4193,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 439145910}
   m_CullTransparentMesh: 0
+--- !u!114 &439145914
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 439145910}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.leaderboard
 --- !u!1 &455205747
 GameObject:
   m_ObjectHideFlags: 0
@@ -4249,6 +4423,7 @@ GameObject:
   - component: {fileID: 467540720}
   - component: {fileID: 467540722}
   - component: {fileID: 467540721}
+  - component: {fileID: 467540723}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -4297,7 +4472,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 30
+    m_FontSize: 24
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 3
@@ -4319,6 +4494,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 467540719}
   m_CullTransparentMesh: 0
+--- !u!114 &467540723
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 467540719}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: settings.sfx
 --- !u!1 &479285295
 GameObject:
   m_ObjectHideFlags: 0
@@ -4411,7 +4599,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &491729094
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4909,6 +5097,7 @@ GameObject:
   - component: {fileID: 524151832}
   - component: {fileID: 524151834}
   - component: {fileID: 524151833}
+  - component: {fileID: 524151835}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -4957,7 +5146,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 64
+    m_FontSize: 50
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -4977,6 +5166,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 524151831}
   m_CullTransparentMesh: 0
+--- !u!114 &524151835
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 524151831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: tutorial.lane
 --- !u!1 &532293851
 GameObject:
   m_ObjectHideFlags: 0
@@ -4988,6 +5190,7 @@ GameObject:
   - component: {fileID: 532293852}
   - component: {fileID: 532293854}
   - component: {fileID: 532293853}
+  - component: {fileID: 532293855}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -5036,7 +5239,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 64
+    m_FontSize: 50
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -5056,6 +5259,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 532293851}
   m_CullTransparentMesh: 0
+--- !u!114 &532293855
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 532293851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: tutorial.slide
 --- !u!1 &536392327
 GameObject:
   m_ObjectHideFlags: 0
@@ -5674,6 +5890,16 @@ PrefabInstance:
     - target: {fileID: 1000011217217016, guid: ac361d43768a861498da8046b83b94f5, type: 3}
       propertyPath: m_Name
       value: Score (7)
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_Alignment
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_HorizontalOverflow
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 224000011673475834, guid: ac361d43768a861498da8046b83b94f5,
         type: 3}
@@ -6445,10 +6671,10 @@ MonoBehaviour:
     m_BestFit: 0
     m_MinSize: 2
     m_MaxSize: 56
-    m_Alignment: 4
+    m_Alignment: 5
     m_AlignByGeometry: 0
     m_RichText: 1
-    m_HorizontalOverflow: 0
+    m_HorizontalOverflow: 1
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 999999999
@@ -6914,6 +7140,7 @@ GameObject:
   - component: {fileID: 681311098}
   - component: {fileID: 681311100}
   - component: {fileID: 681311099}
+  - component: {fileID: 681311101}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -6982,6 +7209,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 681311097}
   m_CullTransparentMesh: 0
+--- !u!114 &681311101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 681311097}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: settings.deleteData
 --- !u!1 &684092553
 GameObject:
   m_ObjectHideFlags: 0
@@ -7973,7 +8213,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_IgnoreLayout: 0
-  m_MinWidth: 460
+  m_MinWidth: 0
   m_MinHeight: -1
   m_PreferredWidth: 300
   m_PreferredHeight: -1
@@ -8033,6 +8273,7 @@ GameObject:
   - component: {fileID: 788409694}
   - component: {fileID: 788409696}
   - component: {fileID: 788409695}
+  - component: {fileID: 788409697}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -8081,7 +8322,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 30
+    m_FontSize: 24
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 3
@@ -8101,6 +8342,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 788409693}
   m_CullTransparentMesh: 0
+--- !u!114 &788409697
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 788409693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: settings.master
 --- !u!1 &792989565
 GameObject:
   m_ObjectHideFlags: 0
@@ -8113,6 +8367,7 @@ GameObject:
   - component: {fileID: 792989568}
   - component: {fileID: 792989567}
   - component: {fileID: 792989569}
+  - component: {fileID: 792989570}
   m_Layer: 0
   m_Name: ScoreLabel
   m_TagString: Untagged
@@ -8197,6 +8452,19 @@ MonoBehaviour:
   m_EffectColor: {r: 0.14217742, g: 0.08434255, b: 0.28676468, a: 0.65}
   m_EffectDistance: {x: 3, y: -3}
   m_UseGraphicAlpha: 1
+--- !u!114 &792989570
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 792989565}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: hud.score
 --- !u!1 &797198306
 GameObject:
   m_ObjectHideFlags: 0
@@ -8208,6 +8476,7 @@ GameObject:
   - component: {fileID: 797198307}
   - component: {fileID: 797198309}
   - component: {fileID: 797198308}
+  - component: {fileID: 797198310}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -8276,6 +8545,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 797198306}
   m_CullTransparentMesh: 0
+--- !u!114 &797198310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 797198306}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.store
 --- !u!1 &800368187
 GameObject:
   m_ObjectHideFlags: 0
@@ -8463,6 +8745,7 @@ GameObject:
   - component: {fileID: 826198190}
   - component: {fileID: 826198192}
   - component: {fileID: 826198191}
+  - component: {fileID: 826198193}
   m_Layer: 0
   m_Name: Resume
   m_TagString: Untagged
@@ -8531,6 +8814,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 826198189}
   m_CullTransparentMesh: 0
+--- !u!114 &826198193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 826198189}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.resume
 --- !u!1 &829118694
 GameObject:
   m_ObjectHideFlags: 0
@@ -8958,10 +9254,10 @@ MonoBehaviour:
     m_BestFit: 0
     m_MinSize: 2
     m_MaxSize: 56
-    m_Alignment: 4
+    m_Alignment: 5
     m_AlignByGeometry: 0
     m_RichText: 1
-    m_HorizontalOverflow: 0
+    m_HorizontalOverflow: 1
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 999999999
@@ -9191,10 +9487,10 @@ RectTransform:
   - {fileID: 1517971671}
   m_Father: {fileID: 455205748}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 1}
-  m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0.00058365, y: -408}
-  m_SizeDelta: {x: 719.66, y: 425}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: -408}
+  m_SizeDelta: {x: -120, y: 425}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &859562871
 MonoBehaviour:
@@ -9556,7 +9852,7 @@ MonoBehaviour:
   powerupSelect: {fileID: 1667271468}
   powerupIcon: {fileID: 590977525}
   powerupCount: {fileID: 1957119031}
-  noItemIcon: {fileID: 21300070, guid: e1a536f74c7ef384a8d7132148ace0c8, type: 3}
+  noItemIcon: {fileID: 21300000, guid: 5335b0ba0e5ff1143a5d8991d8a71a16, type: 3}
   accessoriesSelector: {fileID: 1540953231}
   accesoryNameDisplay: {fileID: 1581550610}
   accessoryIconDisplay: {fileID: 1523852862}
@@ -10256,6 +10552,7 @@ GameObject:
   - component: {fileID: 954757549}
   - component: {fileID: 954757551}
   - component: {fileID: 954757550}
+  - component: {fileID: 954757552}
   m_Layer: 5
   m_Name: AboutUnityText
   m_TagString: Untagged
@@ -10310,15 +10607,16 @@ MonoBehaviour:
     m_BestFit: 0
     m_MinSize: 0
     m_MaxSize: 72
-    m_Alignment: 4
+    m_Alignment: 1
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
-    m_VerticalOverflow: 0
+    m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: "Trash Dash is a sample game project from Unity Technologies, creators
-    of the Unity game engine. \n\nTo learn how this game is made, and how you can
-    make your own games, visit our website!"
+  m_Text: "TABANLARI YA\u011ELA\nS\xDCR\xDCM 1.0\n\n\u0130STANBUL SOKAKLARINDA GE\xC7EN
+    SONSUZ KO\u015EU OYUNU.\n\nUNITY \u0130LE GEL\u0130\u015ET\u0130R\u0130LD\u0130.
+    UNITY TECHNOLOGIES'\u0130N ENDLESS RUNNER \xD6RNEK PROJES\u0130 TEMEL ALINMI\u015ETIR.\n\nYAZI
+    T\u0130P\u0130: LUCKIEST GUY (APACHE L\u0130SANSI 2.0)."
 --- !u!222 &954757551
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -10327,6 +10625,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 954757548}
   m_CullTransparentMesh: 0
+--- !u!114 &954757552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 954757548}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: about.body
 --- !u!1 &960587897
 GameObject:
   m_ObjectHideFlags: 0
@@ -10338,6 +10649,7 @@ GameObject:
   - component: {fileID: 960587898}
   - component: {fileID: 960587900}
   - component: {fileID: 960587899}
+  - component: {fileID: 960587901}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -10362,7 +10674,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0}
   m_AnchoredPosition: {x: 0.000022888184, y: -519.5}
-  m_SizeDelta: {x: 698.79694, y: 141}
+  m_SizeDelta: {x: 460, y: 141}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &960587899
 MonoBehaviour:
@@ -10386,7 +10698,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 64
+    m_FontSize: 52
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 6
@@ -10406,6 +10718,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 960587897}
   m_CullTransparentMesh: 0
+--- !u!114 &960587901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 960587897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: loadout.tutorialPrompt
 --- !u!224 &961120047
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10667,6 +10992,16 @@ PrefabInstance:
     - target: {fileID: 1000011217217016, guid: ac361d43768a861498da8046b83b94f5, type: 3}
       propertyPath: m_Name
       value: PlayerEntry
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_Alignment
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_HorizontalOverflow
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 224000011673475834, guid: ac361d43768a861498da8046b83b94f5,
         type: 3}
@@ -10959,6 +11294,16 @@ PrefabInstance:
       propertyPath: m_Name
       value: Score (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_Alignment
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_HorizontalOverflow
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 224000011673475834, guid: ac361d43768a861498da8046b83b94f5,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -11136,6 +11481,16 @@ PrefabInstance:
       propertyPath: m_Name
       value: Score (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_Alignment
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_HorizontalOverflow
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 224000011673475834, guid: ac361d43768a861498da8046b83b94f5,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -11302,6 +11657,7 @@ GameObject:
   - component: {fileID: 1019362671}
   - component: {fileID: 1019362673}
   - component: {fileID: 1019362672}
+  - component: {fileID: 1019362674}
   m_Layer: 5
   m_Name: Placeholder
   m_TagString: Untagged
@@ -11370,6 +11726,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1019362670}
   m_CullTransparentMesh: 0
+--- !u!114 &1019362674
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1019362670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.enterName
 --- !u!1 &1034873124
 GameObject:
   m_ObjectHideFlags: 0
@@ -11381,6 +11750,7 @@ GameObject:
   - component: {fileID: 1034873125}
   - component: {fileID: 1034873127}
   - component: {fileID: 1034873126}
+  - component: {fileID: 1034873128}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -11449,6 +11819,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1034873124}
   m_CullTransparentMesh: 0
+--- !u!114 &1034873128
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1034873124}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.no
 --- !u!1 &1036523118
 GameObject:
   m_ObjectHideFlags: 0
@@ -11649,9 +12032,9 @@ RectTransform:
   - {fileID: 1839729606}
   m_Father: {fileID: 869760748}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0}
-  m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: -80, y: 115}
+  m_AnchorMin: {x: 0.375, y: 0}
+  m_AnchorMax: {x: 0.375, y: 0}
+  m_AnchoredPosition: {x: 0, y: 115}
   m_SizeDelta: {x: 125, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1051979096
@@ -11881,6 +12264,7 @@ GameObject:
   - component: {fileID: 1057000690}
   - component: {fileID: 1057000692}
   - component: {fileID: 1057000691}
+  - component: {fileID: 1057000693}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -11949,6 +12333,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1057000689}
   m_CullTransparentMesh: 0
+--- !u!114 &1057000693
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1057000689}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: tutorial.done
 --- !u!1 &1071334640
 GameObject:
   m_ObjectHideFlags: 0
@@ -11961,6 +12358,7 @@ GameObject:
   - component: {fileID: 1071334643}
   - component: {fileID: 1071334642}
   - component: {fileID: 1071334644}
+  - component: {fileID: 1071334645}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -12044,6 +12442,19 @@ MonoBehaviour:
   m_EffectColor: {r: 0.3647059, g: 0.34901962, b: 0.4039216, a: 0.925}
   m_EffectDistance: {x: 0, y: -4}
   m_UseGraphicAlpha: 1
+--- !u!114 &1071334645
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1071334640}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: death.endRun
 --- !u!1 &1071772559
 GameObject:
   m_ObjectHideFlags: 0
@@ -12665,6 +13076,7 @@ GameObject:
   - component: {fileID: 1099157487}
   - component: {fileID: 1099157489}
   - component: {fileID: 1099157488}
+  - component: {fileID: 1099157490}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -12713,7 +13125,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 30
+    m_FontSize: 24
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 3
@@ -12733,6 +13145,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1099157486}
   m_CullTransparentMesh: 0
+--- !u!114 &1099157490
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1099157486}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: settings.music
 --- !u!1 &1102885380
 GameObject:
   m_ObjectHideFlags: 0
@@ -12744,6 +13169,7 @@ GameObject:
   - component: {fileID: 1102885381}
   - component: {fileID: 1102885383}
   - component: {fileID: 1102885382}
+  - component: {fileID: 1102885384}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -12812,6 +13238,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1102885380}
   m_CullTransparentMesh: 0
+--- !u!114 &1102885384
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1102885380}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.mainMenu
 --- !u!1 &1104783248
 GameObject:
   m_ObjectHideFlags: 0
@@ -12848,9 +13287,9 @@ RectTransform:
   - {fileID: 1976225066}
   m_Father: {fileID: 869760748}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0}
-  m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 260, y: 115}
+  m_AnchorMin: {x: 0.875, y: 0}
+  m_AnchorMax: {x: 0.875, y: 0}
+  m_AnchoredPosition: {x: 0, y: 115}
   m_SizeDelta: {x: 125, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!82 &1104783250
@@ -13397,10 +13836,10 @@ MonoBehaviour:
     m_BestFit: 0
     m_MinSize: 2
     m_MaxSize: 56
-    m_Alignment: 4
+    m_Alignment: 5
     m_AlignByGeometry: 0
     m_RichText: 1
-    m_HorizontalOverflow: 0
+    m_HorizontalOverflow: 1
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 999999999
@@ -13542,7 +13981,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_IgnoreLayout: 0
-  m_MinWidth: 460
+  m_MinWidth: 0
   m_MinHeight: -1
   m_PreferredWidth: 300
   m_PreferredHeight: -1
@@ -13717,7 +14156,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_IgnoreLayout: 0
-  m_MinWidth: 460
+  m_MinWidth: 0
   m_MinHeight: -1
   m_PreferredWidth: 300
   m_PreferredHeight: -1
@@ -14169,6 +14608,7 @@ GameObject:
   - component: {fileID: 1195921771}
   - component: {fileID: 1195921773}
   - component: {fileID: 1195921772}
+  - component: {fileID: 1195921774}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -14237,6 +14677,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1195921770}
   m_CullTransparentMesh: 0
+--- !u!114 &1195921774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1195921770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: leaderboard.prev
 --- !u!1 &1213395987
 GameObject:
   m_ObjectHideFlags: 0
@@ -15439,15 +15892,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Padding:
-    m_Left: 0
+    m_Left: 20
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 1
   m_Spacing: 0
-  m_ChildForceExpandWidth: 0
+  m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 0
-  m_ChildControlWidth: 0
+  m_ChildControlWidth: 1
   m_ChildControlHeight: 1
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
@@ -15544,6 +15997,7 @@ GameObject:
   - component: {fileID: 1286321975}
   - component: {fileID: 1286321977}
   - component: {fileID: 1286321976}
+  - component: {fileID: 1286321978}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -15592,7 +16046,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 34
+    m_FontSize: 28
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 1
@@ -15612,6 +16066,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1286321974}
   m_CullTransparentMesh: 0
+--- !u!114 &1286321978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1286321974}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.leaderboard
 --- !u!1 &1295762621
 GameObject:
   m_ObjectHideFlags: 0
@@ -15758,7 +16225,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_IgnoreLayout: 0
-  m_MinWidth: 460
+  m_MinWidth: 0
   m_MinHeight: -1
   m_PreferredWidth: 300
   m_PreferredHeight: -1
@@ -15895,6 +16362,16 @@ PrefabInstance:
     - target: {fileID: 1000011217217016, guid: ac361d43768a861498da8046b83b94f5, type: 3}
       propertyPath: m_Name
       value: Score (5)
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_Alignment
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_HorizontalOverflow
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 224000011673475834, guid: ac361d43768a861498da8046b83b94f5,
         type: 3}
@@ -16148,6 +16625,16 @@ PrefabInstance:
     - target: {fileID: 1000011217217016, guid: ac361d43768a861498da8046b83b94f5, type: 3}
       propertyPath: m_Name
       value: Score (6)
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_Alignment
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_HorizontalOverflow
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 224000011673475834, guid: ac361d43768a861498da8046b83b94f5,
         type: 3}
@@ -16625,6 +17112,7 @@ GameObject:
   - component: {fileID: 1320188555}
   - component: {fileID: 1320188554}
   - component: {fileID: 1320188556}
+  - component: {fileID: 1320188557}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -16709,6 +17197,19 @@ MonoBehaviour:
   m_EffectColor: {r: 0.3647059, g: 0.34901962, b: 0.4039216, a: 1}
   m_EffectDistance: {x: 3, y: -3}
   m_UseGraphicAlpha: 1
+--- !u!114 &1320188557
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1320188552}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.leaderboard
 --- !u!1 &1320600320
 GameObject:
   m_ObjectHideFlags: 0
@@ -16757,6 +17258,7 @@ GameObject:
   - component: {fileID: 1338547830}
   - component: {fileID: 1338547833}
   - component: {fileID: 1338547832}
+  - component: {fileID: 1338547834}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -16825,6 +17327,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1338547829}
   m_CullTransparentMesh: 0
+--- !u!114 &1338547834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1338547829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.back
 --- !u!1 &1360779320
 GameObject:
   m_ObjectHideFlags: 0
@@ -17515,6 +18030,7 @@ GameObject:
   - component: {fileID: 1394215950}
   - component: {fileID: 1394215949}
   - component: {fileID: 1394215948}
+  - component: {fileID: 1394215951}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -17598,6 +18114,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1394215946}
   m_CullTransparentMesh: 0
+--- !u!114 &1394215951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1394215946}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: tutorial.toMenu
 --- !u!1 &1397381358
 GameObject:
   m_ObjectHideFlags: 0
@@ -17610,6 +18139,7 @@ GameObject:
   - component: {fileID: 1397381361}
   - component: {fileID: 1397381360}
   - component: {fileID: 1397381362}
+  - component: {fileID: 1397381363}
   m_Layer: 5
   m_Name: RunText
   m_TagString: Untagged
@@ -17658,7 +18188,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 102
+    m_FontSize: 80
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 1
@@ -17693,6 +18223,19 @@ MonoBehaviour:
   m_EffectColor: {r: 0.3647059, g: 0.34901962, b: 0.40392157, a: 1}
   m_EffectDistance: {x: 4, y: -6}
   m_UseGraphicAlpha: 1
+--- !u!114 &1397381363
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1397381358}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.playAgain
 --- !u!1 &1401428194
 GameObject:
   m_ObjectHideFlags: 0
@@ -17859,6 +18402,7 @@ GameObject:
   - component: {fileID: 1403375553}
   - component: {fileID: 1403375552}
   - component: {fileID: 1403375554}
+  - component: {fileID: 1403375555}
   m_Layer: 0
   m_Name: Text
   m_TagString: Untagged
@@ -17942,6 +18486,19 @@ MonoBehaviour:
   m_EffectColor: {r: 0.3647059, g: 0.34901962, b: 0.40392157, a: 1}
   m_EffectDistance: {x: 4, y: -6}
   m_UseGraphicAlpha: 1
+--- !u!114 &1403375555
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1403375550}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: death.watchVideo
 --- !u!1 &1425931247
 GameObject:
   m_ObjectHideFlags: 0
@@ -18217,9 +18774,9 @@ RectTransform:
   - {fileID: 1286321975}
   m_Father: {fileID: 869760748}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0}
-  m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: -250, y: 112.299805}
+  m_AnchorMin: {x: 0.125, y: 0}
+  m_AnchorMax: {x: 0.125, y: 0}
+  m_AnchoredPosition: {x: 0, y: 112.299805}
   m_SizeDelta: {x: 125, y: 74.6}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1470943697
@@ -19045,6 +19602,7 @@ GameObject:
   - component: {fileID: 1514645902}
   - component: {fileID: 1514645901}
   - component: {fileID: 1514645903}
+  - component: {fileID: 1514645904}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -19093,7 +19651,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 128
+    m_FontSize: 100
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 1
@@ -19128,6 +19686,19 @@ MonoBehaviour:
   m_EffectColor: {r: 0.3647059, g: 0.34901962, b: 0.4039216, a: 0.5}
   m_EffectDistance: {x: 0, y: -12}
   m_UseGraphicAlpha: 1
+--- !u!114 &1514645904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1514645899}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: gameOver.title
 --- !u!224 &1517971671
 RectTransform:
   m_ObjectHideFlags: 0
@@ -19858,17 +20429,17 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 28
+    m_FontSize: 20
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 5
-    m_MaxSize: 300
+    m_MinSize: 10
+    m_MaxSize: 28
     m_Alignment: 4
     m_AlignByGeometry: 1
     m_RichText: 1
     m_HorizontalOverflow: 0
-    m_VerticalOverflow: 0
-    m_LineSpacing: 1
+    m_VerticalOverflow: 1
+    m_LineSpacing: 0.85
   m_Text: 'Accessory
 
 '
@@ -20792,6 +21363,7 @@ GameObject:
   - component: {fileID: 1641042603}
   - component: {fileID: 1641042605}
   - component: {fileID: 1641042604}
+  - component: {fileID: 1641042606}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -20860,6 +21432,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1641042602}
   m_CullTransparentMesh: 0
+--- !u!114 &1641042606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1641042602}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: settings.about
 --- !u!1 &1653182061
 GameObject:
   m_ObjectHideFlags: 0
@@ -21103,6 +21688,16 @@ PrefabInstance:
     - target: {fileID: 114000011220535570, guid: ac361d43768a861498da8046b83b94f5,
         type: 3}
       propertyPath: m_Text
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_Alignment
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_HorizontalOverflow
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 224000011673475834, guid: ac361d43768a861498da8046b83b94f5,
@@ -22851,6 +23446,7 @@ GameObject:
   - component: {fileID: 1810179381}
   - component: {fileID: 1810179383}
   - component: {fileID: 1810179382}
+  - component: {fileID: 1810179384}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -22899,7 +23495,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 34
+    m_FontSize: 28
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -22919,6 +23515,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1810179380}
   m_CullTransparentMesh: 0
+--- !u!114 &1810179384
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1810179380}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.missions
 --- !u!1001 &1810322594
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22930,6 +23539,16 @@ PrefabInstance:
     - target: {fileID: 1000011217217016, guid: ac361d43768a861498da8046b83b94f5, type: 3}
       propertyPath: m_Name
       value: Score (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_Alignment
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_HorizontalOverflow
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 224000011673475834, guid: ac361d43768a861498da8046b83b94f5,
         type: 3}
@@ -23538,6 +24157,7 @@ GameObject:
   - component: {fileID: 1824968644}
   - component: {fileID: 1824968646}
   - component: {fileID: 1824968645}
+  - component: {fileID: 1824968647}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -23606,6 +24226,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1824968643}
   m_CullTransparentMesh: 0
+--- !u!114 &1824968647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1824968643}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.yes
 --- !u!1 &1826149885
 GameObject:
   m_ObjectHideFlags: 0
@@ -23728,7 +24361,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1834564029
 RectTransform:
   m_ObjectHideFlags: 0
@@ -24009,6 +24642,7 @@ GameObject:
   - component: {fileID: 1839729606}
   - component: {fileID: 1839729608}
   - component: {fileID: 1839729607}
+  - component: {fileID: 1839729609}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -24057,7 +24691,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 34
+    m_FontSize: 28
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 2
@@ -24077,6 +24711,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1839729605}
   m_CullTransparentMesh: 0
+--- !u!114 &1839729609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1839729605}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.store
 --- !u!1 &1841838543
 GameObject:
   m_ObjectHideFlags: 0
@@ -25162,6 +25809,7 @@ GameObject:
   - component: {fileID: 1967966879}
   - component: {fileID: 1967966881}
   - component: {fileID: 1967966880}
+  - component: {fileID: 1967966882}
   m_Layer: 5
   m_Name: QueryText
   m_TagString: Untagged
@@ -25230,6 +25878,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1967966878}
   m_CullTransparentMesh: 0
+--- !u!114 &1967966882
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1967966878}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: settings.deleteQuery
 --- !u!1 &1971115929
 GameObject:
   m_ObjectHideFlags: 0
@@ -25338,6 +25999,7 @@ GameObject:
   - component: {fileID: 1976225066}
   - component: {fileID: 1976225068}
   - component: {fileID: 1976225067}
+  - component: {fileID: 1976225069}
   m_Layer: 5
   m_Name: Text
   m_TagString: Untagged
@@ -25386,7 +26048,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 12800000, guid: ab2cfde409d710b47b0b502877abb479, type: 3}
-    m_FontSize: 34
+    m_FontSize: 28
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -25408,6 +26070,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1976225065}
   m_CullTransparentMesh: 0
+--- !u!114 &1976225069
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1976225065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: ui.settings
 --- !u!1 &1984436777
 GameObject:
   m_ObjectHideFlags: 0
@@ -25493,10 +26168,10 @@ MonoBehaviour:
     m_BestFit: 0
     m_MinSize: 2
     m_MaxSize: 56
-    m_Alignment: 4
+    m_Alignment: 5
     m_AlignByGeometry: 0
     m_RichText: 1
-    m_HorizontalOverflow: 0
+    m_HorizontalOverflow: 1
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 999999999
@@ -25596,6 +26271,7 @@ GameObject:
   - component: {fileID: 2001643351}
   - component: {fileID: 2001643353}
   - component: {fileID: 2001643352}
+  - component: {fileID: 2001643354}
   m_Layer: 0
   m_Name: CurrencyText
   m_TagString: Untagged
@@ -25664,6 +26340,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2001643350}
   m_CullTransparentMesh: 0
+--- !u!114 &2001643354
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2001643350}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e60cc7784e772542b9d58b6f48308cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::LocText
+  key: death.balance
 --- !u!1001 &2018040213
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -25672,6 +26361,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1266069902}
     m_Modifications:
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_Alignment
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 114000013051946406, guid: ac361d43768a861498da8046b83b94f5,
+        type: 3}
+      propertyPath: m_FontData.m_HorizontalOverflow
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 224000011673475834, guid: ac361d43768a861498da8046b83b94f5,
         type: 3}
       propertyPath: m_AnchorMax.y
