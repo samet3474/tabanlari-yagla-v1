@@ -485,6 +485,13 @@ public class TutorialAutoTest : MonoBehaviour
         // Tutorial sırasında, komut ekranı yokken duraklatma
         m_Phase = "S3-duraklatma";
         float w = 0;
+        // Yönergeler engelden 8 / 3,9 / 5,5 m önce açılır; bu adımın yönergesi henüz gelmediyse devam ettirdikten hemen
+        // sonra (doğru olarak) açılıp oyunu durdurur ve duraklatma kontrollerini bozar. Önce bu adımın yönergesi gelip
+        // tamamlansın (bot onaylar), sonra yönerge beklenmeyen bölümde dene.
+        botEnabled = true;
+        while (Cleared() < 1 && Top() == "Game" && w < 60f) { w += Time.unscaledDeltaTime; yield return null; }
+        botEnabled = false;
+        w = 0;
         while ((PromptVisible() || !m_TM.isMoving) && w < 30f) { w += Time.unscaledDeltaTime; yield return null; }
         m_GS.Pause();
         yield return new WaitForSecondsRealtime(1.5f);
