@@ -298,14 +298,27 @@ public class TutorialAutoTest : MonoBehaviour
     IEnumerator S8_MovesBeforePrompt()
     {
         m_Phase = "S8-yonerge-oncesi-hareket";
-        PlayerData.NewSave();
-        yield return StartFromLoadout();
-        yield return WaitMoving();
         var chr = m_TM.characterController;
+
+        // İlk segment rastgele: kısa (18 m) segmentte koşu başladığında engel zaten yönerge mesafesinin (8 m) içinde
+        // olduğu için yönergeden önce hareket aralığı yoktur (yönerge hemen açılır). Uzun segment gelene kadar yeniden başlat.
+        for (int attempt = 1; ; ++attempt)
+        {
+            PlayerData.NewSave();
+            yield return StartFromLoadout();
+            yield return WaitMoving();
+            float startDist = DistanceToNextObstacle();
+            if (startDist > 9f || attempt >= 4) { Out($"ilk engel koşu başında {startDist:F1} m (deneme {attempt})"); break; }
+            Out($"kisa ilk segment (engel {startDist:F1} m), yonergeden once hareket araligi yok; yeniden baslatiliyor");
+            botEnabled = true; // açılan yönergeyi onaylasın
+            yield return new WaitForSecondsRealtime(0.5f);
+            botEnabled = false;
+            yield return QuitViaPauseMenu();
+        }
         Check(m_TM.isTutorial && chr.currentTutorialLevel == 0, "tutorial basladi (asama 0)");
 
         // Şerit: ilk engel ortada tek başına; oyuncu yönerge mesafesinden (8 m) önce sağa geçer.
-        yield return WaitObstacleWithin(11f);
+        yield return WaitObstacleWithin(9.5f);
         Out($"serit hareketi engele {DistanceToNextObstacle():F1} m kala");
         chr.ChangeLane(1);
         bool p = false, ok = false; float d = 0;
