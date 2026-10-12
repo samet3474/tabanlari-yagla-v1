@@ -576,7 +576,7 @@ public class GameState : AState
                 m_NextValidSegment = null;
                 trackManager.ChangeZone();
 
-                tutorialValidatedObstacles.text = "Passed!";
+                tutorialValidatedObstacles.text = Loc.Get("tutorial.passed", "Passed!");
 
                 if (trackManager.currentZone == 0)
                 {//we looped, mean we finished the tutorial.
@@ -658,7 +658,7 @@ public class GameState : AState
         trackManager.currentSegementChanged = null;
         trackManager.ContinueAsNormalRun();
 
-        tutorialValidatedObstacles.text = "HARIKA!";
+        tutorialValidatedObstacles.text = Loc.Get("tutorial.great", "HARİKA!");
         tutorialValidatedObstacles.gameObject.SetActive(true);
         m_HideTutorialMessage = StartCoroutine(HideTutorialMessage());
     }
