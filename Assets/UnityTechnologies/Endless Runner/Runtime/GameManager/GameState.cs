@@ -609,7 +609,9 @@ public class GameState : AState
                 }
             }
         }
-        else if (m_DisplayTutorial && nextObstaclePosition <= 1.0f)
+        // Only once the run is actually moving: on short segments the obstacle is already within prompt distance on the
+        // first frame, during the countdown, while its prefab may still be loading (Addressables) and has no collider yet.
+        else if (m_DisplayTutorial && trackManager.isMoving && nextObstaclePosition <= 1.0f)
         {
             float distanceToObstacle = nextObstaclePosition * trackManager.currentSegment.worldLength - trackManager.currentSegmentDistance;
             if (distanceToObstacle <= TutorialPromptDistance())
@@ -634,8 +636,18 @@ public class GameState : AState
                 Vector3 pos;
                 Quaternion rot;
                 trackManager.currentSegment.GetPointAt(obstacleT, out pos, out rot);
-                Vector3 lanePos = pos + (chr.currentLane - 1) * trackManager.laneOffset * (rot * Vector3.right) + Vector3.up * k_ObstacleProbeHeight;
-                return !Physics.CheckSphere(lanePos, k_ObstacleProbeRadius, k_ObstacleLayerMask);
+                bool anyBlocked = false;
+                bool playerLaneBlocked = false;
+                for (int lane = 0; lane < 3; ++lane)
+                {
+                    Vector3 lanePos = pos + (lane - 1) * trackManager.laneOffset * (rot * Vector3.right) + Vector3.up * k_ObstacleProbeHeight;
+                    bool blocked = Physics.CheckSphere(lanePos, k_ObstacleProbeRadius, k_ObstacleLayerMask);
+                    anyBlocked |= blocked;
+                    if (lane == chr.currentLane)
+                        playerLaneBlocked = blocked;
+                }
+                // No obstacle found in any lane means it is not there yet (still loading): show the prompt rather than skip.
+                return anyBlocked && !playerLaneBlocked;
             }
             case 1:
             {
