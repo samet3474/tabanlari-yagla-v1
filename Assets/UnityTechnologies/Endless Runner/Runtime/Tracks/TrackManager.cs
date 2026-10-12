@@ -131,6 +131,8 @@ public class TrackManager : MonoBehaviour
     protected const float k_SegmentRemovalDistance = -30f;
     protected const float k_Acceleration = 0.2f;
     protected const float k_ObstacleSpawnTimeout = 5f;
+    // Where the scene's linear fog starts (Main scene: 50-80 m). Track content placed beyond it fades in instead of popping.
+    protected const float k_TutorialFillDistance = 50f;
     
     protected void Awake()
     {
@@ -534,6 +536,17 @@ public class TrackManager : MonoBehaviour
 
         m_CurrentZone = 0;
         m_CurrentZoneDistance = 0;
+
+        // The tutorial's segments were spawned empty. The ones that still start beyond the fog get their obstacles and
+        // coins now, where they cannot be seen appearing; the nearer ones stay a short obstacle-free run-up, like the
+        // safe segments at the start of a normal run. Segments still loading are filled when they arrive.
+        float segmentStart = -m_CurrentSegmentDistance;
+        for (int i = 0; i < m_Segments.Count; ++i)
+        {
+            if (segmentStart >= k_TutorialFillDistance)
+                SpawnObstacle(m_Segments[i]);
+            segmentStart += m_Segments[i].worldLength;
+        }
     }
 
     public void ChangeZone()
@@ -596,12 +609,15 @@ public class TrackManager : MonoBehaviour
         newSegment.transform.localScale = new Vector3((Random.value > 0.5f ? -1 : 1), 1, 1);
         newSegment.objectRoot.localScale = new Vector3(1.0f / newSegment.transform.localScale.x, 1, 1);
 
-        if (m_SafeSegementLeft <= 0)
+        // Tutorial segments stay empty: nothing on the track can hit the player while the moves are being taught.
+        // ContinueAsNormalRun fills the ones still far ahead when the tutorial ends.
+        if (!m_IsTutorial)
         {
-            SpawnObstacle(newSegment);
+            if (m_SafeSegementLeft <= 0)
+                SpawnObstacle(newSegment);
+            else
+                m_SafeSegementLeft -= 1;
         }
-        else
-            m_SafeSegementLeft -= 1;
 
         m_Segments.Add(newSegment);
 
