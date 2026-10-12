@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+    <meta name="apple-mobile-web-app-title" content="Tabanları Yağla">
+    <meta name="theme-color" content="#1B2550">
+    <title>Tabanları Yağla</title>
+    <!-- manifest start_url/scope are relative ("./"), so they resolve to the page's own folder (/tabanlari-yagla-v1/);
+         the web save folder is derived from that path, so it must not change. No service worker on purpose. -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" sizes="32x32" href="TemplateData/icons/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="TemplateData/icons/apple-touch-icon-180.png">
+    <link rel="apple-touch-startup-image" href="TemplateData/acilis-iphone13-1170x2532.png"
+          media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <style>
+      html, body { margin: 0; background: #1B2550; overscroll-behavior: none; }
+      body.ty-desktop { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+      #unity-container.unity-mobile { touch-action: none; }
+      #unity-canvas { background: #1B2550; }
+      #unity-footer { display: none; }
+      /* Loading screen: game logo instead of the Unity logo (style.css is left unchanged). */
+      #unity-logo { width: 280px; height: 158px; background: url('TemplateData/brand-logo.png') no-repeat center / contain; }
+      #unity-progress-bar-empty { margin: 14px auto 0; }
+      /* Shown only when a phone is held sideways; the game is designed for portrait. */
+      #ty-rotate { display: none; position: fixed; inset: 0; z-index: 10; align-items: center; justify-content: center;
+                   background: #1B2550; color: #FFE45C; font: bold 20px/1.4 system-ui, -apple-system, sans-serif; text-align: center; padding: 24px; }
+      @media (orientation: landscape) and (max-height: 500px) { .unity-mobile ~ #ty-rotate, body.ty-mobile #ty-rotate { display: flex; } }
+    </style>
+  </head>
+  <body>
+    <div id="unity-container" class="unity-desktop">
+      <canvas id="unity-canvas" tabindex="-1"></canvas>
+      <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty">
+          <div id="unity-progress-bar-full"></div>
+        </div>
+      </div>
+      <div id="unity-warning"> </div>
+    </div>
+    <div id="ty-rotate">Daha iyi oynamak için telefonunu dik tut.</div>
+    <script>
+      // Safari, Unity'nin callback ile çağırdığı decodeAudioData'nın promise'ini de reddediyor.
+      // Unity hatayı callback'te zaten işliyor; yakalanmamış promise reddi oyunu durdurmasın diye
+      // promise'e boş bir catch ekliyoruz.
+      (function () {
+        var Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        var proto = (window.BaseAudioContext || Ctx).prototype;
+        var original = proto.decodeAudioData;
+        proto.decodeAudioData = function (data, onSuccess, onError) {
+          var result;
+          try {
+            result = original.call(this, data, onSuccess, onError);
+          } catch (e) {
+            if (onError) onError(e);
+            return Promise.resolve(null);
+          }
+          if (result && result.catch) result.catch(function (e) { console.warn("Ses çözülemedi, atlandı:", e); });
+          return result;
+        };
+      })();
+
+      function isAudioDecodeError(msg) {
+        msg = String(msg || "");
+        return msg.indexOf("EncodingError") !== -1 || msg.indexOf("Decoding failed") !== -1 || msg.indexOf("Unable to decode audio") !== -1;
+      }
+
+      var canvas = document.querySelector("#unity-canvas");
+
+      function unityShowBanner(msg, type) {
+        var warningBanner = document.querySelector("#unity-warning");
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(function() {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/WebDev.loader.js";
+      var config = {
+        arguments: [],
+        dataUrl: buildUrl + "/WebDev.data.unityweb",
+        frameworkUrl: buildUrl + "/WebDev.framework.js.unityweb",
+        codeUrl: buildUrl + "/WebDev.wasm.unityweb",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "Samet",
+        productName: "Tabanları Yağla",
+        productVersion: "1.0",
+        showBanner: unityShowBanner,
+        errorHandler: function (err) {
+          if (isAudioDecodeError(err && err.message ? err.message : err)) {
+            console.warn("Ses hatası yok sayıldı:", err);
+            return true;
+          }
+          return false;
+        },
+      };
+
+      // PlayerData.Save() düz FileStream ile save.bin yazıyor; bu ayar kapalıyken dosya yalnızca bellekteki
+      // sanal dosya sisteminde kalıyor ve IndexedDB'ye ancak Unity'nin başka bir iç senkronizasyonuyla
+      // tesadüfen ulaşıyordu. Açıkken persistentDataPath'teki her dosya kapanışında IndexedDB'ye yazılır.
+      config.autoSyncPersistentDataPath = true;
+
+      window.addEventListener("unhandledrejection", function (e) {
+        if (isAudioDecodeError(e.reason && e.reason.message ? e.reason.message : e.reason)) e.preventDefault();
+      });
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent))) {
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes, viewport-fit=cover';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+        document.querySelector("#unity-container").className = "unity-mobile";
+        canvas.className = "unity-mobile";
+        document.body.classList.add("ty-mobile");
+
+        // Telefon ekranları 3x yoğunlukta; tam çözünürlükte çizmek kare hızını düşürür.
+        config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+      } else {
+        // Masaüstünde telefon oranında dikey pencere.
+        document.body.className = "ty-desktop";
+        var h = Math.min(window.innerHeight - 20, 900);
+        canvas.style.width = Math.round(h * 9 / 16) + "px";
+        canvas.style.height = h + "px";
+      }
+
+      document.querySelector("#unity-loading-bar").style.display = "block";
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
+        }).then((unityInstance) => {
+          document.querySelector("#unity-loading-bar").style.display = "none";
+        }).catch((message) => {
+          if (!isAudioDecodeError(message)) alert(message);
+        });
+      };
+
+      document.body.appendChild(script);
+    </script>
+  </body>
+</html>
