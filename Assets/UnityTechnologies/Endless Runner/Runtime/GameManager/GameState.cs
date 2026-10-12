@@ -102,6 +102,19 @@ public class GameState : AState
     protected const float k_JumpPromptRatio = 0.65f;
     protected const float k_SlidePromptMargin = 1.5f;
 
+    // A prompt is skipped when the player already made the move it would ask for (e.g. changed to a free lane before
+    // the "change lane" prompt): asking again would request a pointless or even harmful move.
+    // Jump: the obstacle must fall in the part of the current jump that is high enough (sin(PI * ratio) * jumpHeight
+    // stays above the low barrier, with obstacle/character depth taken off both ends).
+    protected const float k_JumpClearMinRatio = 0.25f;
+    protected const float k_JumpClearMaxRatio = 0.75f;
+    // Slide: the slide must still be on when the far side of the obstacle (its depth plus the character's) is reached.
+    protected const float k_SlideClearMargin = 0.5f;
+    // Lane occupancy test at the obstacle, same obstacle layer and probe size TrackManager uses for pickups.
+    protected const int k_ObstacleLayerMask = 1 << 9;
+    protected const float k_ObstacleProbeRadius = 0.4f;
+    protected const float k_ObstacleProbeHeight = 0.5f;
+
     public override void Enter(AState from)
     {
         m_CountdownRectTransform = countdownText.GetComponent<RectTransform>();
@@ -600,7 +613,46 @@ public class GameState : AState
         {
             float distanceToObstacle = nextObstaclePosition * trackManager.currentSegment.worldLength - trackManager.currentSegmentDistance;
             if (distanceToObstacle <= TutorialPromptDistance())
-                DisplayTutorial(true);
+            {
+                if (TutorialStepAlreadyDone(nextObstaclePosition, distanceToObstacle))
+                    m_DisplayTutorial = false; // nothing to ask: the step continues with the obstacle count as usual
+                else
+                    DisplayTutorial(true);
+            }
+        }
+    }
+
+    // True when the player's current state already avoids the upcoming obstacle the way this step teaches.
+    bool TutorialStepAlreadyDone(float obstacleT, float distanceToObstacle)
+    {
+        CharacterInputController chr = trackManager.characterController;
+        float speedScale = 1.0f + trackManager.speedRatio;
+        switch (chr.currentTutorialLevel)
+        {
+            case 0:
+            {
+                Vector3 pos;
+                Quaternion rot;
+                trackManager.currentSegment.GetPointAt(obstacleT, out pos, out rot);
+                Vector3 lanePos = pos + (chr.currentLane - 1) * trackManager.laneOffset * (rot * Vector3.right) + Vector3.up * k_ObstacleProbeHeight;
+                return !Physics.CheckSphere(lanePos, k_ObstacleProbeRadius, k_ObstacleLayerMask);
+            }
+            case 1:
+            {
+                if (!chr.isJumping)
+                    return false;
+                float ratioAtObstacle = (trackManager.worldDistance + distanceToObstacle - chr.jumpStartDistance) / (chr.jumpLength * speedScale);
+                return ratioAtObstacle >= k_JumpClearMinRatio && ratioAtObstacle <= k_JumpClearMaxRatio;
+            }
+            case 2:
+            {
+                if (!chr.isSliding)
+                    return false;
+                float slideEnd = chr.slideStartDistance + chr.slideLength * speedScale;
+                return trackManager.worldDistance + distanceToObstacle + k_SlideClearMargin <= slideEnd;
+            }
+            default:
+                return false;
         }
     }
 
@@ -641,10 +693,17 @@ public class GameState : AState
                 break;
             case 1:
                 upSlideTuto.SetActive(value);
+                // A jump still in progress here would not clear the obstacle (TutorialStepAlreadyDone said so), and
+                // Jump() does nothing while jumping: end it so the jump this prompt asks for actually starts.
+                if (value)
+                    trackManager.characterController.StopJumping();
                 trackManager.characterController.tutorialWaitingForValidation = value;
                 break;
             case 2:
                 downSlideTuto.SetActive(value);
+                // Same for a slide that would end before the obstacle.
+                if (value)
+                    trackManager.characterController.StopSliding();
                 trackManager.characterController.tutorialWaitingForValidation = value;
                 break;
             case 3:

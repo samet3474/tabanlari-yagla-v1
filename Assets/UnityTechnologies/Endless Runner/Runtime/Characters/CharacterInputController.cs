@@ -35,6 +35,11 @@ public class CharacterInputController : MonoBehaviour
 	public List<Consumable> consumables { get { return m_ActiveConsumables; } }
 	public bool isJumping { get { return m_Jumping; } }
 	public bool isSliding { get { return m_Sliding; } }
+	// Read-only state for the tutorial: the lane being moved to and where (in track world distance) the current
+	// jump/slide started, so a prompt can tell whether the player already made the move it would ask for.
+	public int currentLane { get { return m_CurrentLane; } }
+	public float jumpStartDistance { get { return m_JumpStart; } }
+	public float slideStartDistance { get { return m_SlideStart; } }
 
 	[Header("Controls")]
 	public float jumpLength = 2.0f;     // Distance jumped
