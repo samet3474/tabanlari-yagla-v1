@@ -3,7 +3,7 @@
 > Her aşamanın sonunda güncellenir. Projeye ara verip döndüğünde **önce bu dosyayı oku.**
 > Ayrıntılı geçmiş: [GELISTIRME_NOTLARI.md](GELISTIRME_NOTLARI.md) (bu dosya ondan daha güncel).
 
-**Son güncelleme:** 2026-10-12 (gece). **Gerçek engelli eğitim** (`egitim-engelli` dalı) /test/ adresinde; iPhone testi bekleniyor.
+**Son güncelleme:** 2026-10-12. **Gerçek engelli eğitim CANLIDA** (kullanıcı iPhone 13'te denedi ve onayladı). Kaynak `main` `ac4cb60`, yayın gh-pages `e8777e3`. Sıradaki: ana menü incelemesi (kod değişikliği yok).
 
 ---
 
@@ -32,27 +32,27 @@
 
 "Çalışan sürüm değişmedi" kanıtı (gh-pages kopyasında):
 ```bash
-git diff --stat canli-v1-yayin HEAD -- .nojekyll index.html Build StreamingAssets TemplateData   # boş çıkmalı
-git diff --stat canli-v1-yayin HEAD -- dev test-ad test-dil                                     # boş çıkmalı
+git diff --stat canli-2026-10-12-yayin HEAD -- .nojekyll index.html manifest.webmanifest Build StreamingAssets TemplateData   # boş çıkmalı
+git diff --stat canli-v1-yayin HEAD -- dev test-ad test-dil                                                                  # boş çıkmalı
 ```
 
 ## 1. Kısaca durum
 
 | Konu | Durum |
 |---|---|
-| Canlı oyun (kök adres) | Eski A sürümü. **Değiştirilmedi** (kanıt: canli-v1-yayin ile kök ağaçları aynı). |
-| Test adayı | `egitim-engelli` dalı (`53103e0`). **/test/ adresinde.** İçerik: Aşama 1 + Türkçe arayüz + B (menüye dönmeden normal koşu) + **gerçek engelli eğitim**. |
-| Eğitim | SAĞA → SOLA → YUKARI → AŞAĞI → HAZIRSIN, her adımda normal oyunun gerçek bir engeli (çöp kutusu ×2, alçak bariyer, yüksek bariyer). Windows otomatik testleri **96/96**, hata kaydı 0. **iPhone testi bekleniyor.** (Önceki engelsiz sürüm: `egitim-yeni`, iPhone testinde reddedildi.) |
+| Canlı oyun (kök adres) | **2026-10-12 sürümü**: Aşama 1 + Türkçe arayüz + menüye dönmeden normal koşu + gerçek engelli eğitim. Etiketler `canli-2026-10-12-kaynak` / `canli-2026-10-12-yayin`. Önceki A sürümü `canli-v1-*` etiketlerinde. |
+| Test adresi | Canlıyla aynı derleme (`egitim-engelli` `53103e0`); bekleyen yeni aday yok. |
+| Eğitim | SAĞA → SOLA → YUKARI → AŞAĞI → HAZIRSIN, her adımda normal oyunun gerçek bir engeli (çöp kutusu ×2, alçak bariyer, yüksek bariyer). Windows otomatik testleri **96/96**, hata kaydı 0. **Kullanıcı iPhone 13'te onayladı, canlıda.** (Önceki engelsiz sürüm `egitim-yeni` reddedilmişti.) |
 | Eski eğitimin sorunları (A, B, C, ~9 sn bekleme) | Yeni tasarımda bu akış yok (üçer engel, oyunu durduran yönerge, seviye geçişi kaldırıldı). Eski düzeltmeler `egitim-duzeltme` dalında duruyor. |
 | Dokunma yönünün erken seçilmesi | Değiştirilmedi. Yeni eğitimde yanlış yön adımı ilerletmez ve karakteri oynatmaz; iPhone'da `/test/olcum/` ile "FARKLI EKSEN" sayısına bakılmalı. |
-| Gerçek iPhone 13 testi | **Yapılmadı.** |
+| Gerçek iPhone 13 testi | Gerçek engelli eğitim kullanıcı tarafından denendi ve onaylandı (2026-10-12). |
 
 ## 2. Adresler
 
 | Adres | İçerik | Kayıt klasörü (IndexedDB) |
 |---|---|---|
-| https://samet3474.github.io/tabanlari-yagla-v1/ | **Canlı oyun** (A sürümü) | `/idbfs/4ebc64a6…` |
-| https://samet3474.github.io/tabanlari-yagla-v1/test/ | **Test adayı** (`egitim-engelli`), normal derleme | `/idbfs/7e1905a8…` |
+| https://samet3474.github.io/tabanlari-yagla-v1/ | **Canlı oyun** (2026-10-12: gerçek engelli eğitim) | `/idbfs/4ebc64a6…` |
+| https://samet3474.github.io/tabanlari-yagla-v1/test/ | Test adresi (şu an canlıyla aynı derleme) | `/idbfs/7e1905a8…` |
 | https://samet3474.github.io/tabanlari-yagla-v1/test/olcum/ | Aynı aday, **ölçüm derlemesi** (ekranda adım/kare kayıtları) | `/idbfs/f90ba6cc…` |
 | https://samet3474.github.io/tabanlari-yagla-v1/test-dil/ | Eski test: Aşama 1 + Türkçe (= önceki /test/) | `/idbfs/5e701c6c…` |
 | https://samet3474.github.io/tabanlari-yagla-v1/test-ad/ | Eski test: yalnızca Aşama 1 | `/idbfs/811705a2…` |
@@ -71,23 +71,25 @@ Not: /test/ eğitimini bir kez bitiren tarayıcıda eğitim tekrar açılmaz. Ye
 
 | Dal | Commit | Ne var |
 |---|---|---|
-| `main` | (yalnızca not commit'leri) | Canlı oyunun kaynağı; oyun kodu `canli-v1-kaynak` ile aynı |
+| `main` | `ac4cb60` | Canlı oyunun kaynağı (`egitim-engelli` `--no-ff` birleştirmesi) |
 | `gelistirme` | `638289b` | Ana geliştirme dalı: main + Aşama 1 + Türkçe arayüz |
-| `egitim-engelli` | `53103e0` | egitim-yeni + gerçek engelli eğitim. **/test/'te.** |
+| `egitim-engelli` | `53103e0` | egitim-yeni + gerçek engelli eğitim. **Canlıda** (main'e birleşti). |
 | `egitim-yeni` | `378c04a` | egitim-duzeltme + engelsiz ok eğitimi (egitim-engelli'nin içinde) |
 | `egitim-duzeltme` | `502d3c7` | gelistirme + B + eski eğitimin düzeltmeleri (egitim-yeni'nin içinde) |
 | `ad-marka` | `4c9244a` | Aşama 1 (gelistirme'nin içinde) |
 | `dil-turkce` | `638289b` | Türkçe arayüz (= gelistirme) |
 | `b-tutorial-test` | `d5f0f2f` | B (eğitim akışı) — egitim-duzeltme'nin içinde |
 | `b-egitim-olcum` | `2188d73` | B + girdi teşhis araçları — egitim-duzeltme'nin içinde |
-| `gh-pages` | `b2c7e5e` | Yayın: kök (canlı), /dev/, /test-ad/, /test-dil/, /test/, /test/olcum/ |
+| `gh-pages` | `e8777e3` | Yayın: kök (canlı), /dev/, /test-ad/, /test-dil/, /test/, /test/olcum/ |
 
 Geri dönüş etiketleri (hepsi GitHub'da):
 
 | Etiket | Gösterdiği | Anlamı |
 |---|---|---|
-| `canli-v1-kaynak` | `0638f38` | Canlı oyunun kaynağı |
-| `canli-v1-yayin` | gh-pages `b2bf7c0` | Kökü canlı oyun olan yayın |
+| `canli-2026-10-12-kaynak` | main `ac4cb60` | **Şu anki canlı oyunun kaynağı** |
+| `canli-2026-10-12-yayin` | gh-pages `e8777e3` | **Şu anki canlı yayın** |
+| `canli-v1-kaynak` | `0638f38` | Önceki canlı (A) sürümünün kaynağı — geri dönüş |
+| `canli-v1-yayin` | gh-pages `b2bf7c0` | Önceki canlı (A) yayını — geri dönüş |
 | `test-yedek-egitim-yeni` | gh-pages `5d9bd72` | Gerçek engelli eğitimden önceki /test/ (engelsiz ok eğitimi) |
 | `test-yedek-egitim-duzeltme` | gh-pages `8bbf337` | Yeni eğitimden önceki /test/ (eski eğitim + düzeltmeler) |
 | `egitim-yeni-oncesi` | `502d3c7` | Yeni eğitimden önceki kaynak |
@@ -96,6 +98,28 @@ Geri dönüş etiketleri (hepsi GitHub'da):
 | `asama1-oncesi`, `dil-oncesi`, `egitim-olcum-oncesi` | `97135aa`, `4c9244a`, `d5f0f2f` | Aşama öncesi noktalar |
 
 ## 4. Son yapılanlar (en yeni üstte)
+
+0. **Canlıya geçiş — 2026-10-12** (kullanıcının açık onayıyla; iPhone 13'te onaylanan `/test/` derlemesi).
+   - Hazırlık kontrolleri:
+     - Otomatik testler 96/96, hata kaydı 0, 50 ms'yi aşan kare yok.
+     - Üretim paketinde test araçlarına ait iz yok; aynı arama `/test/olcum/`'da hepsini buluyor.
+     - Üretim derlemesi `BuildOptions.None` ile alınıyor; WebGL tanımlarında `TY_DEVTOOLS` yok.
+     - Türkçe eğitim metinleri pakette var.
+     - Kayıt biçimi aynı (sürüm 12).
+     - `main`'e birleştirme denemesi çakışmasız çıktı.
+   - Kaynak: `egitim-engelli` → `main` `--no-ff` birleştirme `ac4cb60` (oyun kodu = `53103e0`). Etiket: `canli-2026-10-12-kaynak`.
+   - Yayın: gh-pages `e8777e3`. Etiket: `canli-2026-10-12-yayin`.
+     - `test/`'teki dosyalar yeniden derlenmeden köke kopyalandı: `Build/` 4 dosya, `StreamingAssets/` 5 dosya, `TemplateData/` 7 yeni dosya, `index.html`, yeni `manifest.webmanifest`.
+     - Eski 2 Addressables paketi (`monoscripts_9d48…`, `characters_assets_all_6913…`) bilerek silinmedi: geçiş anında açık eski oturumlar 404 almasın diye.
+   - Doğrulama:
+     - Canlıda sunulan wasm, data, framework, loader, index, manifest ve catalog.hash, onaylı `/test/` ile SHA1 olarak aynı.
+     - `/dev/`, `/test-ad/`, `/test-dil/`, `/test/` değişmedi.
+     - Canlı adres hatasız açılıyor.
+     - Kayıt klasörü değişmedi (adres aynı): mevcut oyuncuların kayıtları korunuyor. Eğitimi bitirmiş oyuncular eğitimi tekrar görmez.
+   - Geri alma (zorla push yok):
+     - gh-pages kökü: `git checkout canli-v1-yayin -- Build StreamingAssets TemplateData index.html`, `git rm manifest.webmanifest`, ardından yeni bir commit ve push.
+     - `main`: `git revert -m 1 ac4cb60`.
+   - Bilinen risk: GitHub Pages önbelleği 10 dakika (`max-age=600`) ve dosya adları sabit. Geçişten sonraki ilk dakikalarda bir tarayıcı eski ve yeni dosyaları karışık alırsa sayfayı yenilemek gerekebilir. Kalıcı çözüm: Name Files As Hashes (ayrı iş).
 
 1. **Gerçek engelli eğitim** (`egitim-engelli`). Commit'ler (eskiden yeniye):
    - `39af35f` — Parkur: belirli mesafe ve şeride tek engel yerleştirme (`TrackManager.SpawnObstacleAt`).
@@ -159,14 +183,13 @@ Geri dönüş etiketleri (hepsi GitHub'da):
 - [ ] **iPhone ölçümü:** `/test/olcum/?kayitsil=1`. Takılma anında ekran görüntüsü: ADIM/KARE/SICRAMA satırları adım zamanlarını ve kare sürelerini, KAYDIR satırları dokunmaların nasıl algılandığını gösterir.
 - [ ] **Ayarlardan eğitimi yeniden başlatma** (isteğe bağlı, bu aşamada yapılmadı).
 - [ ] **Dokunma yönünün erken seçilmesi:** iPhone ölçümünde "FARKLI EKSEN" sayısı görülürse eşik/karar düzeltmesi (ayrı iş).
-- [ ] **Canlıya geçiş:** yalnızca /test/ onaylanınca, ayrıca açık onayla (0. bölüm).
+- [x] **Canlıya geçiş:** 2026-10-12'de kullanıcının açık onayıyla yapıldı (4. bölüm, madde 0).
 - [ ] **Önbellek iyileştirmesi** (Name Files As Hashes) — ayrı test değişikliği olarak.
 
 ## 7. Sıradaki adım (döndüğünde buradan başla)
 
-1. Gerçek engelli eğitim için /test/ ve /test/olcum/ iPhone sonuçlarını ilet.
-2. Onaylanırsa canlıya geçiş (0. bölüm), ayrıca açık onayla.
-3. Sonra: Aşama 2 (performans/bellek), İstanbul temalı yeni ana menü, Android APK.
+1. **Ana menü incelemesi** (Subway Surfers düzenine yakın, özgün görseller). Önce yalnızca inceleme ve rapor; kod değişikliği, commit ve yayın yok. Uygulama için ayrıca onay beklenir.
+2. Sonra: Aşama 2 (performans/bellek), önbellek iyileştirmesi (Name Files As Hashes), Android APK.
 
 ## 8. Başka bilgisayarda devam etmek
 
