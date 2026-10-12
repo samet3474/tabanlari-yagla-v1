@@ -97,7 +97,7 @@ public class LoadoutState : AState
         }
 
         runButton.interactable = false;
-        runButton.GetComponentInChildren<Text>().text = "Loading...";
+        runButton.GetComponentInChildren<Text>().text = Loc.Get("ui.loading", "Loading...");
 
         if(m_PowerupToUse != Consumable.ConsumableType.NONE)
         {
@@ -159,7 +159,7 @@ public class LoadoutState : AState
             if(interactable)
             {
                 runButton.interactable = true;
-                runButton.GetComponentInChildren<Text>().text = "Run!";
+                runButton.GetComponentInChildren<Text>().text = Loc.Get("ui.play", "Run!");
 
                 //we can always enabled, as the parent will be disabled if tutorial is already done
                 tutorialPrompt.SetActive(true);

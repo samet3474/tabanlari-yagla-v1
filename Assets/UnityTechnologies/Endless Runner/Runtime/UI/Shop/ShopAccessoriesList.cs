@@ -149,7 +149,7 @@ public class ShopAccessoriesList : ShopList
 		{
 			itm.buyButton.interactable = false;
 			itm.buyButton.image.sprite = itm.disabledButtonSprite;
-			itm.buyButton.transform.GetChild(0).GetComponent<UnityEngine.UI.Text>().text = "Owned";
+			itm.buyButton.transform.GetChild(0).GetComponent<UnityEngine.UI.Text>().text = Loc.Get("shop.owned", "Owned");
 		}
 	}
 

@@ -25,7 +25,7 @@ public class GameOverState : AState
     {
         canvas.gameObject.SetActive(true);
 
-		miniLeaderboard.playerEntry.inputName.text = PlayerData.instance.previousName;
+		miniLeaderboard.playerEntry.inputName.text = Loc.PlayerName(PlayerData.instance.previousName);
 		
 		miniLeaderboard.playerEntry.score.text = trackManager.score.ToString();
 		miniLeaderboard.Populate();

@@ -87,7 +87,7 @@ public class SingleRunMission : MissionBase
 
 	public override string GetMissionDesc()
     {
-        return "Run " + ((int)max) + "m in a single run";
+        return Loc.Format("mission.singleRun", "Run {0}m in a single run", (int)max);
     }
 
     public override MissionType GetMissionType()
@@ -122,7 +122,7 @@ public class PickupMission : MissionBase
 
     public override string GetMissionDesc()
     {
-        return "Pickup " + max + " fishbones";
+        return Loc.Format("mission.pickup", "Pickup {0} fishbones", max);
     }
 
     public override MissionType GetMissionType()
@@ -164,7 +164,7 @@ public class BarrierJumpMission : MissionBase
 
     public override string GetMissionDesc()
     {
-        return "Jump over " + ((int)max) + " barriers";
+        return Loc.Format("mission.barrierJump", "Jump over {0} barriers", (int)max);
     }
 
     public override MissionType GetMissionType()
@@ -221,7 +221,7 @@ public class SlidingMission : MissionBase
 
     public override string GetMissionDesc()
     {
-        return "Slide for " + ((int)max) + "m";
+        return Loc.Format("mission.slide", "Slide for {0}m", (int)max);
     }
 
     public override MissionType GetMissionType()
@@ -266,7 +266,7 @@ public class MultiplierMission : MissionBase
 
     public override string GetMissionDesc()
     {
-        return "Reach a x" + ((int)max) + " multiplier";
+        return Loc.Format("mission.multiplier", "Reach a x{0} multiplier", (int)max);
     }
 
     public override MissionType GetMissionType()

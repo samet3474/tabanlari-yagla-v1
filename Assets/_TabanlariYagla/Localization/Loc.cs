@@ -46,7 +46,8 @@ public static class Loc
             if (tab <= 0)
                 continue;
 
-            s_Table[line.Substring(0, tab)] = line.Substring(tab + 1);
+            // "\n" in the table is a line break (multi-line labels such as the tutorial prompts).
+            s_Table[line.Substring(0, tab)] = line.Substring(tab + 1).Replace("\\n", "\n");
         }
     }
 
@@ -54,6 +55,23 @@ public static class Loc
     {
         string text;
         return Table.TryGetValue(key, out text) ? text : fallback;
+    }
+
+    /// <summary>
+    /// Table text with {0}-style placeholders. Numbers are formatted culture-invariantly so the output does not
+    /// depend on the device locale. A broken format string in the table falls back instead of throwing.
+    /// </summary>
+    public static string Format(string key, string fallbackFormat, params object[] args)
+    {
+        try
+        {
+            return string.Format(System.Globalization.CultureInfo.InvariantCulture, Get(key, fallbackFormat), args);
+        }
+        catch (System.FormatException)
+        {
+            Debug.LogWarning("Loc: invalid format for key " + key);
+            return string.Format(System.Globalization.CultureInfo.InvariantCulture, fallbackFormat, args);
+        }
     }
 
     public static string CharacterName(string characterId)
@@ -69,6 +87,17 @@ public static class Loc
     public static string AccessoryName(string accessoryId)
     {
         return Get("accessory." + accessoryId, accessoryId);
+    }
+
+    // Saves made before the rename stored the sample's default player name; it is shown as the current default.
+    // Display only: the save keeps whatever was written, and real player-typed names are returned unchanged.
+    const string k_LegacyDefaultPlayerName = "Trash Cat";
+
+    public static string PlayerName(string savedName)
+    {
+        return string.Equals(savedName, k_LegacyDefaultPlayerName, System.StringComparison.Ordinal)
+            ? Get("player.defaultName", savedName)
+            : savedName;
     }
 
     public static string ConsumableName(Consumable consumable)
