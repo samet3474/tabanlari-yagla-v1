@@ -6,3 +6,5 @@ Temel: Unity'nin resmî "Endless Runner Sample Game" (Trash Dash) projesi, 6.3 d
 
 - **Telefonda oyna:** https://samet3474.github.io/tabanlari-yagla-v1/
 - Unity menüsü: **Tabanları Yağla → Windows V1 Derle / Web V1 Derle**
+- **Geliştirme notları:** [docs/GELISTIRME_NOTLARI.md](docs/GELISTIRME_NOTLARI.md) (yapılanlar, testler, bekleyen işler, iş yerinde kurulum)
+- **iPhone test sürümü:** https://samet3474.github.io/tabanlari-yagla-v1/dev/ (kaynak: `b-tutorial-test` dalı)
