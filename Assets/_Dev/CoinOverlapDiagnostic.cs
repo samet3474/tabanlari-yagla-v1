@@ -138,8 +138,8 @@ public class CoinOverlapDiagnostic : MonoBehaviour
         PlayerData.instance.tutorialDone = true;
         m_TM.trackSeed = m_Seed;
         m_TM.invincible = true;
-        m_TM.newSegmentCreated = OnSegmentCreated;
         ((LoadoutState)GameManager.instance.topState).StartGame();
+        m_TM.newSegmentCreated = OnSegmentCreated;  // StartGame normal koşuda geri çağrıları temizler
         float w = 0;
         while (!m_TM.isMoving && w < 30f) { w += Time.unscaledDeltaTime; yield return null; }
         Out($"kosu basladi (bekleme {w:F1}s)");
@@ -327,8 +327,8 @@ public class CoinOverlapDiagnostic : MonoBehaviour
         PlayerData.instance.tutorialDone = true;
         m_TM.trackSeed = m_Seed;
         m_TM.invincible = true;
-        m_TM.newSegmentCreated = OnSegmentCreated;
         ((LoadoutState)GameManager.instance.topState).StartGame();
+        m_TM.newSegmentCreated = OnSegmentCreated;  // StartGame normal koşuda geri çağrıları temizler
     }
 
     // Gerçek arayüz yolu: duraklat butonu Pause(), menüdeki çıkış QuitToLoadout() çağırır.

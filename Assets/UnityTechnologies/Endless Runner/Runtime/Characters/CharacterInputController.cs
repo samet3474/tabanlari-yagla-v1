@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine.AddressableAssets;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 // Aliased because UnityEngine.Touch and UnityEngine.InputSystem.EnhancedTouch.Touch would otherwise be ambiguous.
 using ETouch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
@@ -96,6 +98,36 @@ public class CharacterInputController : MonoBehaviour
 #if !UNITY_STANDALONE
     protected Vector2 m_StartingTouch;
 	protected bool m_IsSwiping = false;
+
+    static PointerEventData s_UIPointerData;
+    static EventSystem s_UIPointerEventSystem;
+    static readonly List<RaycastResult> s_UIRaycastResults = new List<RaycastResult>();
+
+    protected static bool IsOverInteractableUI(Vector2 screenPosition)
+    {
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem == null)
+            return false;
+
+        if (s_UIPointerData == null || s_UIPointerEventSystem != eventSystem)
+        {
+            s_UIPointerData = new PointerEventData(eventSystem);
+            s_UIPointerEventSystem = eventSystem;
+        }
+        s_UIPointerData.Reset();
+        s_UIPointerData.position = screenPosition;
+
+        s_UIRaycastResults.Clear();
+        eventSystem.RaycastAll(s_UIPointerData, s_UIRaycastResults);
+        for (int i = 0; i < s_UIRaycastResults.Count; ++i)
+        {
+            Selectable selectable = s_UIRaycastResults[i].gameObject.GetComponentInParent<Selectable>();
+            if (selectable != null && selectable.IsInteractable())
+                return true;
+        }
+
+        return false;
+    }
 #endif
 
     // Cheating functions, use for testing
@@ -138,6 +170,15 @@ public class CharacterInputController : MonoBehaviour
 	public void End()
 	{
         CleanConsumable();
+
+        // A run can end mid-jump or mid-slide (quit from the pause menu). The next run re-enables this object before its
+        // character is loaded, so stale flags would touch a missing animator and keep the slide collider shrunk.
+        if (m_Sliding)
+        {
+            m_Sliding = false;
+            characterCollider.Slide(false);
+        }
+        m_Jumping = false;
     }
 
     public void CleanConsumable()
@@ -261,7 +302,8 @@ public class CharacterInputController : MonoBehaviour
 			if(touch.phase == UnityEngine.InputSystem.TouchPhase.Began)
 			{
 				m_StartingTouch = touch.screenPosition;
-				m_IsSwiping = true;
+				// A touch that starts on a button (pause, inventory) is a UI tap, not a swipe.
+				m_IsSwiping = !IsOverInteractableUI(touch.screenPosition);
 			}
 			else if(touch.phase == UnityEngine.InputSystem.TouchPhase.Ended)
 			{

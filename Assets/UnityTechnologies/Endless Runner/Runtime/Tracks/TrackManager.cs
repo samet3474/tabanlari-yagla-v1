@@ -508,6 +508,34 @@ public class TrackManager : MonoBehaviour
         m_TimeSinceLastPremium += Time.deltaTime;
     }
 
+    // Turns the running tutorial into a normal run without restarting it: segments already spawned stay, new ones
+    // come from the player's theme, and coins, acceleration and missions start working.
+    public void ContinueAsNormalRun()
+    {
+        if (!m_IsTutorial)
+            return;
+
+        m_IsTutorial = false;
+
+        ThemeData theme = ThemeDatabase.GetThemeData(PlayerData.instance.themes[PlayerData.instance.usedTheme]);
+        if (theme != null)
+        {
+            // No coins are spawned during the tutorial, so the whole pool is free and can be replaced safely.
+            if (theme.collectiblePrefab != m_CurrentThemeData.collectiblePrefab)
+            {
+                Coin.coinPool.Clear();
+                Coin.coinPool = new Pooler(theme.collectiblePrefab, k_StartingCoinPoolSize);
+            }
+
+            m_CurrentThemeData = theme;
+            skyMeshFilter.sharedMesh = theme.skyMesh;
+            RenderSettings.fogColor = theme.fogColor;
+        }
+
+        m_CurrentZone = 0;
+        m_CurrentZoneDistance = 0;
+    }
+
     public void ChangeZone()
     {
         m_CurrentZone += 1;
