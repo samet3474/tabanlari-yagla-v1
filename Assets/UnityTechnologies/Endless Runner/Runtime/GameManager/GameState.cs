@@ -77,13 +77,28 @@ public class GameState : AState
 
     protected int k_MaxLives = 3;
 
-    // First run only: the run itself teaches the four moves, one prompt each, on a track with no obstacles
-    // (TrackManager spawns tutorial segments empty), then carries on as a normal run.
+    // First run only: the run itself teaches the four moves. Each step puts one real obstacle of the normal game on the
+    // track ahead (random obstacles and coins stay off during the tutorial, see TrackManager.SpawnNewSegment), asks for
+    // the move that gets past it, and counts only once the move was made, the move has finished and the obstacle was
+    // passed without a hit. A hit works as in a normal run (the character stumbles), without losing a life; the step is
+    // then tried again with a new obstacle. Afterwards the same run carries on as a normal run.
     protected bool m_IsTutorial;
-    protected int m_TutorialStep;           // -1 until the run starts moving; k_TutorialSteps.Length once all are done
-    protected bool m_TutorialMoveStarted;   // the current step's move was seen on the character
+    protected int m_TutorialStep;            // current step; k_TutorialSteps.Length once all are done
+    protected bool m_TutorialPromptVisible;  // this attempt's prompt is up and the step's move is accepted
+    protected bool m_TutorialMoveStarted;    // the step's move was seen on the character
+    protected int m_TutorialAttempts;        // tries of the current step (1 = first)
+    protected int m_TutorialFailures;        // crashes over the whole tutorial
     protected bool m_TutorialCompleted;
     protected TutorialOverlay m_TutorialOverlay;
+
+    // Per step: whether its obstacle is wanted and where (track distance, same scale as TrackManager.worldDistance),
+    // whether placing it has started, the instance once placed, and a request id so an instance that arrives after a
+    // retry cancelled its request is released instead of used.
+    protected readonly bool[] m_TutorialObstacleWanted = new bool[4];
+    protected readonly float[] m_TutorialObstacleDistance = new float[4];
+    protected readonly bool[] m_TutorialObstacleRequested = new bool[4];
+    protected readonly GameObject[] m_TutorialObstacle = new GameObject[4];
+    protected readonly int[] m_TutorialObstacleRequestId = new int[4];
 
     // The order the moves are taught in. Right then left brings the player back to the middle lane.
     protected static readonly CharacterInputController.MoveInput[] k_TutorialSteps =
@@ -94,12 +109,48 @@ public class GameState : AState
         CharacterInputController.MoveInput.Down,
     };
 
+    // Obstacles of the normal game (Day theme: the ones the tutorial segments and normal runs use), as Addressables
+    // GUID keys. Bin: SimpleBarricade, one lane wide. Low barrier: AllLaneObstacle, jumped over. High barrier:
+    // AllLaneObstacle, slid under. Their own colliders and the normal crash handling are used unchanged.
+    protected const string k_BinObstacleKey = "22facfbe232a90b45b681c638f2e490d";         // ObstacleBin
+    protected const string k_LowBarrierObstacleKey = "d68ac797bf384f84bbca159dc2a6e4d7";  // ObstacleLowBarrier
+    protected const string k_HighBarrierObstacleKey = "b19a0bd8ede69fe4683dff84150a047b"; // ObstacleHighBarrier
+    protected static readonly string[] k_TutorialObstacleKeys = { k_BinObstacleKey, k_BinObstacleKey, k_LowBarrierObstacleKey, k_HighBarrierObstacleKey };
+    // Obstacle lane (-1 left, 0 middle, 1 right), and the character lane (0..2) each step starts from and leads to.
+    protected static readonly int[] k_TutorialObstacleLanes = { 0, 1, 0, 0 };
+    protected static readonly int[] k_TutorialStartLanes = { 1, 2, 1, 1 };
+    protected static readonly int[] k_TutorialTargetLanes = { 2, 1, 1, 1 };
+
+    // Distances in metres; the tutorial runs at the minimum speed, 10 m/s.
+    protected const float k_TutorialFirstObstacleDistance = 28f; // from the run start: already in view during the countdown
+    protected const float k_TutorialNextObstacleDistance = 45f;  // ahead of the character when placed: at the fog line
+    protected const float k_TutorialObstacleSpacing = 30f;       // at least this far after the previous step's obstacle
+    protected const float k_TutorialRetryObstacleDistance = 40f; // after a crash (the run is stopped while it is placed)
+    protected const float k_TutorialPromptDistance = 14f;        // the prompt opens: 1.4 s before the obstacle
+    protected const float k_TutorialPassMargin = 1.2f;           // passed: the character is this far beyond it (depths)
+    // A jump or slide swiped early is held and done when it clears the obstacle: the jump arc (sin over jumpLength)
+    // is highest at the obstacle at ~0.6 of its length; a slide lasts slideLength, so it must start within that.
+    protected const float k_TutorialJumpReleaseRatio = 0.6f;
+    protected const float k_TutorialSlideReleaseMargin = 2.0f;
+    // If the move has not come by then, the run slows down (not stopped) until it does; a lane change is quick.
+    protected const float k_TutorialLaneLateDistance = 6f;
+    protected const float k_TutorialSlowMotionScale = 0.35f;
     // A lane change counts once the character is (nearly) on the new lane, a jump once it is back on the ground.
     protected const float k_TutorialArrivalTolerance = 0.02f;
 
     public int tutorialStep { get { return m_TutorialStep; } }
     public int tutorialStepCount { get { return k_TutorialSteps.Length; } }
     public bool isTutorialRun { get { return m_IsTutorial; } }
+    public bool tutorialPromptVisible { get { return m_TutorialPromptVisible; } }
+    public bool tutorialMoveStarted { get { return m_TutorialMoveStarted; } }
+    public int tutorialAttempts { get { return m_TutorialAttempts; } }
+    public int tutorialFailures { get { return m_TutorialFailures; } }
+    public GameObject GetTutorialObstacle(int step) { return m_TutorialObstacle[step]; }
+    // Distance (m) from the character to a step's obstacle position; float.MaxValue when none is wanted.
+    public float GetTutorialObstacleDistance(int step)
+    {
+        return m_TutorialObstacleWanted[step] ? m_TutorialObstacleDistance[step] - trackManager.worldDistance : float.MaxValue;
+    }
 
     public override void Enter(AState from)
     {
@@ -511,26 +562,16 @@ public class GameState : AState
 #endif
 
 
-    // One step at a time: show its prompt, let only its move through, and go on as soon as the character has really
-    // done that move (on the new lane, back on the ground after the jump, up again after the slide).
     void TutorialUpdate()
     {
-        CharacterInputController chr = trackManager.characterController;
-
-        if (m_TutorialStep < 0)
-        {
-            // Countdown: the player has no control yet and stays in the middle lane.
-            if (!trackManager.isMoving)
-                return;
-            ShowTutorialStep(0);
-        }
-
         if (m_TutorialStep >= k_TutorialSteps.Length)
             return;
 
-        CharacterInputController.MoveInput move = k_TutorialSteps[m_TutorialStep];
+        CharacterInputController chr = trackManager.characterController;
+        int step = m_TutorialStep;
+        CharacterInputController.MoveInput move = k_TutorialSteps[step];
 
-        // No moves while the pause menu is up; the step's move comes back with the run.
+        // No moves while the pause menu is up (Pause() froze time); the step's move comes back with the run.
         if (pauseMenu.gameObject.activeSelf)
         {
             if (!m_TutorialMoveStarted)
@@ -538,31 +579,112 @@ public class GameState : AState
             return;
         }
 
-        if (!m_TutorialMoveStarted)
+        PlaceTutorialObstacle(step);
+        if (step + 1 < k_TutorialSteps.Length)
+            PlaceTutorialObstacle(step + 1);
+
+        // A crash, handled as in a normal run (CharacterCollider: the character stumbles and the run restarts; in the
+        // tutorial no life is lost): try this step again with a new obstacle.
+        if (chr.characterCollider.tutorialHitObstacle)
         {
-            m_TutorialMoveStarted = TutorialMoveStarted(chr, move);
-            // The input is consumed on use; if it did not start the move, accept it again.
-            chr.tutorialAllowedMove = m_TutorialMoveStarted ? CharacterInputController.MoveInput.None : move;
-            if (!m_TutorialMoveStarted)
-                return;
+            RetryTutorialStep();
+            return;
         }
 
+        // No prompt for an obstacle that is not on the track yet.
+        if (m_TutorialObstacle[step] == null)
+            return;
+
+        float distance = m_TutorialObstacleDistance[step] - trackManager.worldDistance;
+
+        if (!m_TutorialPromptVisible)
+        {
+            if (!trackManager.isMoving || distance > k_TutorialPromptDistance)
+                return;
+            ShowTutorialPrompt(step);
+        }
+
+        if (!m_TutorialMoveStarted)
+        {
+            if (chr.tutorialHeldMove != CharacterInputController.MoveInput.None && distance <= TutorialReleaseDistance(move))
+                chr.ReleaseTutorialMove();
+
+            m_TutorialMoveStarted = TutorialMoveStarted(chr, step);
+            if (m_TutorialMoveStarted)
+            {
+                // The next step's obstacle goes on the track now, at the fog line, so it is in view well before its
+                // prompt; not earlier, so after a crash here the next obstacle is never already close behind.
+                if (step + 1 < k_TutorialSteps.Length)
+                    WantTutorialObstacle(step + 1, Mathf.Max(trackManager.worldDistance + k_TutorialNextObstacleDistance,
+                        m_TutorialObstacleDistance[step] + k_TutorialObstacleSpacing));
+            }
+            else if (chr.tutorialAllowedMove == CharacterInputController.MoveInput.None && chr.tutorialHeldMove == CharacterInputController.MoveInput.None)
+            {
+                // The input was used but did not start the move (e.g. while the character could not move): accept it again.
+                chr.tutorialAllowedMove = move;
+            }
+        }
+
+        bool slowMotion = !m_TutorialMoveStarted && chr.tutorialHeldMove == CharacterInputController.MoveInput.None
+            && trackManager.isMoving && distance <= TutorialLateDistance(move);
+        Time.timeScale = slowMotion ? k_TutorialSlowMotionScale : 1.0f;
+
+        // The step counts only once the obstacle is behind the character, without a hit (checked above), and the move is over.
+        if (distance > -k_TutorialPassMargin)
+            return;
+        if (!m_TutorialMoveStarted)
+        {
+            // Past the obstacle without the move and without a crash: cannot happen with the obstacle's collider on;
+            // kept so the tutorial can never get stuck on a step.
+            RetryTutorialStep();
+            return;
+        }
         if (!TutorialMoveFinished(chr, move))
             return;
 
-        m_TutorialOverlay.MarkDone(m_TutorialStep);
-        if (m_TutorialStep + 1 < k_TutorialSteps.Length)
-            ShowTutorialStep(m_TutorialStep + 1);
+        m_TutorialOverlay.MarkDone(step);
+        if (step + 1 < k_TutorialSteps.Length)
+        {
+            m_TutorialStep = step + 1;
+            m_TutorialAttempts = 1;
+            StartTutorialAttempt();
+            m_TutorialOverlay.ShowPraise(Loc.Get("tutorial.good", "GÜZEL!"));
+        }
         else
             FinishTutorialSteps();
     }
 
-    static bool TutorialMoveStarted(CharacterInputController chr, CharacterInputController.MoveInput move)
+    float TutorialReleaseDistance(CharacterInputController.MoveInput move)
+    {
+        CharacterInputController chr = trackManager.characterController;
+        float speedScale = 1.0f + trackManager.speedRatio; // same scaling as CharacterInputController.Jump/Slide
+        switch (move)
+        {
+            case CharacterInputController.MoveInput.Up: return chr.jumpLength * speedScale * k_TutorialJumpReleaseRatio;
+            case CharacterInputController.MoveInput.Down: return chr.slideLength * speedScale - k_TutorialSlideReleaseMargin;
+            default: return float.MaxValue;
+        }
+    }
+
+    float TutorialLateDistance(CharacterInputController.MoveInput move)
     {
         switch (move)
         {
-            case CharacterInputController.MoveInput.Right: return chr.currentLane == 2;
-            case CharacterInputController.MoveInput.Left: return chr.currentLane == 1;
+            case CharacterInputController.MoveInput.Up:
+            case CharacterInputController.MoveInput.Down:
+                return TutorialReleaseDistance(move);
+            default:
+                return k_TutorialLaneLateDistance;
+        }
+    }
+
+    static bool TutorialMoveStarted(CharacterInputController chr, int step)
+    {
+        switch (k_TutorialSteps[step])
+        {
+            case CharacterInputController.MoveInput.Right:
+            case CharacterInputController.MoveInput.Left:
+                return chr.currentLane == k_TutorialTargetLanes[step];
             case CharacterInputController.MoveInput.Up: return chr.isJumping;
             case CharacterInputController.MoveInput.Down: return chr.isSliding;
             default: return false;
@@ -585,13 +707,14 @@ public class GameState : AState
         }
     }
 
-    void ShowTutorialStep(int step)
+    void ShowTutorialPrompt(int step)
     {
-        m_TutorialStep = step;
-        m_TutorialMoveStarted = false;
+        m_TutorialPromptVisible = true;
 
         CharacterInputController.MoveInput move = k_TutorialSteps[step];
-        trackManager.characterController.tutorialAllowedMove = move;
+        CharacterInputController chr = trackManager.characterController;
+        chr.tutorialAllowedMove = move;
+        chr.tutorialHoldMove = move == CharacterInputController.MoveInput.Up || move == CharacterInputController.MoveInput.Down;
 
         string text;
         Vector2 direction;
@@ -603,6 +726,81 @@ public class GameState : AState
             default: text = Loc.Get("tutorial.down", "AŞAĞI KAYDIR"); direction = Vector2.down; break;
         }
         m_TutorialOverlay.ShowStep(step, text, direction);
+    }
+
+    // A clean attempt of the current step: no prompt yet, no move accepted, no crash carried over from before.
+    void StartTutorialAttempt()
+    {
+        m_TutorialPromptVisible = false;
+        m_TutorialMoveStarted = false;
+        Time.timeScale = 1.0f;
+
+        CharacterInputController chr = trackManager.characterController;
+        chr.tutorialAllowedMove = CharacterInputController.MoveInput.None;
+        chr.tutorialHoldMove = false;
+        chr.ClearTutorialMove();
+        chr.characterCollider.tutorialHitObstacle = false;
+    }
+
+    void RetryTutorialStep()
+    {
+        int step = m_TutorialStep;
+        m_TutorialFailures += 1;
+        m_TutorialAttempts += 1;
+
+        // The next step's obstacle may already be on its way: it comes again once this step is done.
+        if (step + 1 < k_TutorialSteps.Length)
+            CancelTutorialObstacle(step + 1);
+
+        // The crashed-into obstacle stays where it is (its collider was turned off by the crash) and goes away with its
+        // segment; a new one is placed ahead, and the character goes back to the lane the step starts from.
+        m_TutorialObstacle[step] = null;
+        m_TutorialObstacleRequestId[step] += 1;
+        WantTutorialObstacle(step, trackManager.worldDistance + k_TutorialRetryObstacleDistance);
+        trackManager.characterController.SetTutorialLane(k_TutorialStartLanes[step]);
+
+        StartTutorialAttempt();
+        m_TutorialOverlay.ShowRetry(Loc.Get("tutorial.retry", "TEKRAR DENE!"));
+    }
+
+    void WantTutorialObstacle(int step, float trackDistance)
+    {
+        m_TutorialObstacleWanted[step] = true;
+        m_TutorialObstacleDistance[step] = trackDistance;
+        m_TutorialObstacleRequested[step] = false;
+    }
+
+    void CancelTutorialObstacle(int step)
+    {
+        m_TutorialObstacleRequestId[step] += 1;
+        if (m_TutorialObstacle[step] != null)
+            Addressables.ReleaseInstance(m_TutorialObstacle[step]);
+        m_TutorialObstacle[step] = null;
+        m_TutorialObstacleWanted[step] = false;
+        m_TutorialObstacleRequested[step] = false;
+    }
+
+    // Starts placing a wanted obstacle once a spawned segment covers its distance (segments load asynchronously).
+    void PlaceTutorialObstacle(int step)
+    {
+        if (!m_TutorialObstacleWanted[step] || m_TutorialObstacleRequested[step] || m_TutorialObstacle[step] != null)
+            return;
+
+        int requestId = ++m_TutorialObstacleRequestId[step];
+        m_TutorialObstacleRequested[step] = trackManager.SpawnObstacleAt(k_TutorialObstacleKeys[step], m_TutorialObstacleDistance[step],
+            k_TutorialObstacleLanes[step], obj =>
+            {
+                if (requestId != m_TutorialObstacleRequestId[step] || !m_IsTutorial)
+                {
+                    if (obj != null)
+                        Addressables.ReleaseInstance(obj);
+                    return;
+                }
+                if (obj == null)
+                    m_TutorialObstacleRequested[step] = false; // try again
+                else
+                    m_TutorialObstacle[step] = obj;
+            });
     }
 
     void FinishTutorialSteps()
@@ -628,7 +826,13 @@ public class GameState : AState
 
         m_TutorialCompleted = true;
         m_IsTutorial = false;
-        trackManager.characterController.tutorialAllowedMove = CharacterInputController.MoveInput.None;
+        m_TutorialPromptVisible = false;
+        Time.timeScale = 1.0f;
+
+        CharacterInputController chr = trackManager.characterController;
+        chr.tutorialAllowedMove = CharacterInputController.MoveInput.None;
+        chr.tutorialHoldMove = false;
+        chr.ClearTutorialMove();
 
         PlayerData.instance.tutorialDone = true;
         PlayerData.instance.Save();
@@ -639,12 +843,22 @@ public class GameState : AState
     // Tutorial progress lives on objects that persist between runs, so an abandoned or replayed tutorial must start clean.
     void ResetTutorialProgress()
     {
-        m_TutorialStep = -1;
-        m_TutorialMoveStarted = false;
+        m_TutorialStep = 0;
+        m_TutorialAttempts = 1;
+        m_TutorialFailures = 0;
         m_TutorialCompleted = false;
 
-        CharacterInputController chrCtrl = trackManager.characterController;
-        chrCtrl.tutorialAllowedMove = CharacterInputController.MoveInput.None;
-        chrCtrl.characterCollider.tutorialHitObstacle = false;
+        for (int i = 0; i < k_TutorialSteps.Length; ++i)
+        {
+            // Instances from an abandoned run went away with its segments; late arrivals are released by their callback.
+            m_TutorialObstacleRequestId[i] += 1;
+            m_TutorialObstacle[i] = null;
+            m_TutorialObstacleWanted[i] = false;
+            m_TutorialObstacleRequested[i] = false;
+        }
+        // The first obstacle is placed during the countdown, ahead of the start.
+        WantTutorialObstacle(0, k_TutorialFirstObstacleDistance);
+
+        StartTutorialAttempt();
     }
 }

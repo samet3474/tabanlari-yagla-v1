@@ -3,7 +3,8 @@
 //   Masaüstü: "-tutorialTest" -> tüm senaryolar (sonuçlar "TT|" önekiyle günlüğe yazılır, sonunda uygulama kapanır)
 //   Web:      "?autotest=tutorial" -> yalnızca bot tutorial'ı oynar (START/Run'a elle basılır)
 // Bot eğitim hareketlerini oyunun kendi girdi kapısından (CharacterInputController.HandleMoveInput) verir: klavye ve
-// dokunmatik kolun çağırdığı yol budur, yani yanlış/erken hareketler gerçek oyuncudaki gibi yok sayılır.
+// dokunmatik kolun çağırdığı yol budur, yani yanlış/erken hareketler gerçek oyuncudaki gibi yok sayılır veya tutulur.
+// Çarpışmalar oyunun kendi fiziğiyle olur (hiçbir senaryoda eğitim sırasında dokunulmazlık açılmaz).
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -20,10 +21,11 @@ public class TutorialAutoTest : MonoBehaviour
     static readonly FieldInfo s_TmSpawned = typeof(TrackManager).GetField("_spawnedSegments", k_Inst);
 
     static readonly Move[] k_Steps = { Move.Right, Move.Left, Move.Up, Move.Down };
+    static readonly string[] k_ExpectedObstacles = { "ObstacleBin", "ObstacleBin", "ObstacleLowBarrier", "ObstacleHighBarrier" };
 
     bool m_ScenarioMode;
     public bool botEnabled = true;
-    public float botReaction = 0.0f; // eğitimde yönerge göründükten sonra hareket etmeden önce bekleme (sn)
+    public float botReaction = 0.0f; // eğitimde yönerge göründükten sonra hareket etmeden önce bekleme (gerçek zaman, sn)
 
     string m_Phase = "boot";
     int m_Errors;
@@ -35,12 +37,21 @@ public class TutorialAutoTest : MonoBehaviour
     GameState m_GS;
     TrackManager m_TM;
 
-    // Eğitim boyunca gözlenenler (her karede güncellenir).
-    int m_ObsStep = -2;
-    float m_ObsStepTime;
-    int m_TutorialHits, m_TutorialObstacles, m_TutorialLifeLost, m_Jumps, m_Slides;
+    // ---- Eğitim boyunca her karede gözlenenler ----
+    class Crossing { public int step, attempt, lane; public float y; public bool jumping, sliding, hitBefore; public string obstacle; }
+    int m_ObsStep = -2, m_ObsAttempt = -1;
+    bool m_ObsPrompt;
+    float m_PromptTime;
     readonly List<int> m_StepSequence = new List<int>();
     readonly List<int> m_LaneSequence = new List<int>();
+    readonly List<float> m_PlacementDistances = new List<float>();
+    readonly List<float> m_PromptDistances = new List<float>();
+    readonly List<Crossing> m_Crossings = new List<Crossing>();
+    readonly List<string> m_PlacedNames = new List<string>();
+    readonly List<float> m_PlacedLaneX = new List<float>();
+    GameObject m_ObsObstacle;
+    float m_ObsLastZ = float.MaxValue;
+    int m_Jumps, m_Slides, m_LifeLost, m_RandomObstacles;
     bool m_WasJumping, m_WasSliding;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -99,25 +110,76 @@ public class TutorialAutoTest : MonoBehaviour
 
     void ResetObservation()
     {
-        m_ObsStep = -2; m_TutorialHits = 0; m_TutorialObstacles = 0; m_TutorialLifeLost = 0; m_Jumps = 0; m_Slides = 0;
-        m_StepSequence.Clear(); m_LaneSequence.Clear(); m_WasJumping = false; m_WasSliding = false;
+        m_ObsStep = -2; m_ObsAttempt = -1; m_ObsPrompt = false; m_ObsObstacle = null; m_ObsLastZ = float.MaxValue;
+        m_StepSequence.Clear(); m_LaneSequence.Clear(); m_PlacementDistances.Clear(); m_PromptDistances.Clear();
+        m_Crossings.Clear(); m_PlacedNames.Clear(); m_PlacedLaneX.Clear();
+        m_Jumps = m_Slides = m_LifeLost = m_RandomObstacles = 0; m_WasJumping = m_WasSliding = false;
     }
 
     void Observe(GameState gs, TrackManager tm)
     {
         var chr = tm.characterController;
         if (chr == null || chr.character == null || !gs.isTutorialRun) return;
+        int step = gs.tutorialStep;
+        if (step < 0 || step >= gs.tutorialStepCount) return;
 
-        if (gs.tutorialStep != m_ObsStep) { m_ObsStep = gs.tutorialStep; m_ObsStepTime = Time.realtimeSinceStartup; m_StepSequence.Add(m_ObsStep); }
+        if (step != m_ObsStep || gs.tutorialAttempts != m_ObsAttempt)
+        {
+            if (step != m_ObsStep) m_StepSequence.Add(step);
+            m_ObsStep = step; m_ObsAttempt = gs.tutorialAttempts; m_ObsPrompt = false; m_ObsObstacle = null; m_ObsLastZ = float.MaxValue;
+        }
         if (m_LaneSequence.Count == 0 || m_LaneSequence[m_LaneSequence.Count - 1] != chr.currentLane) m_LaneSequence.Add(chr.currentLane);
         if (chr.isJumping && !m_WasJumping) m_Jumps++;
         if (chr.isSliding && !m_WasSliding) m_Slides++;
         m_WasJumping = chr.isJumping; m_WasSliding = chr.isSliding;
-        if (chr.characterCollider.tutorialHitObstacle) { m_TutorialHits++; chr.characterCollider.tutorialHitObstacle = false; }
-        if (chr.currentLife < chr.maxLife) m_TutorialLifeLost++;
-        int obstacles = 0;
-        for (int i = 0; i < tm.segments.Count; ++i) obstacles += tm.segments[i].objectRoot.GetComponentsInChildren<Obstacle>(true).Length;
-        if (obstacles > m_TutorialObstacles) m_TutorialObstacles = obstacles;
+        if (chr.currentLife < chr.maxLife) m_LifeLost++;
+
+        // Eğitim engelleri dışında pistte engel var mı? (rastgele üretim kapalı olmalı)
+        int all = 0;
+        for (int i = 0; i < tm.segments.Count; ++i) all += tm.segments[i].objectRoot.GetComponentsInChildren<Obstacle>(true).Length;
+        int own = 0;
+        for (int i = 0; i < gs.tutorialStepCount; ++i) if (gs.GetTutorialObstacle(i) != null) own++;
+        if (all > own + 2) m_RandomObstacles = Mathf.Max(m_RandomObstacles, all - own); // +2: çarpılıp geride kalanlar
+
+        var obstacle = gs.GetTutorialObstacle(step);
+        if (obstacle != null && obstacle != m_ObsObstacle)
+        {
+            m_ObsObstacle = obstacle;
+            m_PlacementDistances.Add(gs.GetTutorialObstacleDistance(step));
+            m_PlacedNames.Add(obstacle.name.Replace("(Clone)", "").Trim());
+            m_PlacedLaneX.Add(chr.transform.InverseTransformPoint(obstacle.transform.position).x);
+        }
+        if (gs.tutorialPromptVisible && !m_ObsPrompt)
+        {
+            m_ObsPrompt = true; m_PromptTime = Time.realtimeSinceStartup;
+            m_PromptDistances.Add(gs.GetTutorialObstacleDistance(step));
+            m_ShotNear = m_ShotCross = false;
+            Shot($"adim{step}-a-yonerge");
+        }
+        if (m_ShotDir != null && m_ObsPrompt)
+        {
+            float d = gs.GetTutorialObstacleDistance(step);
+            if (!m_ShotNear && d <= 5f) { m_ShotNear = true; Shot($"adim{step}-b-5m"); }
+            if (!m_ShotCross && d <= 0.3f) { m_ShotCross = true; Shot($"adim{step}-c-gecis"); }
+        }
+        // Engelin önünden geçtiği an (karakter yerel z'si pozitiften sıfıra/negatife): o anki duruş.
+        if (m_ObsObstacle != null)
+        {
+            float z = chr.transform.InverseTransformPoint(m_ObsObstacle.transform.position).z;
+            if (m_ObsLastZ > 0f && z <= 0f)
+                m_Crossings.Add(new Crossing { step = step, attempt = gs.tutorialAttempts, lane = chr.currentLane, y = chr.characterCollider.transform.localPosition.y,
+                    jumping = chr.isJumping, sliding = chr.isSliding, hitBefore = chr.characterCollider.tutorialHitObstacle, obstacle = m_ObsObstacle.name });
+            m_ObsLastZ = z;
+        }
+    }
+
+    string m_ShotDir;
+    bool m_ShotNear, m_ShotCross;
+    void Shot(string name)
+    {
+        if (m_ShotDir == null) return;
+        ScreenCapture.CaptureScreenshot(Path.Combine(m_ShotDir, name + ".png"));
+        Out("GORUNTU " + name);
     }
 
     void BotStep(GameState gs, TrackManager tm)
@@ -128,7 +190,7 @@ public class TutorialAutoTest : MonoBehaviour
         if (gs.isTutorialRun)
         {
             int step = gs.tutorialStep;
-            if (step >= 0 && step < k_Steps.Length && Time.realtimeSinceStartup - m_ObsStepTime >= botReaction)
+            if (step >= 0 && step < k_Steps.Length && gs.tutorialPromptVisible && Time.realtimeSinceStartup - m_PromptTime >= botReaction)
                 chr.HandleMoveInput(k_Steps[step]);
             return;
         }
@@ -149,26 +211,12 @@ public class TutorialAutoTest : MonoBehaviour
                 Vector3 local = pivot.InverseTransformPoint(o.transform.position);
                 if (local.z < 0.1f || local.z > 4.5f) continue;
                 string n = o.name;
-                if (n.Contains("LowBarrier"))
-                {
-                    if (local.z < 1.6f && !chr.isJumping) chr.Jump();
-                }
-                else if (n.Contains("HighBarrier"))
-                {
-                    if (local.z < 1.8f && !chr.isSliding) chr.Slide();
-                }
-                else if (o is PatrollingObstacle)
-                {
-                    if (local.z < 1.6f && !chr.isJumping) chr.Jump();
-                }
-                else
-                {
-                    int lane = Mathf.Clamp(Mathf.RoundToInt(local.x / tm.laneOffset) + 1, 0, 2);
-                    blocked[lane] = true;
-                }
+                if (n.Contains("LowBarrier")) { if (local.z < 1.6f && !chr.isJumping) chr.Jump(); }
+                else if (n.Contains("HighBarrier")) { if (local.z < 1.8f && !chr.isSliding) chr.Slide(); }
+                else if (o is PatrollingObstacle) { if (local.z < 1.6f && !chr.isJumping) chr.Jump(); }
+                else blocked[Mathf.Clamp(Mathf.RoundToInt(local.x / tm.laneOffset) + 1, 0, 2)] = true;
             }
         }
-
         if (blocked[myLane])
         {
             if (myLane > 0 && !blocked[myLane - 1]) chr.ChangeLane(-1);
@@ -195,16 +243,30 @@ public class TutorialAutoTest : MonoBehaviour
         m_GS = GameManager.instance.FindState("Game") as GameState;
         m_TM = m_GS.trackManager;
 
-        yield return S1_StepByStepAndWrongMoves();
+        // "-tutorialShots <klasör>": yalnızca S1, her adımda ekran görüntüsü (pencereli çalıştırılmalı; -batchmode'da çizim yok).
+        var args = System.Environment.GetCommandLineArgs();
+        int shots = System.Array.IndexOf(args, "-tutorialShots");
+        if (shots >= 0 && shots + 1 < args.Length)
+        {
+            m_ShotDir = args[shots + 1];
+            Directory.CreateDirectory(m_ShotDir);
+            yield return S1_RealObstaclesStepByStep();
+            Out("bitti");
+            Application.Quit();
+            yield break;
+        }
+
+        yield return S1_RealObstaclesStepByStep();
         yield return S2_NextRunIsNormal();
         yield return S3_DeletedSaveAbandonPauseRestart();
         yield return S4_DoubleFinish();
-        yield return S5_DeathAndGameOverFlows();
+        yield return S5_DeathSecondWindGameOver();
         yield return S6_MenuReturnAndRestart();
         yield return S7_QuitMidJumpAndSlide();
         yield return S8_RapidInputs();
         yield return S9_Duration();
-        yield return S10_IdleTutorialIsSafe();
+        yield return S10_CrashAndRetry();
+        yield return S11_IdlePlayerNeverLocks();
 
         m_Phase = "son";
         foreach (var s in m_Summary) Out("OLCUM " + s);
@@ -212,12 +274,14 @@ public class TutorialAutoTest : MonoBehaviour
         foreach (var kv in m_PhaseErrors) Out($"HATALAR {kv.Key}: {kv.Value}");
         foreach (var e in m_ErrorSamples) Out("HATA " + e);
         Out("bitti");
+        Time.timeScale = 1f;
         Application.Quit();
     }
 
     string Top() => GameManager.instance.topState.GetName();
     int Spawned() => s_TmSpawned != null ? (int)s_TmSpawned.GetValue(m_TM) : -1;
     CharacterInputController Chr => m_TM.characterController;
+    float Dist(int step) => m_GS.GetTutorialObstacleDistance(step);
 
     static bool DiskTutorialDone()
     {
@@ -232,10 +296,11 @@ public class TutorialAutoTest : MonoBehaviour
     static string OverlayText()
     {
         var o = Overlay();
-        if (o == null) return "";
+        if (o == null || !o.gameObject.activeInHierarchy) return "";
         var t = o.transform.Find("Strip/Label");
         return t != null ? t.GetComponent<Text>().text : "";
     }
+    static bool ArrowVisible() { var o = Overlay(); var a = o != null ? o.transform.Find("Arrow") : null; return a != null && a.gameObject.activeInHierarchy; }
 
     IEnumerator StartFromLoadout()
     {
@@ -253,10 +318,10 @@ public class TutorialAutoTest : MonoBehaviour
         while (!m_TM.isMoving && w < timeout) { w += Time.unscaledDeltaTime; yield return null; }
     }
 
-    IEnumerator WaitStep(int step, float timeout = 10f)
+    IEnumerator WaitUntil(System.Func<bool> cond, float timeout = 20f)
     {
         float w = 0;
-        while (m_GS.isTutorialRun && m_GS.tutorialStep < step && Top() == "Game" && w < timeout) { w += Time.unscaledDeltaTime; yield return null; }
+        while (!cond() && Top() == "Game" && w < timeout) { w += Time.unscaledDeltaTime; yield return null; }
     }
 
     IEnumerator Frames(int n) { for (int i = 0; i < n; ++i) yield return null; }
@@ -284,12 +349,11 @@ public class TutorialAutoTest : MonoBehaviour
         foreach (var o in FindObjectsByType<Obstacle>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             if (o.GetComponentInParent<TrackSegment>(true) == null) orphanObs++;
         int segs = FindObjectsByType<TrackSegment>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
-        int coins = FindObjectsByType<Coin>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
-        Out($"TEMIZLIK {when}: sayac={Spawned()} liste={m_TM.segments.Count} parca_nesnesi={segs} yetim_engel={orphanObs} altin_nesnesi={coins} isMoving={m_TM.isMoving}");
-        Check(Spawned() == 0 && m_TM.segments.Count == 0 && segs == 0 && !m_TM.isMoving, $"{when}: sayac/liste/parca sifir, hareket durdu");
+        Out($"TEMIZLIK {when}: sayac={Spawned()} liste={m_TM.segments.Count} parca_nesnesi={segs} yetim_engel={orphanObs} isMoving={m_TM.isMoving} timeScale={Time.timeScale}");
+        Check(Spawned() == 0 && m_TM.segments.Count == 0 && segs == 0 && !m_TM.isMoving && Time.timeScale == 1f, $"{when}: sayac/liste/parca sifir, hareket durdu, zaman olcegi 1");
     }
 
-    string Pose() => $"serit={Chr.currentLane} zipliyor={Chr.isJumping} kayiyor={Chr.isSliding} adim={m_GS.tutorialStep}";
+    string Pose() => $"serit={Chr.currentLane} zipliyor={Chr.isJumping} kayiyor={Chr.isSliding} adim={m_GS.tutorialStep} deneme={m_GS.tutorialAttempts}";
 
     // Adımın beklemediği hareketleri dener: hiçbiri adımı ilerletmemeli ve karakteri oynatmamalı.
     IEnumerator TryWrongMoves(int step)
@@ -299,85 +363,119 @@ public class TutorialAutoTest : MonoBehaviour
         {
             if (m == k_Steps[step]) continue;
             Chr.HandleMoveInput(m);
-            yield return Frames(3);
+            yield return null;
         }
-        yield return new WaitForSecondsRealtime(0.3f);
-        Check(m_GS.tutorialStep == step && Chr.currentLane == lane && !Chr.isJumping && !Chr.isSliding,
+        yield return null;
+        Check(m_GS.tutorialStep == step && Chr.currentLane == lane && !Chr.isJumping && !Chr.isSliding && Chr.tutorialHeldMove == Move.None,
             $"adim {step}: yanlis hareketler adimi ilerletmedi ve karakteri oynatmadi ({Pose()})");
     }
 
-    IEnumerator S1_StepByStepAndWrongMoves()
+    // Bir engel adımı: yönergeyi bekler, yanlış hareketleri dener, doğru hareketi verir; engel geçilmeden adımın
+    // geçmediğini ve geçişteki duruşu doğrular.
+    IEnumerator DoStep(int step, float inputAtDistance)
     {
-        m_Phase = "S1-adim-adim";
+        yield return WaitUntil(() => m_GS.tutorialPromptVisible || m_GS.tutorialStep != step, 20f);
+        Check(m_GS.tutorialStep == step && m_GS.tutorialPromptVisible, $"adim {step}: yonerge acildi ('{OverlayText()}', engele {Dist(step):F1} m)");
+        yield return TryWrongMoves(step);
+        yield return WaitUntil(() => Dist(step) <= inputAtDistance, 10f);
+        Chr.HandleMoveInput(k_Steps[step]);
+        float inputDist = Dist(step);
+        yield return null;
+        yield return WaitUntil(() => m_GS.tutorialMoveStarted, 5f);
+        float startDist = Dist(step);
+        Check(m_GS.tutorialMoveStarted && m_GS.tutorialStep == step && Dist(step) > 0f,
+            $"adim {step}: dogru hareket basladi (giris {inputDist:F1} m, hareket {startDist:F1} m), engel henuz gecilmedigi icin adim ilerlemedi");
+        // Hareket bitip engel geçilene kadar adım ilerlememeli.
+        while (m_GS.tutorialStep == step && Dist(step) > -1.0f && Top() == "Game")
+        {
+            if (m_GS.tutorialStep != step) break;
+            yield return null;
+        }
+        bool stillHere = m_GS.tutorialStep == step;
+        yield return WaitUntil(() => m_GS.tutorialStep != step || !m_GS.isTutorialRun, 5f);
+        Check(stillHere, $"adim {step}: engel karakterin hemen arkasindayken adim hala acik (gecis ve hareketin bitmesi bekleniyor)");
+    }
+
+    Crossing LastCrossing(int step) { for (int i = m_Crossings.Count - 1; i >= 0; --i) if (m_Crossings[i].step == step) return m_Crossings[i]; return null; }
+
+    IEnumerator S1_RealObstaclesStepByStep()
+    {
+        m_Phase = "S1-gercek-engeller";
         PlayerData.NewSave();
         Check(!PlayerData.instance.tutorialDone && !DiskTutorialDone(), "kayit sifirlandi (bellek ve disk tutorialDone=false)");
         yield return StartFromLoadout();
 
-        // Geri sayım: kontrol yok, yönerge yok, karakter ortada.
-        yield return new WaitForSecondsRealtime(0.5f);
-        Check(m_GS.isTutorialRun && !m_TM.isMoving && m_GS.tutorialStep == -1 && Chr.currentLane == 1 && !OverlayVisible(),
-            $"geri sayimda egitim hazir: orta serit, yonerge yok ({Pose()})");
-        foreach (Move m in new[] { Move.Left, Move.Right, Move.Up, Move.Down }) { Chr.HandleMoveInput(m); Chr.ChangeLane(m == Move.Left ? -1 : 1); }
+        // Geri sayım: karakter ortada, kontrol yok; ilk engel (çöp kutusu) orta şeritte, önde ve görünür.
+        yield return WaitUntil(() => m_GS.GetTutorialObstacle(0) != null, 10f);
+        var first = m_GS.GetTutorialObstacle(0);
+        float firstX = first != null ? Chr.transform.InverseTransformPoint(first.transform.position).x : 99f;
+        Check(!m_TM.isMoving && Chr.currentLane == 1 && !OverlayVisible(), $"1) egitim orta seritte basliyor, geri sayimda yonerge yok ({Pose()})");
+        Check(first != null && first.name.Contains("ObstacleBin") && Mathf.Abs(firstX) < 0.2f && Dist(0) > 20f,
+            $"2) ilk engel cop kutusu, orta seritte (x={firstX:F2}), {Dist(0):F1} m onde ({(first != null ? first.name : "yok")})");
+        foreach (Move m in new[] { Move.Left, Move.Right, Move.Up, Move.Down }) Chr.HandleMoveInput(m);
         yield return Frames(3);
         Check(Chr.currentLane == 1 && !Chr.isJumping && !Chr.isSliding, $"geri sayimda kontrolsuz hareket yok ({Pose()})");
 
         yield return WaitMoving();
-        yield return null;
-        Check(m_GS.tutorialStep == 0 && Chr.tutorialAllowedMove == Move.Right && Chr.currentLane == 1 && OverlayVisible() && OverlayText() == "SAĞA KAYDIR",
-            $"kosu baslayinca ilk yonerge: '{OverlayText()}' izin={Chr.tutorialAllowedMove} ({Pose()})");
+        // Adım 1: SAĞA (sağ şeride geçiş yönergeden hemen sonra, 10 m kala)
+        yield return DoStep(0, 10f);
+        var c0 = LastCrossing(0);
+        Check(c0 != null && c0.lane == 2 && !c0.hitBefore && m_GS.tutorialStep == 1 && m_GS.tutorialFailures == 0,
+            $"3) saga kaydirma: karakter engelin yanindan sag seritte gecti, carpma yok ({(c0 != null ? "serit " + c0.lane : "gecis yok")})");
 
-        // Adım 0: SAĞA
-        yield return TryWrongMoves(0);
-        Chr.HandleMoveInput(Move.Right);
-        yield return null;
-        Check(Chr.currentLane == 2 && m_GS.tutorialStep == 0, "saga kaydir: sag seride geciliyor, varmadan adim gecmiyor");
-        yield return WaitStep(1);
-        Check(m_GS.tutorialStep == 1 && Chr.currentLane == 2 && Mathf.Abs(Chr.offsetFromTarget.x) < 0.03f && OverlayText() == "SOLA KAYDIR",
-            $"sag seride varinca adim 1 (SOLA) ({Pose()}) '{OverlayText()}'");
+        // Adım 2: ikinci çöp kutusu sağ şeritte
+        yield return WaitUntil(() => m_GS.GetTutorialObstacle(1) != null, 10f);
+        var second = m_GS.GetTutorialObstacle(1);
+        float secondX = second != null ? Chr.transform.InverseTransformPoint(second.transform.position).x : 99f;
+        Check(second != null && second.name.Contains("ObstacleBin") && Mathf.Abs(secondX - m_TM.laneOffset) < 0.25f && Chr.currentLane == 2,
+            $"4) ikinci cop kutusu sag seritte (x={secondX:F2}), oyuncu sag seritte");
+        yield return DoStep(1, 10f);
+        var c1 = LastCrossing(1);
+        Check(c1 != null && c1.lane == 1 && !c1.hitBefore && m_GS.tutorialStep == 2 && m_GS.tutorialFailures == 0,
+            $"5) sola kaydirma: orta seride donuldu, engel carpmadan gecildi ({(c1 != null ? "serit " + c1.lane : "gecis yok")})");
 
-        // Adım 1: SOLA (orta şeride dönüş)
-        yield return TryWrongMoves(1);
-        Chr.HandleMoveInput(Move.Left);
-        yield return null;
-        Chr.HandleMoveInput(Move.Left); // ikinci sola kaydırma sol şeride geçirmemeli
-        yield return WaitStep(2);
-        Check(m_GS.tutorialStep == 2 && Chr.currentLane == 1 && OverlayText() == "YUKARI KAYDIR", $"sola kaydir: orta seride donuldu, ikinci sola yok sayildi ({Pose()})");
-
-        // Adım 2: YUKARI (zıplama bitene kadar adım geçmez)
+        // Adım 3: alçak bariyer; yukarı kaydırma erken (12 m) yapılır: tutulur ve doğru anda zıplanır.
+        yield return WaitUntil(() => m_GS.GetTutorialObstacle(2) != null, 10f);
+        var third = m_GS.GetTutorialObstacle(2);
+        Check(third != null && third.name.Contains("ObstacleLowBarrier"), $"ziplama engeli alcak bariyer ({(third != null ? third.name : "yok")})");
+        yield return WaitUntil(() => m_GS.tutorialPromptVisible && m_GS.tutorialStep == 2, 20f);
         yield return TryWrongMoves(2);
         Chr.HandleMoveInput(Move.Up);
         yield return null;
-        Check(Chr.isJumping, "yukari kaydir: zipliyor");
-        yield return new WaitForSecondsRealtime(0.25f);
-        Check(Chr.isJumping && m_GS.tutorialStep == 2 && Chr.offsetFromTarget.y > 0.3f, $"havadayken adim gecmedi (y={Chr.offsetFromTarget.y:F2})");
-        yield return WaitStep(3);
-        Check(m_GS.tutorialStep == 3 && !Chr.isJumping && Chr.offsetFromTarget.y < 0.03f && OverlayText() == "AŞAĞI KAYDIR", $"yere inince adim 3 (ASAGI) ({Pose()})");
+        Check(Chr.tutorialHeldMove == Move.Up && !Chr.isJumping, $"erken yukari kaydirma ({Dist(2):F1} m) tutuldu, hemen ziplanmadi");
+        yield return WaitUntil(() => Chr.isJumping, 5f);
+        float jumpAt = Dist(2);
+        Check(Chr.isJumping && jumpAt > 2.5f && jumpAt <= 3.7f, $"tutulan zipla engelin asilacagi mesafede yapildi ({jumpAt:F1} m)");
+        yield return WaitUntil(() => Dist(2) < -0.5f, 5f);
+        Check(m_GS.tutorialStep == 2 && Chr.isJumping, $"9) engelin ustunden gecildi ama karakter havada: adim ilerlemedi ({Pose()})");
+        yield return WaitUntil(() => m_GS.tutorialStep != 2, 5f);
+        var c2 = LastCrossing(2);
+        Check(c2 != null && c2.jumping && c2.y > 0.62f && !c2.hitBefore && m_GS.tutorialStep == 3 && m_GS.tutorialFailures == 0,
+            $"6) zipla: engel gercekten ziplanarak asildi (gecisteki yukseklik {(c2 != null ? c2.y : -1f):F2} m > bariyer 0,61 m), yere inince adim gecti");
 
-        // Adım 3: AŞAĞI (kayma bitene kadar adım geçmez)
-        yield return TryWrongMoves(3);
-        Chr.HandleMoveInput(Move.Down);
-        yield return null;
-        Check(Chr.isSliding, "asagi kaydir: egiliyor/kayiyor");
-        yield return new WaitForSecondsRealtime(0.25f);
-        Check(Chr.isSliding && m_GS.isTutorialRun, "kayarken egitim bitmedi");
+        // Adım 4: yüksek bariyer
+        yield return WaitUntil(() => m_GS.GetTutorialObstacle(3) != null, 10f);
+        var fourth = m_GS.GetTutorialObstacle(3);
+        Check(fourth != null && fourth.name.Contains("ObstacleHighBarrier"), $"egilme engeli yuksek bariyer ({(fourth != null ? fourth.name : "yok")})");
+        yield return DoStep(3, 8f);
+        var c3 = LastCrossing(3);
+        Check(c3 != null && c3.sliding && !c3.hitBefore && m_GS.tutorialFailures == 0,
+            $"7) asagi kaydir: engelin altindan kayarak gecildi (gecis aninda kayiyor={(c3 != null && c3.sliding)})");
 
-        int loadoutVisits = 0;
-        float w = 0;
-        while (m_GS.isTutorialRun && w < 5f) { if (Top() == "Loadout") loadoutVisits++; w += Time.unscaledDeltaTime; yield return null; }
+        Check(!m_GS.isTutorialRun && Top() == "Game" && OverlayVisible() && OverlayText() == "HAZIRSIN!", $"12) dort engel gecildi, HAZIRSIN gosterildi ('{OverlayText()}')");
+        yield return new WaitForSecondsRealtime(0.3f);
+        Shot("hazirsin");
+        Check(PlayerData.instance.tutorialDone && DiskTutorialDone(), "egitim tamamlandi bilgisi bellekte ve diskte");
+        Check(m_LifeLost == 0 && m_RandomObstacles == 0, $"egitimde can kaybi yok, rastgele engel yok (rastgele={m_RandomObstacles})");
+        Check(m_PlacementDistances.Count == 4 && m_PlacementDistances.TrueForAll(d => d >= 25f),
+            $"engeller ani degil, uzakta yerlesti: {string.Join(", ", m_PlacementDistances.ConvertAll(d => d.ToString("F0") + " m"))}");
+        Check(m_PromptDistances.TrueForAll(d => d > 12.5f && d <= 14.1f), $"yonergeler engele ~14 m kala: {string.Join(", ", m_PromptDistances.ConvertAll(d => d.ToString("F1")))}");
+        m_Summary.Add($"S1 engellerin yerlesme mesafeleri: {string.Join(", ", m_PlacementDistances.ConvertAll(d => d.ToString("F0") + " m"))}; adlar: {string.Join(", ", m_PlacedNames)}; yanal x: {string.Join(", ", m_PlacedLaneX.ConvertAll(x => x.ToString("F2")))}");
+
+        // 13) Normal koşu kesintisiz
         float tDone = Time.realtimeSinceStartup;
-        Check(!m_GS.isTutorialRun && !Chr.isSliding && Top() == "Game" && loadoutVisits == 0, "kayma bitince egitim tamamlandi, oyun Game durumunda (menu yok)");
-        Check(OverlayVisible() && OverlayText() == "HAZIRSIN!", $"HAZIRSIN mesaji gosterildi ('{OverlayText()}')");
-        Check(PlayerData.instance.tutorialDone && DiskTutorialDone(), "tutorialDone bellekte ve diskte true");
-        Check(m_TutorialObstacles == 0 && m_TutorialHits == 0 && m_TutorialLifeLost == 0,
-            $"egitim boyunca pistte engel yok, carpma yok, can kaybi yok (engel={m_TutorialObstacles} carpma={m_TutorialHits})");
-        Check(m_Jumps == 1 && m_Slides == 1 && string.Join(",", m_LaneSequence) == "1,2,1",
-            $"egitimde yalnizca istenen hareketler: serit {string.Join(",", m_LaneSequence)}, zipla={m_Jumps}, kay={m_Slides}");
-
-        // HAZIRSIN kısa sürer, sonra arayüz kapanır.
         yield return new WaitForSecondsRealtime(2.0f);
-        Check(!OverlayVisible(), "HAZIRSIN ~1,6 sn sonra kapandi");
-
-        // Normal koşu: tüm hareketler serbest.
+        Check(!OverlayVisible() && Top() == "Game" && m_TM.isMoving && Time.timeScale == 1f, "13) HAZIRSIN kapandi, ayni kosu normal hizda suruyor (menu yok)");
         Chr.HandleMoveInput(Move.Left); yield return Frames(15);
         bool left = Chr.currentLane == 0;
         Chr.HandleMoveInput(Move.Right); yield return Frames(15);
@@ -388,29 +486,25 @@ public class TutorialAutoTest : MonoBehaviour
         bool down = Chr.isSliding;
         Check(left && right && up && down, $"normal kosuda dort yon de calisiyor (sol={left} sag={right} yukari={up} asagi={down})");
 
-        // Geçiş: engel ve altınlar gelir, karakter bot olmadan da geçişte çarpmaz.
+        // 14) Normal engel ve altın üretimi
+        botEnabled = true;
         int lives = Chr.currentLife;
-        float firstObstacleTime = -1f;
+        float firstNormal = -1f;
         while (Time.realtimeSinceStartup - tDone < 15f && Top() == "Game")
         {
-            if (NearestObstacleAhead() < 10f) { firstObstacleTime = Time.realtimeSinceStartup - tDone; break; }
+            if (firstNormal < 0f && NearestObstacleAhead() < 10f) firstNormal = Time.realtimeSinceStartup - tDone;
+            if (firstNormal >= 0f) break;
             yield return null;
         }
-        Check(firstObstacleTime >= 0f, $"normal kosuda engeller geldi (ilk engel egitim bitisinden {firstObstacleTime:F1} sn sonra 10 m yakinda)");
-        Check(Chr.currentLife == lives, "egitimden normal kosuya geciste carpma olmadi");
-        m_Summary.Add($"egitim bitisinden ilk engelin 10 m yakina gelmesine: {firstObstacleTime:F1} sn");
-
+        Check(firstNormal >= 0f, $"14) normal engeller geldi (egitim bitisinden {firstNormal:F1} sn sonra 10 m yakinda)");
+        m_Summary.Add($"egitim bitisinden ilk normal engelin 10 m yakina gelmesi: {firstNormal:F1} sn");
         Chr.CheatInvincible(true);
-        botEnabled = true;
         float speed0 = m_TM.speed;
-        yield return new WaitForSecondsRealtime(20f);
+        yield return new WaitForSecondsRealtime(15f);
         int activeCoins = 0;
         foreach (var c in FindObjectsByType<Coin>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)) activeCoins++;
-        Out($"normal kosu: hiz {speed0:F2}->{m_TM.speed:F2} parca={m_TM.segments.Count} aktif_altin={activeCoins} mesafe={m_TM.worldDistance:F0}");
-        Check(Top() == "Game" && m_TM.isMoving, "20 sn sonra kosu kesintisiz devam ediyor");
-        Check(m_TM.speed > speed0, "normal kosuda hizlanma basladi");
-        Check(activeCoins > 0, "normal kosuda altin uretiliyor");
-        Check(m_TM.segments.Count >= 9, "onde 9+ parca (normal kosu parca sayisi)");
+        Check(Top() == "Game" && m_TM.isMoving && m_TM.speed > speed0 && activeCoins > 0 && m_TM.segments.Count >= 9 && m_TM.score > 0,
+            $"14) normal kosu: hizlanma {speed0:F1}->{m_TM.speed:F1}, altin={activeCoins}, parca={m_TM.segments.Count}, skor={m_TM.score}");
         Chr.CheatInvincible(false);
         botEnabled = false;
 
@@ -427,7 +521,7 @@ public class TutorialAutoTest : MonoBehaviour
             foreach (var o in m_TM.segments[i].objectRoot.GetComponentsInChildren<Obstacle>())
             {
                 float z = pivot.InverseTransformPoint(o.transform.position).z;
-                if (z > 0f && z < nearest) nearest = z;
+                if (z > 0.5f && z < nearest) nearest = z;
             }
         return nearest;
     }
@@ -458,11 +552,9 @@ public class TutorialAutoTest : MonoBehaviour
         PlayerData.NewSave();
         yield return StartFromLoadout();
         yield return WaitMoving();
-        yield return null;
         Check(m_GS.isTutorialRun && m_GS.tutorialStep == 0, "kayit silindikten sonra egitim bastan basladi");
-
         botEnabled = true;
-        yield return WaitStep(2);
+        yield return WaitUntil(() => m_GS.tutorialStep >= 2, 30f);
         botEnabled = false;
         Out($"yarida birakma aninda: {Pose()}");
         yield return QuitViaPauseMenu();
@@ -471,12 +563,13 @@ public class TutorialAutoTest : MonoBehaviour
 
         m_Phase = "S3-yeniden-baslat";
         yield return StartFromLoadout();
-        yield return WaitMoving();
-        yield return null;
-        Check(m_GS.isTutorialRun && m_GS.tutorialStep == 0 && Chr.currentLane == 1 && OverlayText() == "SAĞA KAYDIR",
-            $"yeniden baslatmada egitim ilk adimdan ve orta seritten ({Pose()})");
+        yield return WaitUntil(() => m_GS.GetTutorialObstacle(0) != null, 10f);
+        Check(m_GS.isTutorialRun && m_GS.tutorialStep == 0 && m_GS.tutorialAttempts == 1 && Chr.currentLane == 1 && m_GS.GetTutorialObstacle(1) == null,
+            $"yeniden baslatmada egitim ilk adim/ilk engelden, orta seritten ({Pose()})");
 
         m_Phase = "S3-duraklatma";
+        yield return WaitMoving();
+        yield return WaitUntil(() => m_GS.tutorialPromptVisible, 10f);
         m_GS.Pause();
         yield return null;
         Chr.HandleMoveInput(Move.Right);
@@ -487,8 +580,8 @@ public class TutorialAutoTest : MonoBehaviour
         yield return Frames(2);
         Check(!AudioListener.pause && m_TM.isMoving && OverlayVisible() && Chr.tutorialAllowedMove == Move.Right, "devam edince ayni adim ve yonerge geri geldi");
         Chr.HandleMoveInput(Move.Right);
-        yield return WaitStep(1);
-        Check(m_GS.tutorialStep == 1, "devamdan sonra adim tamamlandi");
+        yield return WaitUntil(() => m_GS.tutorialStep >= 1, 10f);
+        Check(m_GS.tutorialStep == 1 && m_GS.tutorialFailures == 0, "devamdan sonra engel gecildi, adim tamamlandi");
 
         m_GS.SendMessage("OnApplicationFocus", false);
         yield return new WaitForSecondsRealtime(1.0f);
@@ -498,7 +591,7 @@ public class TutorialAutoTest : MonoBehaviour
         Check(m_TM.isMoving && m_GS.tutorialStep == 1 && Chr.currentLane == 2, $"odak kaybindan sonra devam, konum bozulmadi ({Pose()})");
 
         m_Phase = "S3-tamamla";
-        yield return PlayUntilTutorialDone(30f);
+        yield return PlayUntilTutorialDone(60f);
         Check(!m_GS.isTutorialRun && Top() == "Game" && PlayerData.instance.tutorialDone, "yeniden baslatilan egitim tamamlandi, kosu devam ediyor");
         botEnabled = false;
     }
@@ -516,21 +609,27 @@ public class TutorialAutoTest : MonoBehaviour
         CheckClean("S4 cikis sonrasi");
     }
 
-    IEnumerator S5_DeathAndGameOverFlows()
+    IEnumerator S5_DeathSecondWindGameOver()
     {
-        m_Phase = "S5-olum-oyunsonu";
+        m_Phase = "S5-olum-ikinci-sans-oyunsonu";
         botEnabled = false;
-        int premium0 = PlayerData.instance.premium;
+        int coins0 = PlayerData.instance.coins;
         yield return StartFromLoadout();
         yield return WaitMoving();
+        Check(!m_TM.isTutorial, "egitim bittikten sonra kosu egitimsiz");
         Chr.CheatInvincible(false);
         float w = 0;
-        while (Top() != "GameOver" && w < 180f)
-        {
-            if (m_GS.gameOverPopup.activeSelf) m_GS.GameOver();
-            w += Time.unscaledDeltaTime; yield return null;
-        }
-        Check(Top() == "GameOver", $"engele carpinca oyun sonu ekrani ({w:F0}s)");
+        while (!m_GS.gameOverPopup.activeSelf && w < 180f) { w += Time.unscaledDeltaTime; yield return null; }
+        Check(m_GS.gameOverPopup.activeSelf, $"uc carpmada can bitti, ikinci sans penceresi acildi ({w:F0}s)");
+        float dist0 = m_TM.worldDistance;
+        m_GS.SecondWind();
+        yield return WaitMoving();
+        yield return new WaitForSecondsRealtime(1f);
+        Check(Top() == "Game" && m_TM.isMoving && !m_TM.isTutorial && Chr.currentLife == 1 && m_TM.worldDistance >= dist0,
+            $"ikinci sans: ayni kosu 1 canla devam etti, egitim acilmadi (mesafe {dist0:F0}->{m_TM.worldDistance:F0})");
+        w = 0;
+        while (Top() != "GameOver" && w < 180f) { if (m_GS.gameOverPopup.activeSelf) m_GS.GameOver(); w += Time.unscaledDeltaTime; yield return null; }
+        Check(Top() == "GameOver", "ikinci olumde oyun sonu ekrani");
         var go = GameManager.instance.FindState("GameOver") as GameOverState;
         go.RunAgain();
         yield return WaitMoving();
@@ -540,7 +639,7 @@ public class TutorialAutoTest : MonoBehaviour
         go.GoToLoadout();
         yield return new WaitForSecondsRealtime(2f);
         Check(Top() == "Loadout", "oyun sonundan menuye");
-        Check(PlayerData.instance.tutorialDone && DiskTutorialDone(), "oyun sonu ve kayit sonrasi tutorialDone hala true");
+        Check(PlayerData.instance.tutorialDone && DiskTutorialDone() && PlayerData.instance.coins >= coins0, $"kayit korunuyor: tutorialDone=true, altin {coins0}->{PlayerData.instance.coins}");
         CheckClean("S5 sonrasi");
     }
 
@@ -594,32 +693,26 @@ public class TutorialAutoTest : MonoBehaviour
         CheckClean("S6 son");
     }
 
-    // Oyuncu dört hareketi beklemeden, her karede art arda gönderir: adımlar sırayla ve birer kez ilerlemeli.
+    // 10) Oyuncu dört yönü beklemeden, her karede art arda gönderir: adımlar sırayla, birer kez ve çarpmadan ilerlemeli.
     IEnumerator S8_RapidInputs()
     {
         m_Phase = "S8-hizli-art-arda";
         PlayerData.NewSave();
         yield return StartFromLoadout();
-        yield return WaitMoving();
-        yield return null;
-
         float t0 = Time.realtimeSinceStartup;
-        int frames = 0;
-        while (m_GS.isTutorialRun && Time.realtimeSinceStartup - t0 < 10f)
+        while (m_GS.isTutorialRun && Time.realtimeSinceStartup - t0 < 60f)
         {
-            // Her karede dört yön de (doğru sıra dahil) gönderilir.
             foreach (Move m in k_Steps) Chr.HandleMoveInput(m);
-            frames++;
             yield return null;
         }
-        float dur = Time.realtimeSinceStartup - t0;
         string steps = string.Join(",", m_StepSequence);
-        Check(!m_GS.isTutorialRun && PlayerData.instance.tutorialDone, $"art arda girdiyle egitim tamamlandi ({dur:F2} sn, {frames} kare)");
-        // Son adım tamamlandığı karede eğitim de biter; gözlem eğitim süresince yapıldığı için dizi 3'te biter.
-        Check(steps == "-1,0,1,2,3" || steps == "0,1,2,3", $"adimlar sirayla, atlanmadan ilerledi ({steps})");
-        Check(string.Join(",", m_LaneSequence) == "1,2,1" && m_Jumps == 1 && m_Slides == 1,
-            $"her hareket bir kez yapildi: serit {string.Join(",", m_LaneSequence)}, zipla={m_Jumps}, kay={m_Slides}");
-        m_Summary.Add($"en hizli egitim (her karede dogru girdi): {dur:F2} sn");
+        Check(!m_GS.isTutorialRun && PlayerData.instance.tutorialDone, $"art arda girdiyle egitim tamamlandi ({Time.realtimeSinceStartup - t0:F1} sn, geri sayim dahil)");
+        Check(steps == "0,1,2,3", $"adimlar sirayla, atlanmadan ilerledi ({steps})");
+        Check(string.Join(",", m_LaneSequence) == "1,2,1" && m_Jumps == 1 && m_Slides == 1 && m_GS.tutorialFailures == 0,
+            $"her hareket bir kez, carpma yok: serit {string.Join(",", m_LaneSequence)}, zipla={m_Jumps}, kay={m_Slides}, carpma={m_GS.tutorialFailures}");
+        int crossedOk = 0;
+        foreach (var c in m_Crossings) if (!c.hitBefore && ((c.step == 0 && c.lane == 2) || (c.step == 1 && c.lane == 1) || (c.step == 2 && c.jumping) || (c.step == 3 && c.sliding))) crossedOk++;
+        Check(crossedOk == 4, $"dort engel de dogru hareketle gecildi ({crossedOk}/4)");
         yield return QuitViaPauseMenu();
         CheckClean("S8 cikis sonrasi");
     }
@@ -636,33 +729,70 @@ public class TutorialAutoTest : MonoBehaviour
             yield return WaitMoving();
             float tMoving = Time.realtimeSinceStartup;
             botReaction = reaction;
-            yield return PlayUntilTutorialDone(30f);
+            yield return PlayUntilTutorialDone(60f);
             botEnabled = false;
             botReaction = 0f;
             float tDone = Time.realtimeSinceStartup;
-            Check(!m_GS.isTutorialRun && Top() == "Game", $"egitim tamamlandi (tepki {reaction:F1} sn)");
-            float total = tDone - tMoving + 1.6f; // + HAZIRSIN
-            m_Summary.Add($"tepki {reaction:F1} sn: geri sayim {tMoving - tStart:F1} sn + dort adim {tDone - tMoving:F1} sn + HAZIRSIN 1,6 sn = koşu başından {total:F1} sn");
-            Check(total <= 15f, $"egitim (HAZIRSIN dahil) 15 sn icinde: {total:F1} sn");
+            Check(!m_GS.isTutorialRun && Top() == "Game" && m_GS.tutorialFailures == 0, $"egitim carpmadan tamamlandi (tepki {reaction:F1} sn, carpma={m_GS.tutorialFailures})");
+            m_Summary.Add($"tepki {reaction:F1} sn: OYNA'dan kosuya {tMoving - tStart:F1} sn + dort engel {tDone - tMoving:F1} sn + HAZIRSIN 1,6 sn = toplam {tDone - tStart + 1.6f:F1} sn");
             yield return QuitViaPauseMenu();
             CheckClean($"S9 tepki {reaction:F1} sonrasi");
         }
     }
 
-    // Oyuncu hiçbir şey yapmazsa: koşu sürer, eğitim ilk adımda bekler, pistte engel yok, çarpma yok.
-    IEnumerator S10_IdleTutorialIsSafe()
+    // 11) Çarpma ve yeniden deneme: hareket yapılmazsa engele çarpılır (normal fizik), can gitmez, adım yeni engelle
+    // yeniden denenir; sonra doğru hareketle eğitim sürer.
+    IEnumerator S10_CrashAndRetry()
     {
-        m_Phase = "S10-bekleyen-oyuncu";
+        m_Phase = "S10-carpma-yeniden-deneme";
         PlayerData.NewSave();
         yield return StartFromLoadout();
         yield return WaitMoving();
-        yield return new WaitForSecondsRealtime(20f);
-        Check(m_GS.isTutorialRun && m_GS.tutorialStep == 0 && Chr.currentLane == 1 && m_TM.isMoving && OverlayVisible(),
-            $"20 sn hareketsiz: egitim ilk adimda bekliyor, kosu suruyor ({Pose()}, mesafe={m_TM.worldDistance:F0} m)");
-        Check(m_TutorialObstacles == 0 && m_TutorialHits == 0 && Chr.currentLife == Chr.maxLife,
-            $"bekleme boyunca pistte engel yok, carpma yok (engel={m_TutorialObstacles} carpma={m_TutorialHits})");
+        // Adım 1'de hiçbir şey yapma
+        yield return WaitUntil(() => m_GS.tutorialFailures > 0, 20f);
+        yield return null;
+        Check(m_GS.tutorialFailures == 1 && m_GS.tutorialStep == 0 && m_GS.tutorialAttempts == 2, $"hareketsiz oyuncu cop kutusuna carpti, adim 1 yeniden deneniyor ({Pose()})");
+        Check(OverlayText() == "TEKRAR DENE!" && !ArrowVisible(), $"TEKRAR DENE mesaji gosterildi ('{OverlayText()}')");
+        Check(Chr.currentLife == Chr.maxLife && Time.timeScale == 1f, "egitimde carpma can goturmedi, yavas cekim kapandi");
+        yield return WaitUntil(() => m_GS.GetTutorialObstacle(0) != null, 10f);
+        float retryDist = Dist(0);
+        var retryObs = m_GS.GetTutorialObstacle(0);
+        float rx = retryObs != null ? Chr.transform.InverseTransformPoint(retryObs.transform.position).x : 99f;
+        Check(retryObs != null && retryDist > 30f && Mathf.Abs(rx) < 0.2f && Chr.currentLane == 1, $"yeni cop kutusu {retryDist:F0} m onde, orta seritte; karakter orta seritte");
+        botEnabled = true;
+        yield return WaitUntil(() => m_GS.tutorialStep >= 2, 30f);
+        // Adım 3'te (zıpla) hiçbir şey yapma: alçak bariyere çarp
+        botEnabled = false;
+        yield return WaitUntil(() => m_GS.tutorialFailures >= 2, 30f);
+        Check(m_GS.tutorialFailures == 2 && m_GS.tutorialStep == 2, $"zipla adiminda carpma -> ayni adim yeniden ({Pose()})");
+        Check(m_GS.GetTutorialObstacle(3) == null, "carpinca sonraki adimin engeli konmamis/kaldirilmis");
+        botEnabled = true;
+        yield return PlayUntilTutorialDone(60f);
+        Check(!m_GS.isTutorialRun && Top() == "Game" && PlayerData.instance.tutorialDone && Chr.currentLife == Chr.maxLife,
+            "yeniden denemelerden sonra egitim tamamlandi, kosu suruyor, can tam");
+        botEnabled = false;
         yield return QuitViaPauseMenu();
         CheckClean("S10 cikis sonrasi");
+    }
+
+    // 11) Hiç hareket etmeyen oyuncu: her denemede çarpar, eğitim kilitlenmez (yeni engel gelir, koşu sürer).
+    IEnumerator S11_IdlePlayerNeverLocks()
+    {
+        m_Phase = "S11-hareketsiz-oyuncu";
+        PlayerData.NewSave();
+        yield return StartFromLoadout();
+        yield return WaitMoving();
+        yield return new WaitForSecondsRealtime(25f);
+        Check(m_GS.isTutorialRun && m_GS.tutorialStep == 0 && m_GS.tutorialFailures >= 2 && Chr.currentLife == Chr.maxLife && Top() == "Game",
+            $"25 sn hareketsiz: {m_GS.tutorialFailures} carpma, her seferinde yeni deneme, can tam, oyun suruyor ({Pose()})");
+        yield return WaitUntil(() => m_TM.isMoving && m_GS.GetTutorialObstacle(0) != null, 10f);
+        Check(m_TM.isMoving && m_GS.GetTutorialObstacle(0) != null, "kosu ve yeni engel hazir (kilit yok)");
+        botEnabled = true;
+        yield return PlayUntilTutorialDone(60f);
+        botEnabled = false;
+        Check(!m_GS.isTutorialRun && Top() == "Game", "sonra dogru hareketlerle egitim tamamlandi");
+        yield return QuitViaPauseMenu();
+        CheckClean("S11 cikis sonrasi");
     }
 }
 #endif

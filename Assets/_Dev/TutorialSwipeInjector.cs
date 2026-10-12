@@ -5,6 +5,7 @@
 // (CharacterInputController dokunmatik kolu -> HandleMoveInput -> GameState). Oyun koduna ve alanlarına dokunmaz.
 //
 // Senaryolar (eğitimin her adımında: sağ, sol, yukarı, aşağı):
+//   (Her adımda yönerge, gerçek engel 14 m yaklaşınca açılır; kaydırmalar ondan sonra yapılır.)
 //   kaydirtest=dogru   Yönerge göründükten 0,6 sn sonra temiz, doğru kaydırma.
 //   kaydirtest=yanlis  Önce YANLIŞ yöne kaydırır (adım ilerlememeli, karakter yerinde kalmalı), 1 sn sonra doğru yöne.
 //   kaydirtest=egik    Doğru yöne ama ilk ~%1,5'lik kısmı öbür eksene kayan kaydırma (parmağın başlangıç sapması),
@@ -106,7 +107,8 @@ public class TutorialSwipeInjector : MonoBehaviour
         if (gs == null || !gs.isTutorialRun || !gs.trackManager.isMoving) return;
 
         int step = gs.tutorialStep;
-        if (step < 0 || step >= gs.tutorialStepCount) return;
+        if (step < 0 || step >= gs.tutorialStepCount || !gs.tutorialPromptVisible) return; // yönerge (engel 14 m) görünmeden kaydırma yok
+        int attemptKey = step * 100 + gs.tutorialAttempts; // çarpıp yeniden denenen adım yeni bir deneme sayılır
         float now = Time.realtimeSinceStartup;
 
         if (m_Mode == "hizli" && !m_BurstDone)
@@ -121,9 +123,9 @@ public class TutorialSwipeInjector : MonoBehaviour
             return;
         }
 
-        if (step != m_SeenStep)
+        if (attemptKey != m_SeenStep)
         {
-            m_SeenStep = step;
+            m_SeenStep = attemptKey;
             m_Phase = 0;
             m_WaitUntil = now + 0.6f;
         }
