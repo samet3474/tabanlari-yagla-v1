@@ -53,7 +53,16 @@ public class ShopUI : MonoBehaviour
 
         m_OpenList = itemList;
         itemList.Open();
+
+        // The menu's "characters" button opens the store on its character tab.
+        if (openCharacterListOnStart)
+        {
+            openCharacterListOnStart = false;
+            OpenCharacterList();
+        }
 	}
+
+    public static bool openCharacterListOnStart;
 	
 	void Update ()
     {

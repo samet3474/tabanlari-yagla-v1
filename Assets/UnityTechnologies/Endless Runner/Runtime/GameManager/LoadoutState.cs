@@ -51,6 +51,22 @@ public class LoadoutState : AState
 
 	public AudioClip menuTheme;
 
+    [Header("Menu Scene")]
+    // The menu shows the character in front of its own street backdrop (MenuBackdrop, a copy of the Start scene's
+    // animated environment far from the track), seen by its own camera. The game camera is switched off while the
+    // menu is up and handed back untouched for the run (TrackManager moves Camera.main). The backdrop has the Start
+    // scene's fog; the run's fog distances are restored on exit. All optional: without them the old menu is used.
+    public GameObject menuBackdrop;
+    public Camera menuCamera;
+    public Camera gameCamera;
+    public Behaviour gameCameraCurver;
+    public Color menuFogColor = new Color(0.52f, 0.66f, 1.0f);
+    public float menuFogStart = 0.0f;
+    public float menuFogEnd = 300.0f;
+
+    Color m_RunFogColor;
+    float m_RunFogStart, m_RunFogEnd;
+    bool m_MenuSceneShown;
 
     [Header("Prefabs")]
     public ConsumableIcon consumableIcon;
@@ -86,6 +102,7 @@ public class LoadoutState : AState
 
         skyMeshFilter.gameObject.SetActive(true);
         UIGroundFilter.gameObject.SetActive(true);
+        ShowMenuScene(true);
 
         // Reseting the global blinking value. Can happen if the game unexpectedly exited while still blinking
         Shader.SetGlobalFloat("_BlinkingValue", 0.0f);
@@ -115,6 +132,7 @@ public class LoadoutState : AState
         inventoryCanvas.gameObject.SetActive(false);
 
         if (m_Character != null) Addressables.ReleaseInstance(m_Character);
+        ShowMenuScene(false);
 
         GameState gs = to as GameState;
 
@@ -146,6 +164,42 @@ public class LoadoutState : AState
         StartCoroutine(PopulateTheme());
     }
 
+    void ShowMenuScene(bool show)
+    {
+        if (menuCamera == null || menuBackdrop == null || gameCamera == null || show == m_MenuSceneShown)
+            return;
+        m_MenuSceneShown = show;
+
+        if (show)
+        {
+            m_RunFogColor = RenderSettings.fogColor;
+            m_RunFogStart = RenderSettings.fogStartDistance;
+            m_RunFogEnd = RenderSettings.fogEndDistance;
+            RenderSettings.fogColor = menuFogColor;
+            RenderSettings.fogStartDistance = menuFogStart;
+            RenderSettings.fogEndDistance = menuFogEnd;
+        }
+        else
+        {
+            RenderSettings.fogColor = m_RunFogColor;
+            RenderSettings.fogStartDistance = m_RunFogStart;
+            RenderSettings.fogEndDistance = m_RunFogEnd;
+        }
+
+        menuBackdrop.SetActive(show);
+        menuCamera.enabled = show;
+        gameCamera.enabled = !show;
+        // Both cameras' curvers write the same global shader value; only the shown camera's may run.
+        if (gameCameraCurver != null)
+            gameCameraCurver.enabled = !show;
+    }
+
+    public void GoToCharacterStore()
+    {
+        ShopUI.openCharacterListOnStart = true;
+        GoToStore();
+    }
+
     public override string GetName()
     {
         return "Loadout";
@@ -166,7 +220,9 @@ public class LoadoutState : AState
             }
         }
 
-        if(m_Character != null)
+        // The menu scene shows the character at a fixed, slightly turned angle (set by charPosition); only the old
+        // menu spins it.
+        if(m_Character != null && menuCamera == null)
         {
             m_Character.transform.Rotate(0, k_CharacterRotationSpeed * Time.deltaTime, 0, Space.Self);
         }
@@ -262,16 +318,21 @@ public class LoadoutState : AState
                         }
                     }
 
-                    Vector3 pos = charPosition.transform.position;
-                    if (m_OwnedAccesories.Count > 0)
+                    // Old menu only: its character spot sits at the world origin and is nudged aside for the accessory
+                    // selector. The menu scene's spot is placed in its backdrop and must stay where it is.
+                    if (menuCamera == null)
                     {
-                        pos.x = k_OwnedAccessoriesCharacterOffset;
+                        Vector3 pos = charPosition.transform.position;
+                        if (m_OwnedAccesories.Count > 0)
+                        {
+                            pos.x = k_OwnedAccessoriesCharacterOffset;
+                        }
+                        else
+                        {
+                            pos.x = 0.0f;
+                        }
+                        charPosition.transform.position = pos;
                     }
-                    else
-                    {
-                        pos.x = 0.0f;
-                    }
-                    charPosition.transform.position = pos;
 
                     accessoriesSelector.gameObject.SetActive(m_OwnedAccesories.Count > 0);
 
@@ -285,7 +346,11 @@ public class LoadoutState : AState
                     newChar = op.Result as GameObject;
                     Helpers.SetRendererLayerRecursive(newChar, k_UILayer);
 					newChar.transform.SetParent(charPosition, false);
-                    newChar.transform.rotation = k_FlippedYAxisRotation;
+                    // The menu scene's spot is turned to face its camera (at a slight angle); the old one faces away.
+                    if (menuCamera != null)
+                        newChar.transform.localRotation = Quaternion.identity;
+                    else
+                        newChar.transform.rotation = k_FlippedYAxisRotation;
 
                     if (m_Character != null)
                         Addressables.ReleaseInstance(m_Character);

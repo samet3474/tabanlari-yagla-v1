@@ -1,0 +1,197 @@
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || TY_DEVTOOLS
+// Ana menü ekran uyumu denetimi: yalnızca test derlemesinde. Masaüstü (pencereli, -batchmode olmadan):
+//   -menuShots <klasör> <ad> [güvenliÜst güvenliAlt güvenliSol güvenliSağ]   (piksel; telefonun çentik/çubuk payları)
+// Menü açılınca: öğelerin ekran ve güvenli alan içinde olduğunu, birbirine binmediğini, yazıların kesilmediğini ve
+// karakterin görünür olduğunu denetler ("MS|" satırları), ekran görüntüsü alır (menü, eğitim perdesiyle menü, ayarlar,
+// görevler) ve çıkar. Kayıt yalnızca bellekte değiştirilir (eğitim tamam/değil), diske yazılmaz.
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class MenuShots : MonoBehaviour
+{
+    string m_Dir, m_Name;
+    int m_Fail, m_Pass;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void Boot()
+    {
+        var args = System.Environment.GetCommandLineArgs();
+        int i = System.Array.IndexOf(args, "-menuShots");
+        if (i < 0 || i + 2 >= args.Length) return;
+        var go = new GameObject("MenuShots");
+        DontDestroyOnLoad(go);
+        var m = go.AddComponent<MenuShots>();
+        m.m_Dir = args[i + 1]; m.m_Name = args[i + 2];
+        float F(int k) => i + k < args.Length && float.TryParse(args[i + k], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float v) ? v : 0f;
+        float top = F(3), bottom = F(4), left = F(5), right = F(6);
+        if (top + bottom + left + right > 0f)
+            SafeAreaFitter.debugSafeArea = new Rect(left, bottom, Screen.width - left - right, Screen.height - top - bottom);
+        Directory.CreateDirectory(m.m_Dir);
+    }
+
+    static void Out(string s) => Debug.Log("MS| " + s);
+    void Check(bool ok, string what) { if (ok) m_Pass++; else m_Fail++; Out((ok ? "GECTI " : "KALDI ") + what); }
+
+    IEnumerator Start()
+    {
+        // Ekran boyutu ilk karelerde oturur; güvenli alan payını ona göre yeniden kur.
+        yield return new WaitForSecondsRealtime(1f);
+        var args = System.Environment.GetCommandLineArgs();
+        int a = System.Array.IndexOf(args, "-menuShots");
+        if (SafeAreaFitter.debugSafeArea.HasValue)
+        {
+            float P(int k) => float.Parse(args[a + k], System.Globalization.CultureInfo.InvariantCulture);
+            SafeAreaFitter.debugSafeArea = new Rect(P(5), P(4), Screen.width - P(5) - P(6), Screen.height - P(3) - P(4));
+        }
+
+        // Başlık ekranından menüye
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "Main")
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
+        float w = 0;
+        LoadoutState lo = null;
+        while (w < 60f)
+        {
+            lo = GameManager.instance != null ? GameManager.instance.topState as LoadoutState : null;
+            if (lo != null && lo.runButton.interactable && CharacterDatabase.loaded) break;
+            w += Time.unscaledDeltaTime; yield return null;
+        }
+        if (lo == null) { Out("HATA menu acilmadi"); Application.Quit(); yield break; }
+
+        // 1) Eğitimi bitmiş oyuncunun menüsü
+        PlayerData.instance.tutorialDone = true;
+        lo.tutorialBlocker.SetActive(false);
+        PlayerData.instance.coins = 12345; // sayaç gerçek değeri gösteriyor mu
+        yield return new WaitForSecondsRealtime(2.5f); // karakter yüklenip bekleme animasyonuna geçsin
+        Out($"ekran {Screen.width}x{Screen.height} guvenli={SafeAreaFitter.CurrentSafeArea()}");
+        CheckLayout(lo);
+        yield return Shot("menu");
+
+        // 2) İlk açılış: eğitim perdesi
+        lo.tutorialBlocker.SetActive(true);
+        lo.tutorialPrompt.SetActive(true);
+        yield return Shot("egitim-perdesi");
+        lo.tutorialBlocker.SetActive(false);
+
+        // 3) Ayarlar ve görevler pencereleri
+        var settings = lo.inventoryCanvas.GetComponentInChildren<SettingPopup>(true);
+        settings.Open();
+        yield return Shot("ayarlar");
+        Check(InsideScreen((RectTransform)settings.transform.GetChild(0)), "ayarlar penceresi ekrana sigiyor");
+        settings.Close();
+        lo.missionPopup.CallOpen();
+        yield return new WaitForSecondsRealtime(1f);
+        yield return Shot("gorevler");
+        lo.missionPopup.gameObject.SetActive(false);
+
+        Out($"OZET {m_Name} gecti={m_Pass} kaldi={m_Fail}");
+        Application.Quit();
+    }
+
+    IEnumerator Shot(string what)
+    {
+        yield return new WaitForEndOfFrame();
+        ScreenCapture.CaptureScreenshot(Path.Combine(m_Dir, $"{m_Name}-{what}.png"));
+        yield return new WaitForSecondsRealtime(0.5f);
+    }
+
+    static Rect ScreenRect(RectTransform rt)
+    {
+        var c = new Vector3[4];
+        rt.GetWorldCorners(c); // tuval ekran üstünde: dünya köşeleri = ekran pikselleri
+        return Rect.MinMaxRect(c[0].x, c[0].y, c[2].x, c[2].y);
+    }
+
+    static bool InsideScreen(RectTransform rt)
+    {
+        Rect r = ScreenRect(rt);
+        return r.xMin >= -1 && r.yMin >= -1 && r.xMax <= Screen.width + 1 && r.yMax <= Screen.height + 1;
+    }
+
+    static float OverlapArea(Rect a, Rect b)
+    {
+        float w = Mathf.Min(a.xMax, b.xMax) - Mathf.Max(a.xMin, b.xMin), h = Mathf.Min(a.yMax, b.yMax) - Mathf.Max(a.yMin, b.yMin);
+        return w > 0 && h > 0 ? w * h : 0f;
+    }
+
+    void CheckLayout(LoadoutState lo)
+    {
+        Transform safe = lo.inventoryCanvas.transform.Find("MenuSafeArea");
+        Rect safeRect = SafeAreaFitter.CurrentSafeArea();
+        var items = new List<(string, RectTransform)>
+        {
+            ("logo", (RectTransform)safe.Find("MenuLogo")),
+            ("altin", (RectTransform)safe.Find("MenuCoins")),
+            ("siralama", (RectTransform)safe.Find("OpenLeaderboard")),
+            ("karakter-adi", (RectTransform)safe.Find("CharZone")),
+            ("OYNA", (RectTransform)lo.runButton.transform),
+        };
+        foreach (Transform b in safe.Find("MenuBottomBar")) items.Add(("alt:" + b.name, (RectTransform)b));
+        foreach (Transform b in lo.charSelect) items.Add(("ok:" + b.name, (RectTransform)b));
+
+        foreach (var (n, rt) in items)
+        {
+            Rect r = ScreenRect(rt);
+            bool inSafe = r.xMin >= safeRect.xMin - 1 && r.yMin >= safeRect.yMin - 1 && r.xMax <= safeRect.xMax + 1 && r.yMax <= safeRect.yMax + 1;
+            Check(inSafe, $"{n} guvenli alan icinde ({r.xMin:F0},{r.yMin:F0})-({r.xMax:F0},{r.yMax:F0})");
+        }
+        for (int i = 0; i < items.Count; ++i)
+            for (int j = i + 1; j < items.Count; ++j)
+            {
+                if (items[i].Item1.StartsWith("alt:") && items[j].Item1.StartsWith("alt:")) continue; // aynı şeritte yan yana; aşağıda ayrıca
+                float o = OverlapArea(ScreenRect(items[i].Item2), ScreenRect(items[j].Item2));
+                if (o > 1f) Check(false, $"{items[i].Item1} ile {items[j].Item1} ust uste ({o:F0} px2)");
+            }
+        Check(true, "ust uste binme taramasi bitti");
+        var bar = new List<Rect>();
+        foreach (Transform b in safe.Find("MenuBottomBar")) bar.Add(ScreenRect((RectTransform)b));
+        bool barOk = true;
+        for (int i = 1; i < bar.Count; ++i) barOk &= bar[i].xMin >= bar[i - 1].xMax - 1;
+        Check(barOk && bar.Count == 4, $"alt menude 4 dugme yan yana, ust uste degil (en dar dugme {MinWidth(bar):F0} px)");
+        // Dokunma alanı: ekran yüksekliğinin 1280'de 88 birimi (~9 mm iPhone'da) altına inmesin
+        float unit = Screen.height / 1280f;
+        Check(MinWidth(bar) >= 88f * unit * 0.95f, $"alt menu dugmeleri dokunmaya yeterince genis");
+
+        // Yazılar kesilmiyor (en uygun boyutta tamamı görünüyor)
+        foreach (var t in safe.GetComponentsInChildren<Text>(false))
+        {
+            if (string.IsNullOrEmpty(t.text)) continue;
+            Canvas.ForceUpdateCanvases();
+            int visible = t.cachedTextGenerator.characterCountVisible;
+            int needed = t.text.Replace("\n", "").Replace(" ", "").Length;
+            Check(visible >= needed, $"yazi tam gorunuyor: '{t.text}' ({t.cachedTextGenerator.fontSizeUsedForBestFit}px)");
+        }
+
+        // Karakter: menü kamerasından ekrandaki kutusu; ekranda, üst bilgi/OYNA/alt şerit ile en çok %15 kesişme
+        Rect cr = CharacterScreenRect(lo);
+        Out($"karakter ekran kutusu ({cr.xMin:F0},{cr.yMin:F0})-({cr.xMax:F0},{cr.yMax:F0}) yukseklik %{100f * cr.height / Screen.height:F0}");
+        Check(cr.width > 0 && cr.yMin >= 0 && cr.yMax <= Screen.height && cr.xMin >= 0 && cr.xMax <= Screen.width, "karakter tamamen ekranda");
+        foreach (var (n, rt) in items)
+        {
+            if (n.StartsWith("ok:")) continue;
+            float o = OverlapArea(cr, ScreenRect(rt)) / Mathf.Max(1f, cr.width * cr.height);
+            Check(o <= 0.15f, $"karakteri {n} en cok %15 kapatiyor (%{100f * o:F0})");
+        }
+    }
+
+    static float MinWidth(List<Rect> rs) { float m = float.MaxValue; foreach (var r in rs) m = Mathf.Min(m, r.width); return m; }
+
+    static Rect CharacterScreenRect(LoadoutState lo)
+    {
+        var rs = lo.charPosition.GetComponentsInChildren<Renderer>(false);
+        if (rs.Length == 0 || lo.menuCamera == null) return new Rect();
+        Bounds b = rs[0].bounds;
+        foreach (var r in rs) b.Encapsulate(r.bounds);
+        float xMin = float.MaxValue, yMin = float.MaxValue, xMax = float.MinValue, yMax = float.MinValue;
+        for (int i = 0; i < 8; ++i)
+        {
+            Vector3 c = new Vector3((i & 1) == 0 ? b.min.x : b.max.x, (i & 2) == 0 ? b.min.y : b.max.y, (i & 4) == 0 ? b.min.z : b.max.z);
+            Vector3 s = lo.menuCamera.WorldToScreenPoint(c);
+            xMin = Mathf.Min(xMin, s.x); yMin = Mathf.Min(yMin, s.y); xMax = Mathf.Max(xMax, s.x); yMax = Mathf.Max(yMax, s.y);
+        }
+        return Rect.MinMaxRect(xMin, yMin, xMax, yMax);
+    }
+}
+#endif
