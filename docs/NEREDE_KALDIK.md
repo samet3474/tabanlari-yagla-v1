@@ -33,7 +33,7 @@ Her klasörün kaydı ayrıdır (kayıt, adresin klasörüne bağlı). Test adre
 
 | Dal | Son commit | Ne var |
 |---|---|---|
-| `main` | `97135aa` | Canlı A sürümünün kaynağı + notlar |
+| `main` | `68d06d5`+ | Canlı A sürümünün kaynağı (kod `97135aa` ile aynı; sonrası yalnızca notlar) |
 | `ad-marka` | `4c9244a` | main + Aşama 1 (ad, logo, simgeler, Türkçe görünen adlar) |
 | `dil-turkce` | `638289b` | ad-marka + Türkçe arayüz (LocText, tr.txt, mobil yerleşim düzeltmeleri) |
 | `b-tutorial-test` | `d5f0f2f` | main + B (eğitim akışı) + test araçları |
