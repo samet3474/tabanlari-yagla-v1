@@ -13,22 +13,24 @@ public class TutorialOverlay : MonoBehaviour
     const float k_StripWidth = 520f;
     const float k_StripHeight = 100f;
     const float k_StripAccentHeight = 7f;
-    const float k_StripAnchorY = 0.70f;
+    const float k_StripAnchorY = 0.76f;
     const int k_LabelSize = 54;
     const int k_ReadyLabelSize = 76;
     const float k_DotSize = 22f;
     const float k_DotSpacing = 38f;
     const float k_DotsOffsetY = -84f;
-    const float k_ArrowSize = 180f;
-    const float k_ArrowAnchorY = 0.50f;
+    const float k_ArrowSize = 160f;
+    // Between the strip and the horizon: above the road, so the arrow never covers the obstacle or the character.
+    const float k_ArrowAnchorY = 0.585f;
 
     const float k_ArrowCycle = 0.85f;      // one slide of the arrow in the swipe direction
-    const float k_ArrowTravel = 120f;
+    const float k_ArrowTravel = 100f;
     const float k_FadeInTime = 0.15f;
     const float k_PopTime = 0.2f;
     const float k_PopScale = 1.15f;
     const float k_DotPopScale = 1.7f;
     const float k_ReadyHoldTime = 1.3f;
+    const float k_PraiseHoldTime = 0.6f;
     const float k_ReadyFadeTime = 0.3f;
 
     // Istanbul palette: night-blue strip with the red of the Istiklal tram underneath, gold for what to do and what is done.
@@ -37,6 +39,7 @@ public class TutorialOverlay : MonoBehaviour
     static readonly Color k_Gold = new Color(1.0f, 0.80f, 0.24f, 1.0f);
     static readonly Color k_DotPending = new Color(0.07f, 0.09f, 0.19f, 0.6f);
     static readonly Color k_ShadowColor = new Color(0.0f, 0.0f, 0.0f, 0.55f);
+    static readonly Color k_RetryColor = new Color(1.0f, 0.55f, 0.45f, 1.0f);
 
     static Sprite s_ArrowSprite, s_DotSprite, s_RoundedSprite;
 
@@ -51,7 +54,8 @@ public class TutorialOverlay : MonoBehaviour
     float m_ShownTime;
     int m_PoppedDot = -1;
     float m_DotPopTime;
-    bool m_Ready;
+    bool m_Message;
+    float m_MessageHold;
 
     public static TutorialOverlay Create(RectTransform parent, Font font, int stepCount)
     {
@@ -133,7 +137,7 @@ public class TutorialOverlay : MonoBehaviour
     public void ShowStep(int index, string text, Vector2 direction)
     {
         gameObject.SetActive(true);
-        m_Ready = false;
+        m_Message = false;
         m_Label.text = text;
         m_Label.fontSize = k_LabelSize;
         m_Label.color = Color.white;
@@ -159,17 +163,36 @@ public class TutorialOverlay : MonoBehaviour
         m_DotPopTime = Time.unscaledTime;
     }
 
-    /// <summary>Shows the closing message, then fades out and turns itself off.</summary>
+    /// <summary>Shows the closing message (all dots done), then fades out and turns itself off.</summary>
     public void ShowReady(string text)
     {
-        gameObject.SetActive(true);
-        m_Ready = true;
-        m_Label.text = text;
-        m_Label.fontSize = k_ReadyLabelSize;
-        m_Label.color = k_Gold;
-        m_Arrow.gameObject.SetActive(false);
         for (int i = 0; i < m_Dots.Length; ++i)
             m_Dots[i].color = k_Gold;
+        ShowMessage(text, k_Gold, k_ReadyLabelSize, k_ReadyHoldTime);
+    }
+
+    /// <summary>Short praise after a step, then fades out (the next prompt comes with the next obstacle).</summary>
+    public void ShowPraise(string text)
+    {
+        ShowMessage(text, k_Gold, k_LabelSize, k_PraiseHoldTime);
+    }
+
+    /// <summary>After a crash: stays until the step's prompt shows again for the new obstacle.</summary>
+    public void ShowRetry(string text)
+    {
+        ShowMessage(text, k_RetryColor, k_LabelSize, -1.0f);
+    }
+
+    // A line of text without the arrow. holdTime < 0: stays until the next ShowStep/Hide.
+    void ShowMessage(string text, Color color, int fontSize, float holdTime)
+    {
+        gameObject.SetActive(true);
+        m_Message = true;
+        m_MessageHold = holdTime;
+        m_Label.text = text;
+        m_Label.fontSize = fontSize;
+        m_Label.color = color;
+        m_Arrow.gameObject.SetActive(false);
 
         m_ShownTime = Time.unscaledTime;
         UpdateAnimation();
@@ -191,9 +214,9 @@ public class TutorialOverlay : MonoBehaviour
         float t = Time.unscaledTime - m_ShownTime;
 
         float alpha = Mathf.Clamp01(t / k_FadeInTime);
-        if (m_Ready && t > k_ReadyHoldTime)
+        if (m_Message && m_MessageHold >= 0.0f && t > m_MessageHold)
         {
-            alpha = 1.0f - Mathf.Clamp01((t - k_ReadyHoldTime) / k_ReadyFadeTime);
+            alpha = 1.0f - Mathf.Clamp01((t - m_MessageHold) / k_ReadyFadeTime);
             if (alpha <= 0.0f)
             {
                 Hide();
@@ -204,10 +227,10 @@ public class TutorialOverlay : MonoBehaviour
 
         // New instruction pops in.
         float pop = Mathf.Clamp01(t / k_PopTime);
-        m_Strip.localScale = Vector3.one * Mathf.Lerp(m_Ready ? k_PopScale * 1.1f : k_PopScale, 1.0f, EaseOut(pop));
+        m_Strip.localScale = Vector3.one * Mathf.Lerp(m_Message ? k_PopScale * 1.1f : k_PopScale, 1.0f, EaseOut(pop));
 
         // Arrow slides along the swipe direction and fades at both ends of the slide, then starts again.
-        if (!m_Ready)
+        if (!m_Message)
         {
             float cycle = Mathf.Repeat(t, k_ArrowCycle) / k_ArrowCycle;
             float travel = EaseOut(cycle);
