@@ -193,6 +193,34 @@ public static class MenuUygula
         sb.progressText = pctText;
         sb.tipText = tipText;
         sb.tipKeys = new[] { "tip.1", "tip.2", "tip.3", "tip.4", "tip.5" };
+
+        // Sayfanın yükleme ekranıyla aynı (index.html #ty-loader): düz lacivert zemin, ortada logo; StartButton logoyu
+        // yukarı taşır ve ipucu + çubuk grubunu görünür yapar.
+        RectTransform bg = Child(canvas, "LoadingBackground");
+        Stretch(bg);
+        bg.SetAsFirstSibling();
+        Image bgImage = Get<Image>(bg);
+        bgImage.sprite = null;
+        bgImage.color = new Color32(0x1B, 0x25, 0x50, 0xFF);
+        bgImage.raycastTarget = false;
+        EditorUtility.SetDirty(bgImage);
+
+        RectTransform logo = canvas.Find("LogoImage") as RectTransform;
+        if (logo == null) { Fail("Start sahnesinde LogoImage yok"); return; }
+        logo.anchorMin = logo.anchorMax = logo.pivot = new Vector2(0.5f, 0.5f);
+        logo.anchoredPosition = Vector2.zero;
+        logo.sizeDelta = new Vector2(560f, 315f);
+        logo.localScale = Vector3.one;
+        var logoImage = logo.GetComponent<Image>();
+        if (logoImage != null) { logoImage.preserveAspect = true; EditorUtility.SetDirty(logoImage); }
+        EditorUtility.SetDirty(logo);
+
+        sb.logo = logo;
+        sb.loadingGroup = GetOrAdd<CanvasGroup>(safe.gameObject);
+        sb.loadingGroup.alpha = 0f;
+        sb.loadingGroup.interactable = false;
+        sb.loadingGroup.blocksRaycasts = false;
+        EditorUtility.SetDirty(sb.loadingGroup);
         EditorUtility.SetDirty(sb);
 
         EditorSceneManager.MarkSceneDirty(start);

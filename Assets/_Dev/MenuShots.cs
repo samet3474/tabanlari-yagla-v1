@@ -40,11 +40,26 @@ public class MenuShots : MonoBehaviour
     IEnumerator Start()
     {
         // Açılıştaki yükleme ekranı (Start sahnesi): görüntü ve çubuğun dolmaya başladığı
-        yield return new WaitForSecondsRealtime(0.35f);
+        yield return null;
+        yield return null;
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "Main")
+        {
+            // 1) Yalnız logo: lacivert zemin, ortada logo, çubuk ve ipucu henüz görünmez.
+            var sbLogo = FindAnyObjectByType<StartButton>();
+            Check(sbLogo != null && sbLogo.logo != null && sbLogo.logo.gameObject.activeInHierarchy && sbLogo.loadingGroup != null && sbLogo.loadingGroup.alpha < 0.01f
+                  && Mathf.Abs(sbLogo.logo.anchoredPosition.y) < 1f,
+                "acilista once yalniz logo (ortada, cubuk gizli)");
+            yield return Shot("acilis-logo");
+            // 2) Yükleme ekranı: logo yukarıda, ipucu ve çubuk görünür.
+            for (float g = 0f; g < 3f && sbLogo != null && sbLogo.loadingGroup != null && sbLogo.loadingGroup.alpha < 0.99f; g += Time.unscaledDeltaTime)
+                yield return null;
+        }
         if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "Main")
         {
             // Önce denetim: görüntü alınırken ana menüye geçilebilir ve bu nesneler silinir.
             var sbLoad = FindAnyObjectByType<StartButton>();
+            Check(sbLoad != null && sbLoad.loadingGroup != null && sbLoad.loadingGroup.alpha > 0.99f && sbLoad.logo.anchoredPosition.y > 300f,
+                "yukleme ekraninda logo yukarida, cubuk gorunur");
             Check(sbLoad != null && sbLoad.progressFill != null && sbLoad.progressFill.gameObject.activeInHierarchy && sbLoad.tipText != null && sbLoad.tipText.text.Length > 0,
                 $"yukleme ekraninda cubuk ve ipucu var ('{(sbLoad != null && sbLoad.tipText != null ? sbLoad.tipText.text : "")}', %{(sbLoad != null && sbLoad.progressFill != null ? sbLoad.progressFill.fillAmount * 100f : -1f):F0})");
             yield return Shot("yukleme-ekrani");

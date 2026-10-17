@@ -18,17 +18,30 @@
 - `1d713c6` — düzeltmeler ve son hâl.
 - `974a660` — tek OYNA açılış akışı.
 - `91bcc8a` — logo → dolum çubuklu yükleme ekranı → ana menü.
+- (bu commit) — tek yükleme ekranı, web ve Windows aynı.
 
-**Yayın:** gh-pages `06ff858`; yalnızca `test/` değişti.
+**Yayın:** gh-pages `e774264`; yalnızca `test/` değişti.
 
 **Yedekler:**
+- `test-yedek-tekyukleme-oncesi` → gh-pages `06ff858` (tek yükleme ekranından önceki `/test/`).
 - `test-yedek-yukleme-oncesi` → gh-pages `ef5f897` (logo/yükleme ekranından önceki `/test/`).
 - `test-yedek-acilis-oncesi` → gh-pages `e82111e` (açılış değişikliğinden önceki `/test/`).
 - `test-yedek-ana-menu-oncesi` → gh-pages `e8777e3` (prototip öncesi `/test/` = canlı derleme).
 
 **Test adresi:** https://samet3474.github.io/tabanlari-yagla-v1/test/ — ölçüm sürümü `/test/olcum/`.
 
-### Açılış: logo → yükleme ekranı → ana menü (2026-10-17, `91bcc8a`, kullanıcının örnek görsellerine göre)
+### Tek yükleme ekranı, her yerde aynı (2026-10-17, kullanıcının "tek yükleme ekranı olsun… hepsinde aynı olsun" isteği)
+- **Akış:** lacivert zeminde ortada yalnız logo (0,8 sn) → logo üste kayar, altta İpucu + tek turuncu çubuk %0'dan %100'e dolar → ana menü dokunmadan açılır → OYNA → oyun.
+- **Web:** yalnız sayfanın ekranı (`index.html` `#ty-loader`) görünür ve ana menü açılana kadar kalır. İndirme %0–80'i, oyunun kendi yüklemesi (`StartButton` → `Loading.jslib` → `window.tyLoadingProgress`) %80–100'ü doldurur. Main sahnesi açılınca `tyLoadingDone` ekranı kapatır; güvenlik için 60 sn sonra kendiliğinden kapanır. Çubuk hiç geri gitmez.
+- **Windows / yerel:** Start sahnesi aynı görünür: tam ekran lacivert `LoadingBackground`, ortada `LogoImage` (560x315); 0,8 sn sonra logo yukarı (y=358, %90 boy) kayar, `LoadingSafeArea` (CanvasGroup) görünür olur, çubuk 0'dan dolar. Arkadaki 3B sokak çizilmez (kamera yalnız lacivert temizler). Logo süresi çizilen karelerle sayılır; ilk açılıştaki uzun kareler logo aşamasını atlatmaz.
+- **Testler (Windows test derlemesi):**
+  - Eğitim 96/96.
+  - Açılış senaryoları 45/45 × 3. Menü ~3,3 sn'de hazır (0,8 sn logo + 0,45 sn geçiş dahil).
+  - 8 ekran profili 45/45. Yeni denetimler: önce yalnız logo (ortada, çubuk gizli); sonra logo yukarıda ve çubuk görünür.
+- **Web (tarayıcı paneli, 390x844, /test/ e774264):** çubuk 81→87→92→100 ilerledi, geri gitmedi. Ekran %100'de ~2 sn kaldıktan sonra kapandı (Main sahnesinin açılışı), menü dokunmadan geldi.
+- **Gerçek cihazda (iPhone) henüz denenmedi.**
+
+### Önceki adım: logo → yükleme ekranı → ana menü (2026-10-17, `91bcc8a`; yukarıdaki tek ekranla değişti, kullanıcının örnek görsellerine göre)
 - **1. Logo:** web sayfasının kendi açılış ekranı (`WebGLTemplates/TabanlariYagla/index.html`, `#ty-loader`). Lacivert zeminde ortada yalnız logo, 0,8 sn; oyun dosyalarının indirmesi bu sırada sürer.
 - **2. Yükleme ekranı:**
   - Önce sayfada: logo üste kayar; altta İpucu + dolan turuncu çubuk + yüzde. İndirme çubuğu %0–80 doldurur.
