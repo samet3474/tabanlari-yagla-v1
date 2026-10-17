@@ -3,11 +3,11 @@
 > Her aşamanın sonunda güncellenir. Projeye ara verip döndüğünde **önce bu dosyayı oku.**
 > Ayrıntılı geçmiş: [GELISTIRME_NOTLARI.md](GELISTIRME_NOTLARI.md) (bu dosya ondan daha güncel).
 
-**Son güncelleme:** 2026-10-17. Canlıda gerçek engelli eğitim (`main` `ac4cb60`, gh-pages kökü `e8777e3`). **Ana menü prototipi `/test/`'te** (`ana-menu-prototip` `1d713c6`), kullanıcının iPhone değerlendirmesini bekliyor.
+**Son güncelleme:** 2026-10-17. Canlıda gerçek engelli eğitim (`main` `ac4cb60`, gh-pages kökü `e8777e3`). **Ana menü prototipi + tek OYNA açılış akışı `/test/`'te** (`ana-menu-prototip` `974a660`), kullanıcının iPhone değerlendirmesini bekliyor.
 
 ---
 
-## ▶ ANA MENÜ PROTOTİPİ — /test/'te, kullanıcının iPhone değerlendirmesini bekliyor (2026-10-17)
+## ▶ ANA MENÜ PROTOTİPİ + TEK OYNA AÇILIŞ — /test/'te, kullanıcının iPhone değerlendirmesini bekliyor (2026-10-17)
 
 > Bu bölüm yalnızca `ana-menu-prototip` dalında. `main`'deki not, kullanıcının "main'e dokunma" talimatı nedeniyle güncellenmedi.
 > Canlı oyun ve `main` değişmedi. Canlıya geçiş için ayrıca açık onay gerekir.
@@ -16,12 +16,26 @@
 - `f1aad35` — yarım prototip.
 - `e0533fd` — ara not.
 - `1d713c6` — düzeltmeler ve son hâl.
+- `974a660` — tek OYNA açılış akışı.
 
-**Yayın:** gh-pages `e82111e`; yalnızca `test/Build` (4 dosya) ve `test/olcum/Build` (4 dosya) değişti.
+**Yayın:** gh-pages `ef5f897`; yalnızca `test/` değişti.
 
-**Yedek:** `test-yedek-ana-menu-oncesi` → gh-pages `e8777e3` (prototip öncesi `/test/` = canlı derleme).
+**Yedekler:**
+- `test-yedek-acilis-oncesi` → gh-pages `e82111e` (açılış değişikliğinden önceki `/test/`).
+- `test-yedek-ana-menu-oncesi` → gh-pages `e8777e3` (prototip öncesi `/test/` = canlı derleme).
 
 **Test adresi:** https://samet3474.github.io/tabanlari-yagla-v1/test/ — ölçüm sürümü `/test/olcum/`.
+
+### Açılış akışı (2026-10-17): tek OYNA
+- **Akış:** Oyun açılır → başlık ekranı (logo + hareketli sokak + "YÜKLENİYOR...") → yükleme bitince **dokunmadan** ana menü → OYNA → oyun.
+- **Start sahnesi silinmedi**, düğmesiz yükleme ekranına dönüştü (`MenuUygula.ApplyStartScene`): OYNA düğmesi gizli ve tıklanamaz, yazısı "YÜKLENİYOR...". Kayıt (`PlayerData`, `MusicPlayer` üzerinden) ve karakter/tema veritabanlarının yüklenmesi eskisi gibi burada başlıyor.
+- **`StartButton.autoStart`:** kayıt ve iki veritabanı hazır olunca Main sahnesi arka planda (`LoadSceneAsync`) yüklenir. Yapay bekleme yok. Çift yükleme koruması var. 20 sn güvenlik sınırı: bir veritabanı hiç bitmezse yine geçilir, menü kendisi bekler. `ftueLevel` güncellemesi korunuyor.
+- **Testler (Windows test derlemesi):**
+  - Açılış senaryoları (iPhone 13 oranı): yeni kullanıcı, tekrar açılış (eğitim bitmemiş), eğitimi bitmiş kayıtlı kullanıcı. Üçünde de dokunmadan menüye geçildi, ~1,4 sn'de menü hazırdı (OYNA etkin, karakter yüklü). Main bir kez yüklendi, menüde tek karakter var, eğitim perdesi yalnızca eğitim bitmemişse göründü.
+  - Eğitim testleri 96/96.
+  - 8 ekran profili 42–43 denetimde hepsi geçti.
+- **Web (tarayıcı paneli):** dokunmadan menüye geçti. Süre 11–25 sn, ama bu süre büyük ölçüde dosya ve paket indirmesi; panel yavaş bir ortam, iPhone süresini temsil etmiyor.
+- **Gerçek iPhone ya da Android'de denenmedi.**
 
 ### Menü (Loadout) yeni düzeni
 - **Üst:** solda logo, sağda altın sayacı (`PlayerData.coins`), altında sıralama düğmesi.
