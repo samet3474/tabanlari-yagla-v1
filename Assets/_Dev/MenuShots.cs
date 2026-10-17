@@ -39,8 +39,20 @@ public class MenuShots : MonoBehaviour
 
     IEnumerator Start()
     {
+        // Açılıştaki yükleme ekranı (Start sahnesi): görüntü ve çubuğun dolmaya başladığı
+        yield return new WaitForSecondsRealtime(0.35f);
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "Main")
+        {
+            // Önce denetim: görüntü alınırken ana menüye geçilebilir ve bu nesneler silinir.
+            var sbLoad = FindAnyObjectByType<StartButton>();
+            Check(sbLoad != null && sbLoad.progressFill != null && sbLoad.progressFill.gameObject.activeInHierarchy && sbLoad.tipText != null && sbLoad.tipText.text.Length > 0,
+                $"yukleme ekraninda cubuk ve ipucu var ('{(sbLoad != null && sbLoad.tipText != null ? sbLoad.tipText.text : "")}', %{(sbLoad != null && sbLoad.progressFill != null ? sbLoad.progressFill.fillAmount * 100f : -1f):F0})");
+            yield return Shot("yukleme-ekrani");
+        }
+        else Out("yukleme ekrani goruntu icin cok kisa surdu (menu zaten acik)");
+
         // Ekran boyutu ilk karelerde oturur; güvenli alan payını ona göre yeniden kur.
-        yield return new WaitForSecondsRealtime(1f);
+        yield return new WaitForSecondsRealtime(0.5f);
         var args = System.Environment.GetCommandLineArgs();
         int a = System.Array.IndexOf(args, "-menuShots");
         if (SafeAreaFitter.debugSafeArea.HasValue)

@@ -149,17 +149,55 @@ public static class MenuUygula
 
         Text label = sb.GetComponentInChildren<Text>(true);
         if (label == null) { Fail("Start düğmesinde yazı yok"); return; }
-        label.text = "YÜKLENİYOR...";
-        label.fontSize = Mathf.Min(label.fontSize, 44);
-        Shadowed(label.gameObject);
-        LocText loc = GetOrAdd<LocText>(label.gameObject);
-        loc.key = "ui.loading";
-        EditorUtility.SetDirty(label);
-        EditorUtility.SetDirty(loc);
+        Font font = label.font;
+        label.gameObject.SetActive(false); // eski düğme yazısı; yerine çubuk, yüzde ve ipucu
+
+        // Yükleme ekranı: üstte mevcut logo, arkada hareketli sokak; altta ipucu, dolan çubuk ve yüzde (güvenli alanda).
+        Transform canvas = sb.GetComponentInParent<Canvas>().transform;
+        Dictionary<string, Sprite> sprites = AssetDatabase.LoadAllAssetsAtPath(k_SpriteSheet).OfType<Sprite>().ToDictionary(s => s.name);
+        RectTransform safe = Child(canvas, "LoadingSafeArea");
+        Stretch(safe);
+        GetOrAdd<SafeAreaFitter>(safe.gameObject);
+
+        RectTransform tip = Child(safe, "Tip");
+        tip.anchorMin = new Vector2(0, 0); tip.anchorMax = new Vector2(1, 0); tip.pivot = new Vector2(0.5f, 0);
+        tip.offsetMin = new Vector2(48f, 236f); tip.offsetMax = new Vector2(-48f, 236f + 120f);
+        Text tipText = Label(Get<Text>(tip), font, "", 30, 30, TextAnchor.LowerCenter, Color.white);
+        tipText.resizeTextForBestFit = false; // yazı tipi dinamik değil
+        tipText.supportRichText = true;
+        tipText.verticalOverflow = VerticalWrapMode.Overflow;
+        Shadowed(tip.gameObject);
+
+        RectTransform bar = Child(safe, "ProgressBar");
+        bar.anchorMin = new Vector2(0, 0); bar.anchorMax = new Vector2(1, 0); bar.pivot = new Vector2(0.5f, 0);
+        bar.offsetMin = new Vector2(64f, 150f); bar.offsetMax = new Vector2(-64f, 150f + 66f);
+        Panel(Get<Image>(bar), sprites["UIBorderFilled01"]);
+        RectTransform fill = Child(bar, "Fill");
+        fill.anchorMin = Vector2.zero; fill.anchorMax = Vector2.one; fill.pivot = new Vector2(0.5f, 0.5f);
+        fill.offsetMin = new Vector2(7f, 7f); fill.offsetMax = new Vector2(-7f, -7f);
+        Image fillImage = Get<Image>(fill);
+        fillImage.sprite = sprites["UISliderFill"];
+        fillImage.type = Image.Type.Filled;
+        fillImage.fillMethod = Image.FillMethod.Horizontal;
+        fillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
+        fillImage.fillAmount = 0f;
+        fillImage.color = new Color(1.0f, 0.62f, 0.15f, 1f); // OYNA turuncusu
+        fillImage.raycastTarget = false;
+        RectTransform pct = Child(bar, "Percent");
+        Stretch(pct);
+        Text pctText = Label(Get<Text>(pct), font, "0%", 36, 36, TextAnchor.MiddleCenter, Color.white);
+        pctText.resizeTextForBestFit = false;
+        Shadowed(pct.gameObject);
+
+        sb.progressFill = fillImage;
+        sb.progressText = pctText;
+        sb.tipText = tipText;
+        sb.tipKeys = new[] { "tip.1", "tip.2", "tip.3", "tip.4", "tip.5" };
+        EditorUtility.SetDirty(sb);
 
         EditorSceneManager.MarkSceneDirty(start);
         EditorSceneManager.SaveScene(start);
-        Out("Start sahnesi: otomatik geçişli yükleme ekranı (düğme gizli, yazı YÜKLENİYOR...)");
+        Out("Start sahnesi: otomatik geçişli yükleme ekranı (düğme gizli; çubuk, yüzde, ipucu)");
     }
 
     // ------------------------------------------------------------------ Main sahnesi
