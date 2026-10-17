@@ -4,6 +4,67 @@
 > Ayrıntılı geçmiş: [GELISTIRME_NOTLARI.md](GELISTIRME_NOTLARI.md) (bu dosya ondan daha güncel).
 
 **Son güncelleme:** 2026-10-17. **Canlıda ana menü + tek yükleme ekranı** (`main` `ea229d9`, gh-pages kökü `4924636`). Önceki canlı: gerçek engelli eğitim (`ac4cb60` / `e8777e3`).
+**Geliştirmede:** `istanbul-tema` dalı (`main` `e16c54d`'den). İstanbul teması, faz 1: simit tezgâhı test engeli. Yayın yok, `/test/` değişmedi.
+
+---
+
+## ▶ İSTANBUL TEMASI — FAZ 1: SİMİT TEZGÂHI BORU HATTI TESTİ (2026-10-17, `istanbul-tema`)
+
+> `main`, `gh-pages`, canlı oyun ve `/test/` değişmedi. Yayın yok. Sonraki her adım (yeni model, tema, parça, yayın) ayrı onay ister.
+
+**Kararlar (kullanıcı):**
+- İstanbul **ayrı bir tema** olacak, varsayılan değil. Day teması değişmeyecek.
+- İlk bölge İstiklal Caddesi. Galata–Karaköy ve Eminönü için altyapı genişletilebilir kalacak; modeller henüz üretilmeyecek.
+
+**Meshy (Pro plan; kayıt ve lisans notu: `_araclar/istanbul/URETIM_VE_LISANS.md`):**
+- Konsept görseli: 3 kredi.
+- Görselden 3B model: meshy-7.1, 2K doku, üçgen hedefi 3.000; 30 kredi.
+- Toplam 33 kredi; bakiye 731 → 698 (2026-11-11'de yenilenir).
+- Orijinaller `_araclar/istanbul/simit_3d_01a14b68/` altında, SHA-256 özetleriyle.
+- §2.4 üst veri maddesi **belirsiz**: çıktılarda Meshy işareti bulunmadı, ama bu hukuki teyit değil. Yayından önce Meshy desteğinden yazılı teyit önerilir.
+
+**Projeye eklenenler (bu dalda; kullanıcı onayıyla commit edildi):**
+- `Assets/_TabanlariYagla/Istanbul/Test/SimitTezgahi/`:
+  - `SimitTezgahi.fbx`: Meshy FBX'inin birebir kopyası.
+  - `Textures/texture_0.png`: FBX'ten çıkarılan doku; oyunda en fazla 1024.
+  - `SimitTezgahi.mat`: `Unlit/CurvedUnlit`.
+  - `ObstacleSimitTezgahi.prefab`: `ObstacleRoadworksCone` kopyası; `SimpleBarricade`, katman 9, tetikleyici kutu 1,40 x 1,00 x 0,72 m; görsel 1,40 x 1,24 x 0,72 m; 2.962 üçgen.
+- Addressables: yeni `Istanbul-Test` grubu (Day-Theme-Obstacles ayarları), adres `ObstacleSimitTezgahi`.
+  - `AddressableAssetSettings.asset`: yalnız 1 satır eklendi (`m_GroupAssets` listesine `Istanbul-Test`, guid `2d270d11…`).
+  - Editör aracı ayarı kaydedince Addressables 2.10 dosyayı baştan yazmıştı. Yazılan şeyler: eksik alanlar, kaldırılan `BuildScriptVirtualMode` kaydı (etkin derleyici numarası 3→2, yine PackedMode), `m_HostingServicesManager` ve grup sırası.
+  - Bu dönüşüm commit edilmedi: dosya geri alındı, tek satır elle eklendi. Unity'de salt okunur denetimden geçti (`IstanbulUygula.Dogrula`: 17 grup, çözülemeyen 0) ve dosya yeniden yazılmadı.
+  - Dönüşüm, Addressables ayarları Unity'den ilk kaydedildiğinde yine olacak; o zaman ayrı bir commit olarak ele alınmalı.
+- `Assets/_TabanlariYagla/Editor/IstanbulUygula.cs`: aktarımı tekrarlayan editör aracı (`-executeMethod IstanbulUygula.SimitTezgahi`).
+- `Assets/_Dev/SimitTest.cs`: yalnız geliştirme derlemesinde çalışan oyun içi test (`-simitTest`; `-simitKoni` aynı sürüşü mevcut koniyle yapar).
+  - Day parçalarını **yalnız test sürecinin belleğinde** simit kullanacak şekilde ayarlar; dosyalar değişmez.
+  - Çalıştırma betiği: `_araclar/istanbul/simit_test.ps1`.
+- **Değişmeyenler:** tema, parça, mevcut engeller, oyun kodu.
+
+**Commit'ler (`istanbul-tema`):**
+- `7efc215`: entegrasyon (model, doku, malzeme, prefab, Addressables grubu ve 1 satırlık ayar, `IstanbulUygula.cs`).
+- `97a936b`: geliştirme testi `SimitTest.cs`.
+- Bu not: ayrı commit.
+- Commit dışı bırakılanlar: `Windows/addressables_content_state.bin` (derleme durumu), kullanıcı kaydı, `Build/`, depo dışındaki `_araclar/istanbul/*`.
+- Commit öncesi yedek: `_araclar/istanbul/yedek-commit-oncesi-20261017-234234/` (diff, durum ve dosya kopyaları).
+
+**Test sonuçları (Windows test derlemesi, 390x844; gerçek iPhone'da denenmedi):**
+- Commit öncesi yeniden çalıştırma (tek satırlık ayar dosyasıyla): eğitim **96/96**, hata logu 0. Menü: 3 açılış senaryosu + 8 ekran profili, **11 çalıştırmanın her biri 45/45**.
+- Kullanıcı kaydı her çalıştırmadan sonra yedekle aynı (SHA-256).
+- Normal yayın Windows derlemesi (`V1Build.BuildWindows`): `Assembly-CSharp.dll`'de `SimitTest`, `-simitTest`, `MenuShots` yok; `StartButton` ve `TrackManager` var. Geliştirme derlemesinde `SimitTest` var.
+- Simit testi (entegrasyon sırasındaki son çalıştırma; commit öncesi yeniden çalıştırılmadı): 9 kontrol geçti, **2 kaldı**.
+  - Addressables'tan yükleniyor; 2.962 üçgen; doku 1024; CurvedUnlit.
+  - 70 tezgâh: komşu şeritteki karaktere değen 0/140.
+  - Altınlar: 495 altının 0'ı tezgâhın içinde.
+  - Dokunmadan sürüşte 13/13 çarpma (çarpışma çalışıyor).
+- **Kalanlar:** "zıplama" (25 geçiş, 1 çarpma) ve "şerit değiştirme" (7 çarpma). Aynı sürüş mevcut **trafik konisiyle de aynı sonucu verdi** (1 ve 9 çarpma). Sorun simitte değil, test aracının otomatik pilotunda (hız 22'de zıplama zamanlaması; boş şerit bulamadığında bekleme).
+- Parça başına üçgen (simitlerin yoğun olduğu test koşusu): ortalama 12.627, en çok 21.770. Aynı koşu koniyle: 7.662 / 10.706. Her tezgâh +2.962; bir sırada 2 tezgâh olabiliyor.
+- Addressables paketi `Istanbul-Test` (Windows): 598 KB. WebGL paketi ölçülmedi.
+- Görüntüler: `_araclar/istanbul/test/simit-kosu-uzak.png`, `simit-kosu-yakin.png`.
+
+**Geri alma:**
+- Dalın tamamı: `git switch main` (gerekirse `git branch -D istanbul-tema`; uzak dal için `git push origin --delete istanbul-tema`).
+- Yalnız test aracı: `git revert 97a936b`. Entegrasyon: `git revert 7efc215`.
+- `main` ve `gh-pages` hiç değişmedi; Meshy arşivi depo dışında ayrı duruyor.
 
 ---
 
