@@ -52,6 +52,10 @@ public static class MenuUygula
     const float k_RoundButton = 88f;
     const float k_NameTop = 204f, k_NameWidth = 440f, k_NameHeight = 72f;
     const float k_BarHeight = 136f;
+    // Alt şerit yazıları: 22 boyutunda "KARAKTERLER" ~150, "GÖREVLER" ~108 birim; en dar ekranda (21:9, ~549 birim)
+    // ağırlık 1.4 ile Karakterler ~156, diğerleri ~112 birim alır.
+    const int k_BarLabelSize = 22;
+    const float k_CharactersWeight = 1.4f;
     const float k_PlayBottom = 172f, k_PlayWidth = 440f, k_PlayHeight = 150f;
     const float k_SideBottom = k_PlayBottom + k_PlayHeight + 20f;  // yan seçicilerin alt kenarı (OYNA'nın üstü)
 
@@ -89,7 +93,13 @@ public static class MenuUygula
 
         var root = new GameObject("MenuBackdrop");
         Object.Instantiate(env, root.transform).name = "MenuEnvironment";
-        Object.Instantiate(anim, root.transform).name = "MenUAnimation";
+        GameObject animCopy = Object.Instantiate(anim, root.transform);
+        animCopy.name = "MenUAnimation";
+        // Start'ın geçen kedi/rakun oyuncuları menü karakterinin yanında ikinci bir karakter gibi görünür: çıkarılır.
+        // Sokağın hareketli süsleri (MenuEnvironmentProps) kalır.
+        foreach (Transform t in animCopy.GetComponentsInChildren<Transform>(true))
+            if (t != null && t.parent == animCopy.transform && t.name.Contains("MenuActors"))
+                Object.DestroyImmediate(t.gameObject);
 
         GameObject camCopy = Object.Instantiate(cam, root.transform);
         camCopy.name = "MenuCamera";
@@ -266,6 +276,8 @@ public static class MenuUygula
         RectTransform settings = Move(cv, "SettingButton", bar);
         characters.SetSiblingIndex(0); missions.SetSiblingIndex(1); store.SetSiblingIndex(2); settings.SetSiblingIndex(3);
         IconButton(characters, null, S("CatIcone"), font, true);
+        foreach (RectTransform b in new[] { characters, missions, store, settings })
+            GetOrAdd<LayoutElement>(b.gameObject).flexibleWidth = b == characters ? k_CharactersWeight : 1f;
         IconButton(missions, null, S("MissionsIcon"), font, true);
         IconButton(store, null, S("StoreIcon"), font, true);
         IconButton(settings, null, S("SettingIcone"), font, true);
@@ -290,14 +302,30 @@ public static class MenuUygula
             }
             else if (t.name == "TutorialText")
             {
-                Place(rt, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0f, 8f), new Vector2(560f, k_PlayBottom - 16f));
+                // Çocuklar eski yerleşime göre büyük negatif konumlarda ve ok animasyonu konumunu mutlak değerlerle
+                // sürüyor (TutorialArrow.anim): çocuklara dokunulmaz, yalnızca bu kutu taşınır. Yazı (alt kenara göre
+                // -519.5, genişlik = kutu + 460) OYNA'nın altında ~85'e, ok (merkeze göre -449) OYNA'nın alt kenarına gelir.
+                const float textOffset = 519.5f, arrowOffset = 449f, textCenter = 85f, arrowCenter = k_PlayBottom + 13f;
+                float boxBottom = textCenter + textOffset;
+                float boxHeight = 2f * (arrowCenter + arrowOffset - boxBottom);
+                Place(rt, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0f, boxBottom), new Vector2(100f, boxHeight));
             }
         }
 
         // Açılır pencereler tuvalin üstünde kalır
         loadout.missionPopup.transform.SetAsLastSibling();
         var settingPopup = cv.Find("SettingPopup");
-        if (settingPopup != null) settingPopup.SetAsLastSibling();
+        if (settingPopup != null)
+        {
+            settingPopup.SetAsLastSibling();
+            // 720 genişliğe göre çizilmiş pencereler dar ekranda kendini küçültür.
+            foreach (string path in new[] { "Background", "ConfirmPopup/Image", "AboutPopup/Image", "AboutPopup/Background" })
+            {
+                Transform panel = settingPopup.Find(path);
+                if (panel == null) { Fail("ayarlar paneli yok: " + path); continue; }
+                GetOrAdd<FitInsideParent>(panel.gameObject);
+            }
+        }
 
         Out("Loadout arayüzü yerleştirildi");
     }
@@ -335,7 +363,11 @@ public static class MenuUygula
             var rt = (RectTransform)label.transform;
             rt.anchorMin = new Vector2(0, 0); rt.anchorMax = new Vector2(1, 0); rt.pivot = new Vector2(0.5f, 0);
             rt.offsetMin = new Vector2(2f, 2f); rt.offsetMax = new Vector2(-2f, 38f);
-            Label(label, font, label.text, 26, 13, TextAnchor.MiddleCenter, Color.white);
+            Label(label, font, label.text, k_BarLabelSize, k_BarLabelSize, TextAnchor.MiddleCenter, Color.white);
+            // Sabit boyut: Unity'nin en uygun boyutu tek uzun kelimeyi ("KARAKTERLER") harf harf bölüp ilk satırını
+            // gösteriyordu. Taşma yatayda serbest; genişlikler (k_CharactersWeight) en dar ekranda da sığacak biçimde.
+            label.resizeTextForBestFit = false;
+            label.horizontalOverflow = HorizontalWrapMode.Overflow;
             Shadowed(label.gameObject);
         }
         // Eski görselin gölge/çerçeve çocukları gizlenir (silinmez).

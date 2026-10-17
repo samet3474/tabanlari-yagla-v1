@@ -86,6 +86,20 @@ public class MenuShots : MonoBehaviour
         yield return Shot("gorevler");
         lo.missionPopup.gameObject.SetActive(false);
 
+        // 4) "Karakterler" düğmesi: gerçek tıklama yolu (onClick) mağazayı karakter sekmesiyle açmalı
+        var charactersButton = lo.inventoryCanvas.transform.Find("MenuSafeArea/MenuBottomBar/CharactersButton").GetComponent<Button>();
+        charactersButton.onClick.Invoke();
+        ShopUI shop = null;
+        w = 0;
+        while (shop == null && w < 10f) { shop = FindAnyObjectByType<ShopUI>(); w += Time.unscaledDeltaTime; yield return null; }
+        yield return new WaitForSecondsRealtime(1.5f);
+        Check(shop != null && shop.characterList.gameObject.activeInHierarchy && !shop.itemList.gameObject.activeInHierarchy,
+            "Karakterler dugmesi magazayi karakter sekmesiyle acti");
+        yield return Shot("magaza-karakterler");
+        if (shop != null) shop.CloseScene();
+        yield return new WaitForSecondsRealtime(1f);
+        Check(GameManager.instance.topState is LoadoutState && FindAnyObjectByType<ShopUI>() == null, "magaza kapandi, menuye donuldu");
+
         Out($"OZET {m_Name} gecti={m_Pass} kaldi={m_Fail}");
         Application.Quit();
     }
@@ -162,6 +176,9 @@ public class MenuShots : MonoBehaviour
             int visible = t.cachedTextGenerator.characterCountVisible;
             int needed = t.text.Replace("\n", "").Replace(" ", "").Length;
             Check(visible >= needed, $"yazi tam gorunuyor: '{t.text}' ({t.cachedTextGenerator.fontSizeUsedForBestFit}px)");
+            // Yatayda taşmaya izin verilen yazılar (alt şerit) kendi düğmesinin genişliğini aşmamalı.
+            if (t.horizontalOverflow == HorizontalWrapMode.Overflow && t.transform.parent is RectTransform owner)
+                Check(t.preferredWidth <= owner.rect.width + 1f, $"'{t.text}' dugmesine sigiyor (yazi {t.preferredWidth:F0} / dugme {owner.rect.width:F0} birim)");
         }
 
         // Karakter: menü kamerasından ekrandaki kutusu; ekranda, üst bilgi/OYNA/alt şerit ile en çok %15 kesişme
