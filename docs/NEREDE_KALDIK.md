@@ -3,66 +3,68 @@
 > Her aşamanın sonunda güncellenir. Projeye ara verip döndüğünde **önce bu dosyayı oku.**
 > Ayrıntılı geçmiş: [GELISTIRME_NOTLARI.md](GELISTIRME_NOTLARI.md) (bu dosya ondan daha güncel).
 
-**Son güncelleme:** 2026-10-12. **Gerçek engelli eğitim CANLIDA** (kullanıcı iPhone 13'te denedi ve onayladı). Kaynak `main` `ac4cb60`, yayın gh-pages `e8777e3`. Sıradaki: ana menü incelemesi (kod değişikliği yok).
+**Son güncelleme:** 2026-10-17. Canlıda gerçek engelli eğitim (`main` `ac4cb60`, gh-pages kökü `e8777e3`). **Ana menü prototipi `/test/`'te** (`ana-menu-prototip` `1d713c6`), kullanıcının iPhone değerlendirmesini bekliyor.
 
 ---
 
-## ⏸ DEVAM EDEN İŞ — Ana menü prototipi (YARIM, 2026-10-12'de durduruldu)
+## ▶ ANA MENÜ PROTOTİPİ — /test/'te, kullanıcının iPhone değerlendirmesini bekliyor (2026-10-17)
 
-> Bu bölüm yalnızca `ana-menu-prototip` dalındadır. `main`'deki not, kullanıcının "main'e dokunma" talimatı nedeniyle güncellenmedi.
-> **Prototip tamamlanmadı ve doğrulanmadı.** Canlı oyun, `main`, gh-pages ve `/test/` değişmedi.
+> Bu bölüm yalnızca `ana-menu-prototip` dalında. `main`'deki not, kullanıcının "main'e dokunma" talimatı nedeniyle güncellenmedi.
+> Canlı oyun ve `main` değişmedi. Canlıya geçiş için ayrıca açık onay gerekir.
 
-**Dal:** `ana-menu-prototip`, `main` `31565f6`'dan açıldı. Yarım iş commit `f1aad35`'te.
-**Yedek:** `test-yedek-ana-menu-oncesi` → gh-pages `e8777e3` (prototip öncesi `/test/` = canlı derleme). GitHub'da.
+**Dal:** `ana-menu-prototip`, `main` `31565f6`'dan açıldı. Commit'ler (eskiden yeniye):
+- `f1aad35` — yarım prototip.
+- `e0533fd` — ara not.
+- `1d713c6` — düzeltmeler ve son hâl.
 
-**Hedef:** Loadout menüsünü yeniden düzenlemek:
-- Üstte logo ve altın sayacı.
-- Ortada sabit açılı 3D karakter, arkasında Start sahnesinin animasyonlu sokağı.
-- Altta büyük OYNA ve Karakterler/Görevler/Mağaza/Ayarlar şeridi.
-- Güvenli alan desteği ve farklı telefon oranlarına uyum.
+**Yayın:** gh-pages `e82111e`; yalnızca `test/Build` (4 dosya) ve `test/olcum/Build` (4 dosya) değişti.
 
-Oyun akışı ve `PlayerData` değişmeyecek.
+**Yedek:** `test-yedek-ana-menu-oncesi` → gh-pages `e8777e3` (prototip öncesi `/test/` = canlı derleme).
 
-**Lisans:** Kullanıcı onayladı. Yalnızca projede zaten kullanılan varlıklar kullanılıyor: Unity Asset Store EULA kapsamındaki Endless Runner modelleri ve ikonları, Luckiest Guy yazı tipi (Apache 2.0), Unity'nin varsayılan gökyüzü malzemesi (Default-Skybox) ve projeye ait logo. Yeni yapay zekâ varlığı yok; eklenmeden önce ticari koşullar bildirilip onay alınacak.
+**Test adresi:** https://samet3474.github.io/tabanlari-yagla-v1/test/ — ölçüm sürümü `/test/olcum/`.
 
-### Yapılanlar (commit `f1aad35`)
-| Dosya | Durum |
-|---|---|
-| `Runtime/GameManager/LoadoutState.cs` | Menü sahnesi alanları, `ShowMenuScene()`, `GoToCharacterStore()`. Karakter dönmüyor, menü noktasına göre yerleşiyor. Alanlar boşsa eski menü aynen çalışır. Editörde derlendi; oyunda **denenmedi**. |
-| `Runtime/UI/Shop/ShopUI.cs` | `openCharacterListOnStart`: mağaza karakter sekmesiyle açılır. Derlendi, **denenmedi**. |
-| `_TabanlariYagla/Menu/SafeAreaFitter.cs`, `Plugins/WebGL/SafeArea.jslib` | Güvenli alan: yerelde `Screen.safeArea`, web'de CSS `env(safe-area-inset-*)`. Editörde derlendi; WebGL'de ve cihazda **denenmedi**. |
-| `_TabanlariYagla/Menu/MenuCoinCounter.cs` | Altın sayacı (`PlayerData.coins`). Derlendi, **denenmedi**. |
-| `_TabanlariYagla/Editor/MenuUygula.cs` | Editör aracı (`Uygula`, `Onizle`). `Uygula` çıkış 0 ile çalıştı: prefabı oluşturdu ve Main sahnesini kaydetti; Start sahnesini kaydetmedi. `Onizle` önizleme PNG'leri üretti. |
-| `_TabanlariYagla/Menu/MenuBackdrop.prefab` | Start ortamının kopyası, menü kamerası ve karakter noktası. |
-| `Scenes/Main.unity` | Araçla kaydedildi: arka plan, LoadoutState bağlantıları, yeni arayüz yerleşimi. **Oyunda veya derlemede görülmedi.** |
-| `Localization/.../tr.txt` | `ui.characters KARAKTERLER` |
-| `_Dev/MenuShots.cs` | Çok ekranlı denetim ve ekran görüntüsü aracı (yalnızca test derlemesi). **Hiç derlenmedi, çalıştırılmadı** (.meta dosyası yok). |
+### Menü (Loadout) yeni düzeni
+- **Üst:** solda logo, sağda altın sayacı (`PlayerData.coins`), altında sıralama düğmesi.
+- **Orta:** karakter adı ve karakter okları. 3D karakter dönmüyor; hafif açılı ve bekleme animasyonuyla duruyor.
+- **Arka plan:** Start sahnesinin sokak ortamının kopyası (`MenuBackdrop.prefab`, pistten uzakta), kendi menü kamerasıyla. Start'ın geçen kedi/rakun oyuncuları (`MenuActors`) çıkarıldı; ikinci karakter gibi görünüyordu.
+- **Alt:** büyük OYNA (`LoadoutState.StartGame()` aynen).
+- **En alt:** Karakterler (mağaza karakter sekmesi), Görevler, Mağaza, Ayarlar.
+- **Yan seçiciler** (yalnızca sahip olunanlar varsa görünür): tema ve güçlendirme sol altta küçültülmüş, aksesuar sağda.
+- **Eğitim perdesi:** OYNA dışını karartır; ok ve yazı OYNA'nın altında.
+- **Güvenli alan** (`SafeAreaFitter`): yerelde `Screen.safeArea`, web'de CSS `env(safe-area-inset-*)` (`SafeArea.jslib`; şablonda `viewport-fit=cover` açık).
+- **Pencereler:** 720 genişliğe göre çizilmiş ayarlar pencereleri dar ekranda `FitInsideParent` ile küçülür.
+- **Kamera:** menüdeyken oyun kamerası kapalı, koşu başlarken geri açılır. `Camera.main` (TrackManager) değişmedi.
+- **Sis:** Start'ın sis ayarı menüde kullanılır, koşuda eskisine döner.
 
-### Önemli: sahne ile araç arasındaki fark
-- **Durum:** Önizlemeye göre kamera ve karakter değerleri araçta güncellendi: kamera (-0.93, 1.3, 6.34), açı (8, -164, 0), FOV 45; karakter (-2.03, 0, 2.5). Ancak araç bu değerlerle **yeniden çalıştırılmadı**. Kaydedilmiş `Main.unity` ve `MenuBackdrop.prefab` hâlâ ilk denemenin kamera değerlerini taşıyor.
-- **Çözüm:** Cumartesi ilk adım.
+### Değişen dosyalar
+- **Oyun kodu (küçük):** `LoadoutState.cs` (menü sahnesi alanları, `ShowMenuScene`, `GoToCharacterStore`; alanlar boşsa eski davranış), `ShopUI.cs` (`openCharacterListOnStart`).
+- **Yeni:** `_TabanlariYagla/Menu/` (`SafeAreaFitter`, `SafeArea.jslib`, `MenuCoinCounter`, `FitInsideParent`, `MenuBackdrop.prefab`, asmref).
+- **Sahne:** `Scenes/Main.unity` — `MenuUygula` aracıyla kaydedildi; Start sahnesi değişmedi.
+- **Araçlar:** `_TabanlariYagla/Editor/MenuUygula.cs` (tekrar çalıştırılabilir editör aracı), `_Dev/MenuShots.cs` (yalnızca test derlemesi).
+- **Metin:** `tr.txt` → `ui.characters KARAKTERLER`.
 
-### Yapılmayanlar
-- Windows ve WebGL derlemesi.
-- Eğitim otomatik testleri (S1–S11).
-- Çok ekran denetimi ve ekran görüntüleri.
-- `/test/` yayını.
+### Test sonuçları
+- **Eğitim ve oyun akışı:** son derlemede otomatik testler **96/96**, hata kaydı 0. Kapsam: OYNA, eğitim, normal koşu, duraklatma, odak kaybı, oyun sonu, ikinci şans, menüye dönüş, kayıt.
+- **Ekran uyumu (Windows test derlemesi, pencereli, `MenuShots`):** 8 profilin hepsinde **39/39**.
+  - Profiller: 360x640 (16:9), 375x667 (iPhone SE), 390x844 (iPhone 13), 390x844 + iPhone uygulama güvenli payı (üst 47 / alt 34), 360x800 (20:9) + Android payı, 412x915 (Pixel) + pay, 430x932 (Pro Max) + pay, 360x840 (21:9) + pay.
+  - Denetimler: logo, altın, sıralama, karakter adı, OYNA, 4 alt düğme ve okların güvenli alan içinde olması ve üst üste binmemesi; yazıların kesilmemesi ve düğmeye sığması; alt düğmelerin dokunma genişliği; karakterin tamamen ekranda olması (yüksekliğin %41'i) ve arayüzün onu en çok %15 kapatması; ayarlar penceresinin sığması; "Karakterler" düğmesinin gerçek tıklama yoluyla mağazayı karakter sekmesiyle açması ve kapanınca menüye dönülmesi.
+  - Görüntüler: `_araclar/menu/ekran/`.
+- **Web (tarayıcı paneli, 390x844):** `/test/` açılıyor, menü doğru çiziliyor, eğitim perdesi doğru.
+- **Gerçek cihaz:** iPhone ya da Android'de **hiç denenmedi.** Web'deki güvenli alan (`env()`) yalnızca tarayıcı panelinde yüklendi, gerçek çentikli cihazda doğrulanmadı.
 
-### Olası sorunlar (doğrulanmadı)
-- **Önizlemede T-poz:** Önizlemede karakter T-pozunda ve tüm şapkalar açık; bu önizlemeye özgü olmalı (oyunda animatör ve aksesuar ayarı çalışır).
-- **Işık:** Start'ın ışık haritası ve yansıma probu taşınmadı; ortam gerçek zamanlı ışıkla çiziliyor. Önizlemede iyi görünüyor.
-- **Karakterler düğmesi:** Mağaza düğmesinin kopyası; bağlantısı (`GoToCharacterStore`) araçla kuruldu ama tıklanarak denenmedi.
-- **Pencerelerin sığması:** Ayarlar, Görevler ve Sıralama pencereleri 720 genişliğe göre; dar ekranda (~540) sığmayabilir.
-- **Kamera:** Menüde oyun kamerası kapatılıyor; eğitim ve oyun testleri koşunun doğru kamerayla başladığını doğrulamalı.
+### Bilinen sorunlar ve açık noktalar
+- **RenderPass hatası:** Tarayıcı panelinin konsolunda "RenderPass: dimensions ... (16384 x 16384)" ve "EndRenderPass" hataları görüldü. Menü açıkken artmıyor (5 sn boyunca sayı sabit), açılış/başlık ekranında oluşuyor. Panelin grafik sınırına özgü olabilir; canlı sürümde de olup olmadığını kesin ayıramadım. iPhone'da `/test/olcum/` ile bakılmalı.
+- **BestFit uyarısı:** "BestFit yalnızca dinamik yazı tiplerinde" uyarısı çıkıyor; LuckiestGuy dinamik değil. Alt şerit yazıları bu yüzden sabit boyuta alındı. Karakter adı ve altın sayısı en büyük boyutta çiziliyor (şimdiki değerlere sığıyor).
+- **Işık:** Start'ın ışık haritası ve yansıma probu taşınmadı (gerçek zamanlı ışık); görüntüler iyi ama Start'tan biraz farklı olabilir.
+- **Kapsam dışı:** Görevler ve Sıralama pencereleri ekran görüntüsünde sığıyor ama sayısal sığma denetimi yalnızca Ayarlar için yapıldı.
 
-### Cumartesi devam: ilk adım
-1. Unity kapalıyken aracı güncel değerlerle yeniden çalıştır:
-   `Unity.exe -batchmode -projectPath <proje> -executeMethod MenuUygula.Uygula -logFile <log>`
-   Logda `MENU| TAMAM` görülmeli. Sonra `link.xml` ve `.slnx` dosyalarını `git restore` ile geri al.
-2. Windows test derlemesini al. Sırayla:
-   - Eğitim testleri (`-tutorialTest -timeline -batchmode`); beklenen 96/96.
-   - Pencereli `-menuShots <klasör> <ad> [üst alt sol sağ]` ile 360x640, 390x844 (+ iPhone güvenli payı), 360x800, 412x915, 375x667, 430x932 ölçüleri.
-3. Hatalar düzelince WebGL derlemeleri, yalnızca `/test/` ve `/test/olcum/` yayını, rapor. Canlı için ayrıca onay gerekir.
+### Devam
+1. Kullanıcı iPhone 13'te `/test/`'i değerlendirir. Eğitimi görmek için `/test/olcum/?kayitsil=1`.
+2. Geri bildirime göre düzeltme. Değişiklikler `MenuUygula.Uygula` ile yeniden uygulanır, sonra `MenuShots` ve eğitim testleri tekrar çalıştırılır.
+3. Onaylanırsa canlıya geçiş (0. bölümdeki adımlar), **yalnızca açık onayla**.
+4. **Yeniden çalıştırma:**
+   - `Unity.exe -batchmode -projectPath <proje> -executeMethod MenuUygula.Uygula`
+   - Ekran denetimi: `_araclar/menu/ekranlar.ps1` (Windows test derlemesi gerekir).
 
 ---
 
