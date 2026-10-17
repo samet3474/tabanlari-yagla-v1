@@ -201,6 +201,289 @@ public static class IstanbulUygula
         if (Application.isBatchMode) EditorApplication.Exit(s_Errors == 0 ? 0 : 1);
     }
 
+    // ------------------------------------------------------------------ İstiklal test parçası
+    // -executeMethod IstanbulUygula.IstiklalParca (tekrar çalıştırılabilir).
+    // Day temasındaki UrbanBuilding01 kopyalanır: yol (Road01/02), yol noktaları (Entry/Exit, 18 m), sokak lambası, uzak
+    // arka plan ve engel noktası aynen kalır. Sanayi binaları ve borular çıkarılır; yerine bu araçla üretilen tek bir mesh
+    // gelir (mevcut VCOL malzemesi: CurvedUnlit, dokusuz, renk köşe renginden): İstiklal'i çağrıştıran özgün cepheler
+    // (yazı, tabela, marka yok), ortada tramvay rayları ve taş döşeme. Olası engellere simit tezgâhı eklenir; parçada tek
+    // engel noktası olduğundan simit en fazla 2 kez çıkar (SimpleBarricade 1-2 şerit). Addressables: Istanbul-Test grubu.
+    const string k_IstiklalFolder = "Assets/_TabanlariYagla/Istanbul/Test/Istiklal";
+    const string k_IstiklalPrefab = k_IstiklalFolder + "/IstiklalTest01.prefab";
+    const string k_IstiklalMesh = k_IstiklalFolder + "/IstiklalSokak.asset";
+    const string k_SourceSegment = "Assets/UnityTechnologies/Endless Runner/Prefabs/Themes/Default/Urban/UrbanBuilding01.prefab";
+    const string k_VcolMaterial = "Assets/UnityTechnologies/Endless Runner/Art/Materials/VCOL.mat";
+    static readonly string[] k_RemoveFromSegment = { "Decorations/Building02", "Decorations/Apartments04", "Decorations/Pipes" };
+
+    public static void IstiklalParca()
+    {
+        s_Errors = 0;
+        Directory.CreateDirectory(k_IstiklalFolder);
+        AssetDatabase.Refresh();
+
+        Mesh mesh = BuildIstiklalMesh();
+        var old = AssetDatabase.LoadAssetAtPath<Mesh>(k_IstiklalMesh);
+        if (old == null) AssetDatabase.CreateAsset(mesh, k_IstiklalMesh);
+        else { EditorUtility.CopySerialized(mesh, old); mesh = old; EditorUtility.SetDirty(old); }
+        Out($"sokak mesh: üçgen={mesh.triangles.Length / 3} köşe={mesh.vertexCount} sınır={mesh.bounds.min:F2}..{mesh.bounds.max:F2}");
+
+        if (!File.Exists(k_IstiklalPrefab) && !AssetDatabase.CopyAsset(k_SourceSegment, k_IstiklalPrefab)) { Fail("parça kopyalanamadı"); return; }
+        GameObject root = PrefabUtility.LoadPrefabContents(k_IstiklalPrefab);
+        try
+        {
+            root.name = Path.GetFileNameWithoutExtension(k_IstiklalPrefab);
+            foreach (string p in k_RemoveFromSegment)
+            {
+                var t = root.transform.Find(p);
+                if (t != null) Object.DestroyImmediate(t.gameObject);
+            }
+            var deco = root.transform.Find("Decorations");
+            Transform street = deco.Find("IstiklalSokak");
+            if (street == null) street = new GameObject("IstiklalSokak").transform;
+            street.SetParent(deco, false);
+            street.localPosition = Vector3.zero; street.localRotation = Quaternion.identity; street.localScale = Vector3.one;
+            street.gameObject.layer = deco.gameObject.layer;
+            var mf = street.GetComponent<MeshFilter>(); if (mf == null) mf = street.gameObject.AddComponent<MeshFilter>();
+            var mr = street.GetComponent<MeshRenderer>(); if (mr == null) mr = street.gameObject.AddComponent<MeshRenderer>();
+            mf.sharedMesh = mesh;
+            mr.sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(k_VcolMaterial);
+            mr.shadowCastingMode = ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+            mr.lightProbeUsage = LightProbeUsage.Off;
+            mr.reflectionProbeUsage = ReflectionProbeUsage.Off;
+
+            var seg = root.GetComponent<TrackSegment>();
+            string simitGuid = AssetDatabase.AssetPathToGUID(k_Prefab);
+            if (!seg.possibleObstacles.Any(r => r.AssetGUID == simitGuid))
+                seg.possibleObstacles = seg.possibleObstacles.Concat(new[] { new UnityEngine.AddressableAssets.AssetReference(simitGuid) }).ToArray();
+            Out($"engel noktaları=[{string.Join(",", seg.obstaclePositions)}] olası engel: {string.Join(", ", seg.possibleObstacles.Select(r => Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(r.AssetGUID))))}");
+
+            int tris = 0, renderers = 0;
+            foreach (var f in root.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (f.sharedMesh == null || f.GetComponent<MeshRenderer>() == null) continue;
+                renderers++;
+                for (int i = 0; i < f.sharedMesh.subMeshCount; ++i) tris += (int)f.sharedMesh.GetIndexCount(i) / 3;
+            }
+            Out($"parça (engelsiz): çizici={renderers} üçgen={tris}");
+            foreach (Transform p in seg.pathParent) Out($"  yol {p.name} {p.localPosition}");
+            PrefabUtility.SaveAsPrefabAsset(root, k_IstiklalPrefab);
+        }
+        finally { PrefabUtility.UnloadPrefabContents(root); }
+
+        var settings = AddressableAssetSettingsDefaultObject.Settings;
+        var group = settings.FindGroup(k_Group);
+        if (group == null) Fail(k_Group + " grubu yok");
+        else
+        {
+            var entry = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(k_IstiklalPrefab), group);
+            entry.address = Path.GetFileNameWithoutExtension(k_IstiklalPrefab);
+            Out($"Addressables: grup={group.Name} adres={entry.address} guid={entry.guid}");
+        }
+        AssetDatabase.SaveAssets();
+        Out(s_Errors == 0 ? "BITTI" : $"BITTI hata={s_Errors}");
+        if (Application.isBatchMode) EditorApplication.Exit(s_Errors == 0 ? 0 : 1);
+    }
+
+    // Basit kutu/dörtgen geometri; renk köşe renginde. Işık yok (CurvedUnlit), derinlik hissi için yüz yönüne göre
+    // gölgeleme köşe rengine işlenir. Sol taraf kurulur, sağ taraf x aynasıyla eklenir (farklı renk dizisiyle).
+    class MeshBuilder
+    {
+        public readonly System.Collections.Generic.List<Vector3> v = new System.Collections.Generic.List<Vector3>();
+        public readonly System.Collections.Generic.List<Color32> c = new System.Collections.Generic.List<Color32>();
+        public readonly System.Collections.Generic.List<int> t = new System.Collections.Generic.List<int>();
+        public bool mirror;
+
+        static float Shade(Vector3 n)
+        {
+            if (n.y > 0.5f) return 1.0f;
+            if (n.y < -0.5f) return 0.62f;
+            if (Mathf.Abs(n.z) > 0.5f) return 0.8f;
+            return 0.94f;
+        }
+
+        Vector3 M(Vector3 p) => mirror ? new Vector3(-p.x, p.y, p.z) : p;
+
+        // a,b,c,d çevresel sırada; ön yüz n yönüne bakar (sarım kendiliğinden düzeltilir).
+        public void Quad(Vector3 a, Vector3 b, Vector3 cc, Vector3 d, Vector3 n, Color col)
+        {
+            a = M(a); b = M(b); cc = M(cc); d = M(d); if (mirror) n.x = -n.x;
+            Color32 k = (Color)(col * Shade(n)); k.a = 255;
+            int i = v.Count;
+            v.Add(a); v.Add(b); v.Add(cc); v.Add(d);
+            for (int j = 0; j < 4; ++j) c.Add(k);
+            bool front = Vector3.Dot(Vector3.Cross(b - a, cc - a), n) > 0f;
+            if (front) { t.Add(i); t.Add(i + 1); t.Add(i + 2); t.Add(i); t.Add(i + 2); t.Add(i + 3); }
+            else { t.Add(i); t.Add(i + 2); t.Add(i + 1); t.Add(i); t.Add(i + 3); t.Add(i + 2); }
+        }
+
+        // Yalnız +x yönüne (sol taraftaki cephelerin sokağa bakan yüzü) bakan dörtgen.
+        public void FaceX(float x, float y0, float y1, float z0, float z1, Color col)
+            => Quad(new Vector3(x, y0, z0), new Vector3(x, y1, z0), new Vector3(x, y1, z1), new Vector3(x, y0, z1), Vector3.right, col);
+
+        public void Box(float x0, float x1, float y0, float y1, float z0, float z1, Color col, bool bottom = true)
+        {
+            Quad(new Vector3(x1, y0, z0), new Vector3(x1, y1, z0), new Vector3(x1, y1, z1), new Vector3(x1, y0, z1), Vector3.right, col);
+            Quad(new Vector3(x0, y0, z0), new Vector3(x0, y1, z0), new Vector3(x0, y1, z1), new Vector3(x0, y0, z1), Vector3.left, col);
+            Quad(new Vector3(x0, y1, z0), new Vector3(x1, y1, z0), new Vector3(x1, y1, z1), new Vector3(x0, y1, z1), Vector3.up, col);
+            if (bottom) Quad(new Vector3(x0, y0, z0), new Vector3(x1, y0, z0), new Vector3(x1, y0, z1), new Vector3(x0, y0, z1), Vector3.down, col);
+            Quad(new Vector3(x0, y0, z0), new Vector3(x1, y0, z0), new Vector3(x1, y1, z0), new Vector3(x0, y1, z0), Vector3.back, col);
+            Quad(new Vector3(x0, y0, z1), new Vector3(x1, y0, z1), new Vector3(x1, y1, z1), new Vector3(x0, y1, z1), Vector3.forward, col);
+        }
+    }
+
+    static Color Hex(string h) { ColorUtility.TryParseHtmlString("#" + h, out var c); return c; }
+
+    struct Building { public float z0, z1; public int floors; public Color wall; public Color awning; public bool cumba, balconies; }
+
+    static Mesh BuildIstiklalMesh()
+    {
+        const float zStart = -4.5f, zEnd = 13.5f;   // parça: Entry z=-4,49 → Exit z=13,5
+        const float face = -2.95f;                   // cephe çizgisi (mevcut binalarla aynı, x=±2,95)
+        const float back = -9.0f;
+        const float ground = 4.0f, floorH = 3.2f;
+        Color cornice = Hex("EFE8DA"), frame = Hex("E9E2D2"), glass = Hex("2F3A46"), shop = Hex("3B4954"), rail = Hex("2B2B2E");
+
+        var mb = new MeshBuilder();
+        Building[][] sides =
+        {
+            new[] {
+                new Building { z0 = zStart, z1 = 1.8f,  floors = 4, wall = Hex("E3CFA6"), awning = Hex("A83A32"), balconies = true },
+                new Building { z0 = 1.8f,  z1 = 7.2f,  floors = 3, wall = Hex("C98468"), awning = Hex("2F6A4E"), cumba = true },
+                new Building { z0 = 7.2f,  z1 = zEnd,  floors = 4, wall = Hex("BFB9AE"), awning = Hex("2B3F66"), balconies = true },
+            },
+            new[] {
+                new Building { z0 = zStart, z1 = 1.2f,  floors = 3, wall = Hex("D8A65E"), awning = Hex("2F6A4E"), cumba = true },
+                new Building { z0 = 1.2f,  z1 = 7.8f,  floors = 4, wall = Hex("E6BCAB"), awning = Hex("A83A32"), balconies = true },
+                new Building { z0 = 7.8f,  z1 = zEnd,  floors = 4, wall = Hex("A9BB9E"), awning = Hex("6B2E3E"), balconies = true },
+            },
+        };
+
+        for (int side = 0; side < 2; ++side)
+        {
+            mb.mirror = side == 1;
+            foreach (var b in sides[side])
+            {
+                float h = ground + b.floors * floorH;
+                float zc = (b.z0 + b.z1) * 0.5f, len = b.z1 - b.z0;
+                // Gövde (arka ve alt yüzü görünmez; yine de kutu — az üçgen).
+                mb.Box(back, face, 0f, h, b.z0, b.z1, b.wall, bottom: false);
+                // Bina aralarında ince ayırıcı pilastr.
+                mb.Box(face, face + 0.12f, 0f, h, b.z0, b.z0 + 0.25f, cornice, bottom: false);
+                // Zemin kat: camlı dükkân (yazısız), üstünde tente.
+                mb.FaceX(face + 0.02f, 0.25f, 3.25f, b.z0 + 0.55f, b.z1 - 0.4f, shop);
+                mb.Box(face, face + 0.8f, 3.3f, 3.45f, b.z0 + 0.45f, b.z1 - 0.3f, b.awning);
+                mb.Quad(new Vector3(face + 0.8f, 3.3f, b.z0 + 0.45f), new Vector3(face + 0.8f, 3.05f, b.z0 + 0.45f),
+                        new Vector3(face + 0.8f, 3.05f, b.z1 - 0.3f), new Vector3(face + 0.8f, 3.3f, b.z1 - 0.3f), Vector3.right, b.awning * 0.85f);
+                // Kat kornişleri ve çatı saçağı.
+                for (int f = 0; f <= b.floors; ++f)
+                {
+                    float y = ground + f * floorH - 0.1f;
+                    bool top = f == b.floors;
+                    mb.Box(face, face + (top ? 0.4f : 0.16f), y - (top ? 0.25f : 0f), y + (top ? 0.45f : 0.2f), b.z0, b.z1, cornice);
+                }
+                // Pencereler: çerçeve + cam (yalnız sokağa bakan yüz).
+                int windows = Mathf.Max(2, Mathf.FloorToInt(len / 1.75f));
+                float step = len / windows;
+                for (int f = 0; f < b.floors; ++f)
+                {
+                    float y = ground + f * floorH;
+                    for (int w = 0; w < windows; ++w)
+                    {
+                        float wz = b.z0 + step * (w + 0.5f);
+                        if (b.cumba && f >= 1 && Mathf.Abs(wz - zc) < 1.3f) continue; // cumbanın arkası
+                        mb.FaceX(face + 0.01f, y + 0.75f, y + 2.6f, wz - 0.52f, wz + 0.52f, frame);
+                        mb.FaceX(face + 0.025f, y + 0.85f, y + 2.5f, wz - 0.42f, wz + 0.42f, glass);
+                    }
+                }
+                // Cumba: 2. kattan çatıya kadar çıkma, ön yüzünde pencereler.
+                if (b.cumba && b.floors >= 2)
+                {
+                    float y0 = ground + floorH - 0.2f, y1 = h - 0.1f, d = face + 0.7f;
+                    mb.Box(face, d, y0, y1, zc - 1.25f, zc + 1.25f, b.wall * 0.97f);
+                    for (int f = 1; f < b.floors; ++f)
+                    {
+                        float y = ground + f * floorH;
+                        mb.FaceX(d + 0.01f, y + 0.75f, y + 2.6f, zc - 0.95f, zc + 0.95f, frame);
+                        mb.FaceX(d + 0.025f, y + 0.85f, y + 2.5f, zc - 0.85f, zc - 0.05f, glass);
+                        mb.FaceX(d + 0.025f, y + 0.85f, y + 2.5f, zc + 0.05f, zc + 0.85f, glass);
+                    }
+                }
+                // Balkonlar: 1. ve 3. katta ortadaki pencerelerin önünde; döşeme + koyu demir korkuluk.
+                if (b.balconies)
+                {
+                    for (int f = 1; f < b.floors; f += 2)
+                    {
+                        float y = ground + f * floorH;
+                        mb.Box(face, face + 0.6f, y + 0.6f, y + 0.75f, zc - 1.4f, zc + 1.4f, cornice);
+                        mb.Box(face + 0.55f, face + 0.6f, y + 0.75f, y + 1.65f, zc - 1.4f, zc + 1.4f, rail);
+                    }
+                }
+            }
+        }
+
+        // Sokak: açık renk taş döşeme ve ortada tek hatlı nostaljik tramvay rayları (yalnız görsel; çarpışma yok).
+        // CurvedUnlit dünyayı köşe başına büker (y -= eğrilik x uzaklık²); 18 m'lik tek dörtgen ortasında eğriden ~40 cm
+        // yukarıda düz kalır ve yol (köşeleri en fazla ~1 m arayla) uzakta döşemenin üstüne çıkar. Bu yüzden döşeme,
+        // oluklar ve raylar ~1 m'lik parçalara bölünür (sapma ~1 mm; döşeme yolun 1,2 cm üstünde).
+        mb.mirror = false;
+        Color stone = Hex("A69E92"), joint = Hex("7D766C"), steel = Hex("9AA0A6"), groove = Hex("3A3A3C");
+        const float py = 0.012f;
+        int pieces = Mathf.CeilToInt((zEnd - zStart) / 1.0f);
+        float pieceLen = (zEnd - zStart) / pieces;
+        for (int i = 0; i < pieces; ++i)
+        {
+            float a = zStart + i * pieceLen, b = a + pieceLen;
+            mb.Quad(new Vector3(-2.3f, py, a), new Vector3(2.3f, py, a), new Vector3(2.3f, py, b), new Vector3(-2.3f, py, b), Vector3.up, stone);
+            foreach (float rx in new[] { -0.5f, 0.5f })
+            {
+                mb.Quad(new Vector3(rx - 0.09f, py + 0.004f, a), new Vector3(rx + 0.09f, py + 0.004f, a), new Vector3(rx + 0.09f, py + 0.004f, b), new Vector3(rx - 0.09f, py + 0.004f, b), Vector3.up, groove);
+                // Ray: üst ve iki yan yüz (uçlar komşu parçayla birleşir, görünmez).
+                float r0 = rx - 0.035f, r1 = rx + 0.035f, top = py + 0.03f;
+                mb.Quad(new Vector3(r0, top, a), new Vector3(r1, top, a), new Vector3(r1, top, b), new Vector3(r0, top, b), Vector3.up, steel);
+                mb.Quad(new Vector3(r1, py, a), new Vector3(r1, top, a), new Vector3(r1, top, b), new Vector3(r1, py, b), Vector3.right, steel);
+                mb.Quad(new Vector3(r0, py, a), new Vector3(r0, top, a), new Vector3(r0, top, b), new Vector3(r0, py, b), Vector3.left, steel);
+            }
+        }
+        for (float z = zStart + 0.75f; z < zEnd; z += 1.5f)
+            mb.Quad(new Vector3(-2.3f, py + 0.002f, z - 0.03f), new Vector3(2.3f, py + 0.002f, z - 0.03f), new Vector3(2.3f, py + 0.002f, z + 0.03f), new Vector3(-2.3f, py + 0.002f, z + 0.03f), Vector3.up, joint);
+
+        var mesh = new Mesh { name = "IstiklalSokak" };
+        mesh.SetVertices(mb.v);
+        mesh.SetColors(mb.c);
+        mesh.SetTriangles(mb.t, 0);
+        mesh.SetUVs(0, Enumerable.Repeat(Vector2.zero, mb.v.Count).ToList());
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        return mesh;
+    }
+
+    // Salt okunur döküm (-executeMethod IstanbulUygula.ParcaDok): Day temasındaki bir parçanın yapısı ve ölçüleri.
+    public static void ParcaDok()
+    {
+        foreach (string name in new[] { "UrbanBuilding01", "UrbanPlasterWalls01" })
+        {
+            string path = AssetDatabase.FindAssets(name + " t:Prefab").Select(AssetDatabase.GUIDToAssetPath).First(p => p.Contains("/Default/"));
+            var go = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            var seg = go.GetComponent<TrackSegment>();
+            Out($"== {path}");
+            foreach (Transform p in seg.pathParent) Out($"  yol {p.name} {p.localPosition}");
+            Out($"  engel noktaları=[{string.Join(",", seg.obstaclePositions)}] olası engel={seg.possibleObstacles.Length}: {string.Join(",", seg.possibleObstacles.Select(r => Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(r.AssetGUID))))}");
+            int total = 0;
+            foreach (var mf in go.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var r = mf.GetComponent<MeshRenderer>(); if (r == null || mf.sharedMesh == null) continue;
+                int t = 0; for (int i = 0; i < mf.sharedMesh.subMeshCount; ++i) t += (int)mf.sharedMesh.GetIndexCount(i) / 3;
+                total += t;
+                var b = r.bounds;
+                Out($"  {AnimationUtility.CalculateTransformPath(mf.transform, go.transform)} mesh={mf.sharedMesh.name} ucgen={t} mat={string.Join("+", r.sharedMaterials.Select(m => m ? m.name + ":" + m.shader.name : "-"))} min={b.min:F2} max={b.max:F2} aktif={mf.gameObject.activeSelf}");
+            }
+            foreach (var c in go.GetComponentsInChildren<Collider>(true)) Out($"  collider {c.name} {c.GetType().Name} katman={c.gameObject.layer} bounds={c.bounds.min:F2}..{c.bounds.max:F2}");
+            Out($"  toplam ucgen={total}");
+        }
+        if (Application.isBatchMode) EditorApplication.Exit(0);
+    }
+
     static void AddToAddressables()
     {
         var settings = AddressableAssetSettingsDefaultObject.Settings;
