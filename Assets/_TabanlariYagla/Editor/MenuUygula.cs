@@ -6,7 +6,8 @@
 //
 // Yapılanlar:
 //  1. Start sahnesinin animasyonlu sokak ortamı (MenuEnvironment, MenUAnimation) ve kamerası kopyalanıp
-//     MenuBackdrop.prefab yapılır. Start sahnesi kaydedilmez, değişmez.
+//     MenuBackdrop.prefab yapılır (bu adımda Start sahnesi kaydedilmez).
+//  1b. Start sahnesi düğmesiz yükleme ekranı olur (ApplyStartScene): OYNA gizlenir, ana menü kendiliğinden açılır.
 //  2. Main sahnesine MenuBackdrop yerleştirilir (pistten uzakta), karakter noktası ve menü kamerası LoadoutState'e
 //     bağlanır. Oyun kamerası ve pist dokunulmadan kalır.
 //  3. Loadout arayüzü yeniden yerleştirilir: güvenli alan kökü, üstte logo + altın + sıralama, ortada karakter adı ve
@@ -75,6 +76,7 @@ public static class MenuUygula
         ReadArgs();
         BuildBackdropPrefab();
         if (s_Errors == 0) ApplyMainScene();
+        if (s_Errors == 0) ApplyStartScene();
         Out(s_Errors == 0 ? "TAMAM" : "DURDU, hata sayısı=" + s_Errors);
         if (Application.isBatchMode) EditorApplication.Exit(s_Errors == 0 ? 0 : 1);
     }
@@ -126,6 +128,38 @@ public static class MenuUygula
         Object.DestroyImmediate(root);
         if (!ok) Fail("prefab kaydedilemedi");
         else Out("MenuBackdrop.prefab kaydedildi (Start sahnesi kaydedilmedi)");
+    }
+
+    // ------------------------------------------------------------------ Start sahnesi: düğmesiz yükleme ekranı
+
+    // Logo ve hareketli sokak aynen kalır; OYNA düğmesi görünmez ve tıklanamaz olur, yazısı "YÜKLENİYOR..." olur.
+    // StartButton.autoStart: kayıt ve veritabanları hazır olunca ana menü kendiliğinden açılır. Nesne silinmez.
+    static void ApplyStartScene()
+    {
+        Scene start = EditorSceneManager.OpenScene(k_StartScene, OpenSceneMode.Single);
+        StartButton sb = Object.FindObjectsByType<StartButton>(FindObjectsInactive.Include, FindObjectsSortMode.None).FirstOrDefault();
+        if (sb == null) { Fail("Start sahnesinde StartButton yok"); return; }
+
+        sb.autoStart = true;
+        EditorUtility.SetDirty(sb);
+        var button = sb.GetComponent<Button>();
+        if (button != null) { button.interactable = false; EditorUtility.SetDirty(button); }
+        var image = sb.GetComponent<Image>();
+        if (image != null) { image.enabled = false; EditorUtility.SetDirty(image); }
+
+        Text label = sb.GetComponentInChildren<Text>(true);
+        if (label == null) { Fail("Start düğmesinde yazı yok"); return; }
+        label.text = "YÜKLENİYOR...";
+        label.fontSize = Mathf.Min(label.fontSize, 44);
+        Shadowed(label.gameObject);
+        LocText loc = GetOrAdd<LocText>(label.gameObject);
+        loc.key = "ui.loading";
+        EditorUtility.SetDirty(label);
+        EditorUtility.SetDirty(loc);
+
+        EditorSceneManager.MarkSceneDirty(start);
+        EditorSceneManager.SaveScene(start);
+        Out("Start sahnesi: otomatik geçişli yükleme ekranı (düğme gizli, yazı YÜKLENİYOR...)");
     }
 
     // ------------------------------------------------------------------ Main sahnesi

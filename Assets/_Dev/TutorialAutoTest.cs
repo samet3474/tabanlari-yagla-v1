@@ -233,7 +233,10 @@ public class TutorialAutoTest : MonoBehaviour
         if (!m_ScenarioMode) yield break;
         botEnabled = false;
 
-        if (SceneManager.GetActiveScene().name != "Main") { yield return null; SceneManager.LoadScene("Main"); }
+        // Başlık ekranı artık kendiliğinden ana menüye geçer (StartButton.autoStart); zorla yüklemek çift yükleme olur.
+        float wl = 0;
+        while (SceneManager.GetActiveScene().name != "Main" && wl < 30f) { wl += Time.unscaledDeltaTime; yield return null; }
+        if (SceneManager.GetActiveScene().name != "Main") { Out("UYARI: otomatik gecis olmadi, Main elle yukleniyor"); SceneManager.LoadScene("Main"); }
         float w = 0;
         while (!(GameManager.instance != null && GameManager.instance.topState is LoadoutState && CharacterDatabase.loaded && ThemeDatabase.loaded) && w < 60f)
         { w += Time.unscaledDeltaTime; yield return null; }

@@ -13,6 +13,7 @@ using UnityEngine.UI;
 public class MenuShots : MonoBehaviour
 {
     string m_Dir, m_Name;
+    static int s_MainLoads;
     int m_Fail, m_Pass;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -21,6 +22,7 @@ public class MenuShots : MonoBehaviour
         var args = System.Environment.GetCommandLineArgs();
         int i = System.Array.IndexOf(args, "-menuShots");
         if (i < 0 || i + 2 >= args.Length) return;
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += (s, m) => { if (s.name == "Main") s_MainLoads++; };
         var go = new GameObject("MenuShots");
         DontDestroyOnLoad(go);
         var m = go.AddComponent<MenuShots>();
@@ -47,20 +49,37 @@ public class MenuShots : MonoBehaviour
             SafeAreaFitter.debugSafeArea = new Rect(P(5), P(4), Screen.width - P(5) - P(6), Screen.height - P(3) - P(4));
         }
 
-        // Başlık ekranından menüye
-        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "Main")
-            UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
+        // Başlık (yükleme) ekranı dokunmadan ana menüye geçmeli: kimse sahne yüklemez, yalnızca beklenir.
+        var startButton = FindAnyObjectByType<StartButton>();
+        if (startButton != null)
+        {
+            var sbButton = startButton.GetComponent<Button>();
+            Check(startButton.autoStart && (sbButton == null || !sbButton.interactable), "baslik ekraninda OYNA dugmesi yok (otomatik gecis)");
+        }
         float w = 0;
+        float mainAt = -1f;
         LoadoutState lo = null;
+
+
         while (w < 60f)
         {
+            if (mainAt < 0f && UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Main") mainAt = Time.realtimeSinceStartup;
             lo = GameManager.instance != null ? GameManager.instance.topState as LoadoutState : null;
-            if (lo != null && lo.runButton.interactable && CharacterDatabase.loaded) break;
+            if (lo != null && lo.runButton.interactable && CharacterDatabase.loaded && lo.charPosition.childCount > 0) break;
             w += Time.unscaledDeltaTime; yield return null;
         }
-        if (lo == null) { Out("HATA menu acilmadi"); Application.Quit(); yield break; }
+        if (lo == null) { Out("HATA menu acilmadi (otomatik gecis olmadi)"); Application.Quit(); yield break; }
+        Out($"ACILIS ana menu sahnesi {mainAt:F2}s, menu hazir (OYNA etkin, karakter yuklu) {Time.realtimeSinceStartup:F2}s (uygulama baslangicindan)");
+        yield return new WaitForSecondsRealtime(1f);
+        Check(s_MainLoads == 1, $"Main sahnesi bir kez yuklendi (yukleme={s_MainLoads}, cift yukleme yok)");
+        Check(lo.charPosition.childCount == 1, $"menude tek karakter var ({lo.charPosition.childCount})");
+        Out($"ACILIS kayit: tutorialDone={PlayerData.instance.tutorialDone} egitimPerdesi={lo.tutorialBlocker.activeSelf}");
+        Check(lo.tutorialBlocker.activeSelf == !PlayerData.instance.tutorialDone, "egitim perdesi yalnizca egitim bitmemisse gorunuyor");
 
-        // 1) Eğitimi bitmiş oyuncunun menüsü
+        // 1) Eğitimi bitmiş oyuncunun menüsü (değerler yalnızca görüntü için; Ayarlar kapanırken kayıt diske yazıldığı
+        // için hemen ardından asıllarına döndürülür)
+        bool savedDone = PlayerData.instance.tutorialDone;
+        int savedCoins = PlayerData.instance.coins;
         PlayerData.instance.tutorialDone = true;
         lo.tutorialBlocker.SetActive(false);
         PlayerData.instance.coins = 12345; // sayaç gerçek değeri gösteriyor mu
@@ -68,6 +87,8 @@ public class MenuShots : MonoBehaviour
         Out($"ekran {Screen.width}x{Screen.height} guvenli={SafeAreaFitter.CurrentSafeArea()}");
         CheckLayout(lo);
         yield return Shot("menu");
+        PlayerData.instance.tutorialDone = savedDone;
+        PlayerData.instance.coins = savedCoins;
 
         // 2) İlk açılış: eğitim perdesi
         lo.tutorialBlocker.SetActive(true);
@@ -101,6 +122,13 @@ public class MenuShots : MonoBehaviour
         Check(GameManager.instance.topState is LoadoutState && FindAnyObjectByType<ShopUI>() == null, "magaza kapandi, menuye donuldu");
 
         Out($"OZET {m_Name} gecti={m_Pass} kaldi={m_Fail}");
+        // Sonraki açılışı "kayıtlı, eğitimi bitmiş kullanıcı" yapmak için (test betiği kullanıcının kaydını sonra geri koyar).
+        if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-menuKayitTamam") >= 0)
+        {
+            PlayerData.instance.tutorialDone = true;
+            PlayerData.instance.Save();
+            Out("KAYIT tutorialDone=true diske yazildi");
+        }
         Application.Quit();
     }
 
