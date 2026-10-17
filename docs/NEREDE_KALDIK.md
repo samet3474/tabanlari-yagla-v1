@@ -3,14 +3,49 @@
 > Her aşamanın sonunda güncellenir. Projeye ara verip döndüğünde **önce bu dosyayı oku.**
 > Ayrıntılı geçmiş: [GELISTIRME_NOTLARI.md](GELISTIRME_NOTLARI.md) (bu dosya ondan daha güncel).
 
-**Son güncelleme:** 2026-10-17. Canlıda gerçek engelli eğitim (`main` `ac4cb60`, gh-pages kökü `e8777e3`). **Ana menü prototipi + açılış (logo → yükleme ekranı → menü) `/test/`'te** (`ana-menu-prototip` `91bcc8a`), kullanıcının iPhone değerlendirmesini bekliyor.
+**Son güncelleme:** 2026-10-17. **Canlıda ana menü + tek yükleme ekranı** (`main` `ea229d9`, gh-pages kökü `4924636`). Önceki canlı: gerçek engelli eğitim (`ac4cb60` / `e8777e3`).
 
 ---
 
-## ▶ ANA MENÜ PROTOTİPİ + TEK OYNA AÇILIŞ — /test/'te, kullanıcının iPhone değerlendirmesini bekliyor (2026-10-17)
+## ▶ CANLIDA: ANA MENÜ + TEK YÜKLEME EKRANI (2026-10-17)
 
-> Bu bölüm yalnızca `ana-menu-prototip` dalında. `main`'deki not, kullanıcının "main'e dokunma" talimatı nedeniyle güncellenmedi.
-> Canlı oyun ve `main` değişmedi. Canlıya geçiş için ayrıca açık onay gerekir.
+Kullanıcı iPhone 13'te `/test/` sürümünü (gh-pages `e774264`, kaynak `1110f81`) denedi ve canlıya geçişi açıkça onayladı.
+
+**Kaynak:** `ana-menu-prototip` `main`'e çakışmasız birleştirildi (`--no-ff`). Birleştirme commit'i: `ea229d9`. Ağacı `1110f81` ile birebir aynı.
+
+**Yayın:** gh-pages `4924636`. `/test/` derlemesi **yeniden derlenmeden** köke kopyalandı.
+- Canlıdan indirilen `index.html`, `Build/*` (4 dosya), `catalog.bin`, `settings.json` ve logo, `/test/` dosyalarıyla SHA-256 olarak aynı.
+- Eski Addressables paketleri (2 adet) açık eski oturumlar için kökte bırakıldı.
+- Yollar göreli (`Build/…`, `{RuntimePath}` = sayfanın klasörü, manifest `./`); `/test/`'e bağlı yol yok.
+- Kayıt biçimi değişmedi (`PlayerData` dokunulmadı). Kökün kayıt klasörü aynı kaldığından mevcut oyuncuların kaydı korunur.
+- `/test/`, `/dev/`, `/test-ad/`, `/test-dil/`: `e774264`'e göre değişiklik 0 dosya; canlıdaki `index.html`'leri de aynı.
+
+**Etiketler (GitHub'da):**
+| Etiket | Gösterdiği | Amaç |
+|---|---|---|
+| `canli-2026-10-17-oncesi-kaynak` | main `31565f6` | geçiş öncesi kaynak |
+| `canli-2026-10-17-oncesi-yayin` | gh-pages `e774264` (kök = eski canlı `e8777e3`) | geçiş öncesi yayın |
+| `canli-2026-10-17-kaynak` | main `ea229d9` | canlı kaynak |
+| `canli-2026-10-17-yayin` | gh-pages `4924636` | canlı yayın |
+
+Önceki tüm etiketler ve yedekler duruyor.
+
+**Testler:**
+- Windows test derlemesi (aynı kaynak): eğitim 96/96, 3 açılış senaryosu 45/45, 8 ekran profili 45/45.
+- Canlı (tarayıcı paneli, 390x844): logo → çubuk 81→87→92→100 → menü dokunmadan açıldı. OYNA oyunu başlattı, eğitim ilk adımı (SAĞA KAYDIR / TEKRAR DENE) göründü. Duraklat → ANA MENÜ → menüye dönüldü. Konsolda hata yok.
+- Panelde klavye ve kaydırma oyuna ulaşmadığı için eğitimin tamamı, normal koşu, oyun sonu, karakter, mağaza, görevler ve ayarlar canlıda panelde denenemedi. Bunlar kullanıcının iPhone 13 testinde (aynı derleme) ve Windows testlerinde doğrulandı.
+
+**Geri dönüş (gerekirse):**
+- Yayın: v1-pages'te `git checkout canli-2026-10-17-oncesi-yayin -- Build StreamingAssets TemplateData index.html manifest.webmanifest`, commit, push gh-pages.
+- Kaynak: `git revert -m 1 ea229d9` (main).
+
+**Bilinen risk:** dosya adlarında sürüm eki yok; GitHub Pages ~10 dk önbellek tutar. Geçişten hemen sonra açanlarda nadiren eski/yeni karışımı olabilir; sayfayı yenilemek düzeltir.
+
+---
+
+## Ana menü prototipi + tek OYNA açılış — geliştirme kaydı (2026-10-17'de canlıya alındı, yukarıya bak)
+
+> Bu bölüm `ana-menu-prototip` dalında yazıldı; dal 2026-10-17'de `main`'e birleşti (`ea229d9`).
 
 **Dal:** `ana-menu-prototip`, `main` `31565f6`'dan açıldı. Commit'ler (eskiden yeniye):
 - `f1aad35` — yarım prototip.
@@ -295,8 +330,8 @@ Geri dönüş etiketleri (hepsi GitHub'da):
 
 ## 7. Sıradaki adım (döndüğünde buradan başla)
 
-1. **Ana menü incelemesi** (Subway Surfers düzenine yakın, özgün görseller). Önce yalnızca inceleme ve rapor; kod değişikliği, commit ve yayın yok. Uygulama için ayrıca onay beklenir.
-2. Sonra: Aşama 2 (performans/bellek), önbellek iyileştirmesi (Name Files As Hashes), Android APK.
+1. ~~Ana menü~~ — 2026-10-17'de canlıya alındı. Yeni iş için kullanıcıdan talimat beklenir.
+2. Öneriler (onaysız başlanmaz): Aşama 2 (performans/bellek), önbellek iyileştirmesi (Name Files As Hashes), Android APK.
 
 ## 8. Başka bilgisayarda devam etmek
 
