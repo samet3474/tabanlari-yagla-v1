@@ -178,11 +178,18 @@
       ];
       document.querySelector("#ty-loader-tip").innerHTML = "<b>İpucu:</b> " + tyTips[Math.floor(Math.random() * tyTips.length)];
       setTimeout(function () { tyLoader.classList.add("ty-loading"); }, 800);
-      function tyProgress(p) {
-        var pct = Math.floor(80 * Math.max(0, Math.min(1, p)));
+      // Tek çubuk: indirme %0-80, oyunun kendi yüklemesi %80-100 (Loading.jslib -> tyLoadingProgress). Hiç geri gitmez.
+      var tyShown = 0;
+      function tySetBar(fraction) {
+        var pct = Math.floor(100 * Math.max(tyShown, Math.min(1, fraction)));
+        tyShown = pct / 100;
         document.querySelector("#ty-loader-fill").style.width = pct + "%";
         document.querySelector("#ty-loader-pct").textContent = pct + "%";
       }
+      function tyProgress(p) { tySetBar(0.8 * Math.max(0, Math.min(1, p))); }
+      window.tyLoadingProgress = function (fraction) { tySetBar(fraction); };
+      // Ana menü açıldı: yükleme ekranı kapanır (yedek: oyun bildirmezse 60 sn sonra yine kapanır).
+      window.tyLoadingDone = function () { tySetBar(1); setTimeout(function () { tyLoader.style.display = "none"; }, 120); };
 
       var script = document.createElement("script");
       script.src = loaderUrl;
@@ -190,9 +197,9 @@
         createUnityInstance(canvas, config, (progress) => {
           tyProgress(progress);
         }).then((unityInstance) => {
-          // Oyun açıldı: Unity'deki yükleme ekranı (sokak arka planı) %80'den devam eder.
+          // Oyun açıldı: aynı ekran açık kalır, çubuğu oyunun kendi yüklemesi %80'den %100'e götürür.
           tyProgress(1);
-          tyLoader.style.display = "none";
+          setTimeout(function () { if (tyLoader.style.display !== "none") window.tyLoadingDone(); }, 60000);
         }).catch((message) => {
           if (!isAudioDecodeError(message)) alert(message);
         });
