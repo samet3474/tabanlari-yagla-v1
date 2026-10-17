@@ -3,7 +3,7 @@
 > Her aşamanın sonunda güncellenir. Projeye ara verip döndüğünde **önce bu dosyayı oku.**
 > Ayrıntılı geçmiş: [GELISTIRME_NOTLARI.md](GELISTIRME_NOTLARI.md) (bu dosya ondan daha güncel).
 
-**Son güncelleme:** 2026-10-17. Canlıda gerçek engelli eğitim (`main` `ac4cb60`, gh-pages kökü `e8777e3`). **Ana menü prototipi + tek OYNA açılış akışı `/test/`'te** (`ana-menu-prototip` `974a660`), kullanıcının iPhone değerlendirmesini bekliyor.
+**Son güncelleme:** 2026-10-17. Canlıda gerçek engelli eğitim (`main` `ac4cb60`, gh-pages kökü `e8777e3`). **Ana menü prototipi + açılış (logo → yükleme ekranı → menü) `/test/`'te** (`ana-menu-prototip` `91bcc8a`), kullanıcının iPhone değerlendirmesini bekliyor.
 
 ---
 
@@ -17,16 +17,35 @@
 - `e0533fd` — ara not.
 - `1d713c6` — düzeltmeler ve son hâl.
 - `974a660` — tek OYNA açılış akışı.
+- `91bcc8a` — logo → dolum çubuklu yükleme ekranı → ana menü.
 
-**Yayın:** gh-pages `ef5f897`; yalnızca `test/` değişti.
+**Yayın:** gh-pages `06ff858`; yalnızca `test/` değişti.
 
 **Yedekler:**
+- `test-yedek-yukleme-oncesi` → gh-pages `ef5f897` (logo/yükleme ekranından önceki `/test/`).
 - `test-yedek-acilis-oncesi` → gh-pages `e82111e` (açılış değişikliğinden önceki `/test/`).
 - `test-yedek-ana-menu-oncesi` → gh-pages `e8777e3` (prototip öncesi `/test/` = canlı derleme).
 
 **Test adresi:** https://samet3474.github.io/tabanlari-yagla-v1/test/ — ölçüm sürümü `/test/olcum/`.
 
-### Açılış akışı (2026-10-17): tek OYNA
+### Açılış: logo → yükleme ekranı → ana menü (2026-10-17, `91bcc8a`, kullanıcının örnek görsellerine göre)
+- **1. Logo:** web sayfasının kendi açılış ekranı (`WebGLTemplates/TabanlariYagla/index.html`, `#ty-loader`). Lacivert zeminde ortada yalnız logo, 0,8 sn; oyun dosyalarının indirmesi bu sırada sürer.
+- **2. Yükleme ekranı:**
+  - Önce sayfada: logo üste kayar; altta İpucu + dolan turuncu çubuk + yüzde. İndirme çubuğu %0–80 doldurur.
+  - Oyun açılınca Unity'deki Start sahnesinde aynı düzen (logo, hareketli sokak, ipucu, çubuk, yüzde, güvenli alanda) %80'den %100'e gider.
+  - Gerçek adımlar: kayıt %10, karakter ve tema veritabanları %25 + %25, Main sahnesinin arka planda yüklenmesi %60–100.
+  - Main sahnesi ancak çubuk %100'ü gösterince açılır. Çubuk gerçek değere hızla yetişir (5/sn); yapay bekleme yok.
+  - Unity'nin kendi ince çubuğu gizli.
+- **3. Ana menü** dokunmadan açılır → OYNA → oyun.
+- **Varlıklar:** sprite sayfası (`UIBorderFilled01`, `UISliderFill`), LuckiestGuy, proje logosu (`TemplateData/brand-logo.png`). Yeni görsel yok; Subway Surfers'tan hiçbir görsel kullanılmadı, yalnızca düzen örnek alındı.
+- **İpuçları:** `tr.txt` → `tip.prefix`, `tip.1–5`; sayfadakiler `index.html` içinde.
+- **Testler (Windows test derlemesi, son hâl):**
+  - Açılış senaryoları (yeni / tekrar / kayıtlı kullanıcı): 43/43 × 3. Menü ~2 sn'de hazır (görüntü alma dahil).
+  - 8 ekran profili: 43/43.
+  - Eğitim testleri 96/96 (logo/yükleme değişikliğinden hemen önceki derlemede; bu değişiklik oyun akışına dokunmuyor).
+- **Web (tarayıcı paneli, 390x844):** logo → yükleme ekranı (sayfa) → yükleme ekranı (Unity, sokak) → menü sırası görüldü, dokunma gerekmedi.
+
+### Önceki adım: tek OYNA (974a660)
 - **Akış:** Oyun açılır → başlık ekranı (logo + hareketli sokak + "YÜKLENİYOR...") → yükleme bitince **dokunmadan** ana menü → OYNA → oyun.
 - **Start sahnesi silinmedi**, düğmesiz yükleme ekranına dönüştü (`MenuUygula.ApplyStartScene`): OYNA düğmesi gizli ve tıklanamaz, yazısı "YÜKLENİYOR...". Kayıt (`PlayerData`, `MusicPlayer` üzerinden) ve karakter/tema veritabanlarının yüklenmesi eskisi gibi burada başlıyor.
 - **`StartButton.autoStart`:** kayıt ve iki veritabanı hazır olunca Main sahnesi arka planda (`LoadSceneAsync`) yüklenir. Yapay bekleme yok. Çift yükleme koruması var. 20 sn güvenlik sınırı: bir veritabanı hiç bitmezse yine geçilir, menü kendisi bekler. `ftueLevel` güncellemesi korunuyor.
