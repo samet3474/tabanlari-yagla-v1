@@ -3,12 +3,76 @@
 > Her aşamanın sonunda güncellenir. Projeye ara verip döndüğünde **önce bu dosyayı oku.**
 > Ayrıntılı geçmiş: [GELISTIRME_NOTLARI.md](GELISTIRME_NOTLARI.md) (bu dosya ondan daha güncel).
 
-**Son güncelleme:** 2026-10-17. **Canlıda ana menü + tek yükleme ekranı** (`main` `ea229d9`, gh-pages kökü `4924636`). Önceki canlı: gerçek engelli eğitim (`ac4cb60` / `e8777e3`).
-**Geliştirmede:** `istanbul-tema` dalı (`main` `e16c54d`'den). İstanbul teması, faz 1: simit tezgâhı test engeli. Yayın yok, `/test/` değişmedi.
+**Son güncelleme:** 2026-10-18. **Canlıda ana menü + tek yükleme ekranı** (`main` `ea229d9`, gh-pages kökü `4924636`). Önceki canlı: gerçek engelli eğitim (`ac4cb60` / `e8777e3`).
+**Geliştirmede:** `istanbul-tema` dalı (`main` `e16c54d`'den). İstanbul teması: simit tezgâhı + ilk İstiklal test parçası. Yayın yok, `/test/` değişmedi.
 
 ---
 
-## ▶ İSTANBUL TEMASI — FAZ 1: SİMİT TEZGÂHI BORU HATTI TESTİ (2026-10-17, `istanbul-tema`)
+## ▶ İSTANBUL TEMASI — AŞAMA 1: İLK İSTİKLAL TEST PARÇASI (2026-10-18, `istanbul-tema`)
+
+> Kullanıcı onayıyla commit edildi ve yalnız `istanbul-tema` dalına push edildi. Yayın yok; `main`, `gh-pages`, `/test/` değişmedi.
+> Sonraki adım (Galata, Eminönü, yeni parçalar) için kullanıcı kararı bekleniyor.
+
+**Commit'ler:**
+- `f8a9cf1`: İstiklal test parçası (prefab, `IstiklalSokak.asset`, Addressables kaydı, `IstanbulUygula.cs`).
+- `341f1ce`: geliştirme testi `IstiklalTest.cs`.
+- Bu not: ayrı commit.
+- Commit dışı: `addressables_content_state.bin`, kullanıcı kaydı, `Build/`, depo dışındaki `_araclar/istanbul/*`.
+- Yedekler: `_araclar/istanbul/yedek-asamaA-20261018-002238/`.
+
+**Yapılan:** tek bir test parçası, `Assets/_TabanlariYagla/Istanbul/Test/Istiklal/IstiklalTest01.prefab`.
+- Day temasındaki `UrbanBuilding01`'in kopyası. Korunanlar: yol (Road01/02), Entry z=-4,49 → Exit z=13,50 (18 m), şerit aralığı 1,5, sokak lambası, uzak arka plan, engel noktası `[0,5]`.
+- Sanayi binaları ve borular yerine tek bir mesh (`IstiklalSokak.asset`, 1.388 üçgen). Malzeme projede zaten olan `VCOL` (CurvedUnlit, dokusuz, renk köşe renginden).
+  - Cepheler: özgün, yazısız ve markasız; 3–4 katlı pastel cepheler, kat kornişleri, pencereler, balkonlar, cumba, dükkân camları ve renkli tenteler.
+  - Ortada tek hatlı tramvay rayları ve açık renk taş döşeme. Çarpışma kutusu yok, yalnız görsel.
+- Olası engeller: mevcut alçak bariyer, koni ve çöp kutusu + simit tezgâhı. Tek engel noktası olduğundan simit en fazla 2 kez çıkar.
+- Addressables: `Istanbul-Test` grubuna `IstiklalTest01` kaydı (grup dosyasına 5 satır). `AddressableAssetSettings.asset` **değişmedi**.
+- Tema, Day/Tutorial, kayıt formatı, `TrackManager`, oyuncu kodu, `Road01/02.fbx`, `WorldCurver` ve ortak shader'lar değişmedi. Yeni Meshy üretimi ve indirme yok.
+- Araçlar:
+  - `IstanbulUygula.IstiklalParca`: parçayı yeniden üretir.
+  - `IstanbulUygula.ParcaDok`: salt okunur döküm.
+  - `Assets/_Dev/IstiklalTest.cs` (`-istiklalTest`): yalnız geliştirme derlemesinde çalışır; Day bölgelerini yalnız bellekte bu parçaya çevirir.
+  - Çalıştırma betiği: `_araclar/istanbul/istiklal_test.ps1`.
+
+**Görsel düzeltme — eğrilik (2026-10-18):**
+- Belirti: uzakta taş döşemenin yerine asfalt ve asfalt çatlakları görünüyordu.
+  - İlk raporda "çatlaklar döşemenin üstünde" denmişti; bu **yanlıştı**. Gerçekte döşeme uzakta yolun altında kalıyordu.
+- Kaynak: `Road01/02.fbx` içinde, orta şeritte (x ±0,4 m) yüzeyden 0,4 cm yüksekte duran koyu köşe renkli poligonlar (çatlaklar).
+- Neden: `CurvedUnlit` köşe başına `y -= 0,005 × uzaklık²` uygular (Main: `curveStrength` 0,005).
+  - 18 m'lik tek döşeme dörtgeni ortasında ~40 cm düz kalıyordu. Yolun köşeleri en fazla ~1 m arayla dizili, eğriyi izliyordu.
+- Çözüm: yalnız `BuildIstiklalMesh` değişti. Döşeme, oluklar ve raylar 18 adet 1 m'lik parçaya bölündü; sapma ~1 mm, pay 1,2 cm.
+  - Mesh dosya kimliği korundu (`14452df9…`), prefab bayt bayt aynı.
+  - Üçgen 1.090 → 1.388.
+- Ölçüm: yol ortasında döşeme oranı, düzeltmeden önce çoğu satırda %0 (asfalt %80–100); sonra her mesafede %71–88 (kalan kısım raylar, derzler ve karakter).
+  - Karşılaştırma görüntüleri: `_araclar/istanbul/test/karsilastirma-sokak.png`, `karsilastirma-simit.png`.
+- Bina gövdelerinde de benzer, küçük bir eğrilik farkı var (5–6 m'lik kutular, tabanda birkaç cm). Bu aşamada düzeltilmedi.
+
+**Test (düzeltmeden sonra, yeni Windows test derlemesi, 390x844; gerçek iPhone'da denenmedi):**
+- Eğitim 96/96, hata logu 0. Menü: 11 çalıştırmanın her biri 45/45. Kullanıcı kaydı her seferinde yedekle aynı (SHA-256 `F19B7495…`).
+- İstiklal testi: 10/10 geçti, hata logu 0.
+  - 64 parça, hepsi İstiklal.
+  - 63 birleşim; boşluk 0,0000 m, açı 0,00°.
+  - 4 engel türü yerleşti: simit 20, çöp kutusu 27, alçak bariyer 14, koni 22.
+  - Parça başına en çok 2 simit; komşu şeride değen 0/40.
+  - 724 altının 0'ı engelin içinde.
+- Üçgen: engelsiz parça 3.353 (5 çizici). Engellerle ortalama 4.626, en çok 9.277 (hedef 10–15 bin). Çizici en çok 13.
+- Doku: yeni doku yok. Parçanın bütün malzemeleri VCOL, dokusuz. Simit dokusu 1024.
+- Addressables `Istanbul-Test` paketi (Windows): 633 KB (önce 628 KB; yalnız simitle 598 KB). WebGL ölçülmedi.
+- Otomatik sürüşler — **bilinen başarısızlıklar, başarılı sayılmaz** (karışık engellerde otomatik pilotun sınırları):
+  - zıplama: 5 çarpma, hepsi çöp kutusu (zıplanamaz yükseklikte).
+  - şerit değiştirme: 6 çarpma (5 alçak bariyer — bütün şeritleri kapatır, 1 koni). Önceki çalıştırmalarda 6 ve 10.
+  - dokunmadan: 9 çarpma; çarpışma çalışıyor.
+  - Simit, zıplama ve şerit değiştirme sürüşlerinde çarpılmadı.
+- Görüntüler: `_araclar/istanbul/test/istiklal-*.png` (yeni); `test/onceki/` (düzeltme öncesi).
+
+**Geri alma:**
+- Yalnız görsel düzeltme: `IstanbulUygula.cs` içinde eski döşeme/ray kodu geri alınır ve `IstanbulUygula.IstiklalParca` yeniden çalıştırılır. Alternatif: `f8a9cf1` öncesi duruma dönülür.
+- Bütün aşama: `git revert 341f1ce f8a9cf1` (not commit'i de gerekirse). Ya da `git switch main`.
+- `main`, `gh-pages` değişmedi.
+
+---
+
+## İstanbul teması — faz 1: simit tezgâhı boru hattı testi (2026-10-17, `istanbul-tema`)
 
 > `main`, `gh-pages`, canlı oyun ve `/test/` değişmedi. Yayın yok. Sonraki her adım (yeni model, tema, parça, yayın) ayrı onay ister.
 
