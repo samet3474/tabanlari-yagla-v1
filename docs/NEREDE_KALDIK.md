@@ -3,7 +3,114 @@
 > Her aşamanın sonunda güncellenir. Projeye ara verip döndüğünde **önce bu dosyayı oku.**
 > Ayrıntılı geçmiş: [GELISTIRME_NOTLARI.md](GELISTIRME_NOTLARI.md) (bu dosya ondan daha güncel).
 
-**Son güncelleme:** 2026-10-12. **Gerçek engelli eğitim CANLIDA** (kullanıcı iPhone 13'te denedi ve onayladı). Kaynak `main` `ac4cb60`, yayın gh-pages `e8777e3`. Sıradaki: ana menü incelemesi (kod değişikliği yok).
+**Son güncelleme:** 2026-10-17. Canlıda gerçek engelli eğitim (`main` `ac4cb60`, gh-pages kökü `e8777e3`). **Ana menü prototipi + açılış (logo → yükleme ekranı → menü) `/test/`'te** (`ana-menu-prototip` `91bcc8a`), kullanıcının iPhone değerlendirmesini bekliyor.
+
+---
+
+## ▶ ANA MENÜ PROTOTİPİ + TEK OYNA AÇILIŞ — /test/'te, kullanıcının iPhone değerlendirmesini bekliyor (2026-10-17)
+
+> Bu bölüm yalnızca `ana-menu-prototip` dalında. `main`'deki not, kullanıcının "main'e dokunma" talimatı nedeniyle güncellenmedi.
+> Canlı oyun ve `main` değişmedi. Canlıya geçiş için ayrıca açık onay gerekir.
+
+**Dal:** `ana-menu-prototip`, `main` `31565f6`'dan açıldı. Commit'ler (eskiden yeniye):
+- `f1aad35` — yarım prototip.
+- `e0533fd` — ara not.
+- `1d713c6` — düzeltmeler ve son hâl.
+- `974a660` — tek OYNA açılış akışı.
+- `91bcc8a` — logo → dolum çubuklu yükleme ekranı → ana menü.
+- (bu commit) — tek yükleme ekranı, web ve Windows aynı.
+
+**Yayın:** gh-pages `e774264`; yalnızca `test/` değişti.
+
+**Yedekler:**
+- `test-yedek-tekyukleme-oncesi` → gh-pages `06ff858` (tek yükleme ekranından önceki `/test/`).
+- `test-yedek-yukleme-oncesi` → gh-pages `ef5f897` (logo/yükleme ekranından önceki `/test/`).
+- `test-yedek-acilis-oncesi` → gh-pages `e82111e` (açılış değişikliğinden önceki `/test/`).
+- `test-yedek-ana-menu-oncesi` → gh-pages `e8777e3` (prototip öncesi `/test/` = canlı derleme).
+
+**Test adresi:** https://samet3474.github.io/tabanlari-yagla-v1/test/ — ölçüm sürümü `/test/olcum/`.
+
+### Tek yükleme ekranı, her yerde aynı (2026-10-17, kullanıcının "tek yükleme ekranı olsun… hepsinde aynı olsun" isteği)
+- **Akış:** lacivert zeminde ortada yalnız logo (0,8 sn) → logo üste kayar, altta İpucu + tek turuncu çubuk %0'dan %100'e dolar → ana menü dokunmadan açılır → OYNA → oyun.
+- **Web:** yalnız sayfanın ekranı (`index.html` `#ty-loader`) görünür ve ana menü açılana kadar kalır. İndirme %0–80'i, oyunun kendi yüklemesi (`StartButton` → `Loading.jslib` → `window.tyLoadingProgress`) %80–100'ü doldurur. Main sahnesi açılınca `tyLoadingDone` ekranı kapatır; güvenlik için 60 sn sonra kendiliğinden kapanır. Çubuk hiç geri gitmez.
+- **Windows / yerel:** Start sahnesi aynı görünür: tam ekran lacivert `LoadingBackground`, ortada `LogoImage` (560x315); 0,8 sn sonra logo yukarı (y=358, %90 boy) kayar, `LoadingSafeArea` (CanvasGroup) görünür olur, çubuk 0'dan dolar. Arkadaki 3B sokak çizilmez (kamera yalnız lacivert temizler). Logo süresi çizilen karelerle sayılır; ilk açılıştaki uzun kareler logo aşamasını atlatmaz.
+- **Testler (Windows test derlemesi):**
+  - Eğitim 96/96.
+  - Açılış senaryoları 45/45 × 3. Menü ~3,3 sn'de hazır (0,8 sn logo + 0,45 sn geçiş dahil).
+  - 8 ekran profili 45/45. Yeni denetimler: önce yalnız logo (ortada, çubuk gizli); sonra logo yukarıda ve çubuk görünür.
+- **Web (tarayıcı paneli, 390x844, /test/ e774264):** çubuk 81→87→92→100 ilerledi, geri gitmedi. Ekran %100'de ~2 sn kaldıktan sonra kapandı (Main sahnesinin açılışı), menü dokunmadan geldi.
+- **Gerçek cihazda (iPhone) henüz denenmedi.**
+
+### Önceki adım: logo → yükleme ekranı → ana menü (2026-10-17, `91bcc8a`; yukarıdaki tek ekranla değişti, kullanıcının örnek görsellerine göre)
+- **1. Logo:** web sayfasının kendi açılış ekranı (`WebGLTemplates/TabanlariYagla/index.html`, `#ty-loader`). Lacivert zeminde ortada yalnız logo, 0,8 sn; oyun dosyalarının indirmesi bu sırada sürer.
+- **2. Yükleme ekranı:**
+  - Önce sayfada: logo üste kayar; altta İpucu + dolan turuncu çubuk + yüzde. İndirme çubuğu %0–80 doldurur.
+  - Oyun açılınca Unity'deki Start sahnesinde aynı düzen (logo, hareketli sokak, ipucu, çubuk, yüzde, güvenli alanda) %80'den %100'e gider.
+  - Gerçek adımlar: kayıt %10, karakter ve tema veritabanları %25 + %25, Main sahnesinin arka planda yüklenmesi %60–100.
+  - Main sahnesi ancak çubuk %100'ü gösterince açılır. Çubuk gerçek değere hızla yetişir (5/sn); yapay bekleme yok.
+  - Unity'nin kendi ince çubuğu gizli.
+- **3. Ana menü** dokunmadan açılır → OYNA → oyun.
+- **Varlıklar:** sprite sayfası (`UIBorderFilled01`, `UISliderFill`), LuckiestGuy, proje logosu (`TemplateData/brand-logo.png`). Yeni görsel yok; Subway Surfers'tan hiçbir görsel kullanılmadı, yalnızca düzen örnek alındı.
+- **İpuçları:** `tr.txt` → `tip.prefix`, `tip.1–5`; sayfadakiler `index.html` içinde.
+- **Testler (Windows test derlemesi, son hâl):**
+  - Açılış senaryoları (yeni / tekrar / kayıtlı kullanıcı): 43/43 × 3. Menü ~2 sn'de hazır (görüntü alma dahil).
+  - 8 ekran profili: 43/43.
+  - Eğitim testleri 96/96 (logo/yükleme değişikliğinden hemen önceki derlemede; bu değişiklik oyun akışına dokunmuyor).
+- **Web (tarayıcı paneli, 390x844):** logo → yükleme ekranı (sayfa) → yükleme ekranı (Unity, sokak) → menü sırası görüldü, dokunma gerekmedi.
+
+### Önceki adım: tek OYNA (974a660)
+- **Akış:** Oyun açılır → başlık ekranı (logo + hareketli sokak + "YÜKLENİYOR...") → yükleme bitince **dokunmadan** ana menü → OYNA → oyun.
+- **Start sahnesi silinmedi**, düğmesiz yükleme ekranına dönüştü (`MenuUygula.ApplyStartScene`): OYNA düğmesi gizli ve tıklanamaz, yazısı "YÜKLENİYOR...". Kayıt (`PlayerData`, `MusicPlayer` üzerinden) ve karakter/tema veritabanlarının yüklenmesi eskisi gibi burada başlıyor.
+- **`StartButton.autoStart`:** kayıt ve iki veritabanı hazır olunca Main sahnesi arka planda (`LoadSceneAsync`) yüklenir. Yapay bekleme yok. Çift yükleme koruması var. 20 sn güvenlik sınırı: bir veritabanı hiç bitmezse yine geçilir, menü kendisi bekler. `ftueLevel` güncellemesi korunuyor.
+- **Testler (Windows test derlemesi):**
+  - Açılış senaryoları (iPhone 13 oranı): yeni kullanıcı, tekrar açılış (eğitim bitmemiş), eğitimi bitmiş kayıtlı kullanıcı. Üçünde de dokunmadan menüye geçildi, ~1,4 sn'de menü hazırdı (OYNA etkin, karakter yüklü). Main bir kez yüklendi, menüde tek karakter var, eğitim perdesi yalnızca eğitim bitmemişse göründü.
+  - Eğitim testleri 96/96.
+  - 8 ekran profili 42–43 denetimde hepsi geçti.
+- **Web (tarayıcı paneli):** dokunmadan menüye geçti. Süre 11–25 sn, ama bu süre büyük ölçüde dosya ve paket indirmesi; panel yavaş bir ortam, iPhone süresini temsil etmiyor.
+- **Gerçek iPhone ya da Android'de denenmedi.**
+
+### Menü (Loadout) yeni düzeni
+- **Üst:** solda logo, sağda altın sayacı (`PlayerData.coins`), altında sıralama düğmesi.
+- **Orta:** karakter adı ve karakter okları. 3D karakter dönmüyor; hafif açılı ve bekleme animasyonuyla duruyor.
+- **Arka plan:** Start sahnesinin sokak ortamının kopyası (`MenuBackdrop.prefab`, pistten uzakta), kendi menü kamerasıyla. Start'ın geçen kedi/rakun oyuncuları (`MenuActors`) çıkarıldı; ikinci karakter gibi görünüyordu.
+- **Alt:** büyük OYNA (`LoadoutState.StartGame()` aynen).
+- **En alt:** Karakterler (mağaza karakter sekmesi), Görevler, Mağaza, Ayarlar.
+- **Yan seçiciler** (yalnızca sahip olunanlar varsa görünür): tema ve güçlendirme sol altta küçültülmüş, aksesuar sağda.
+- **Eğitim perdesi:** OYNA dışını karartır; ok ve yazı OYNA'nın altında.
+- **Güvenli alan** (`SafeAreaFitter`): yerelde `Screen.safeArea`, web'de CSS `env(safe-area-inset-*)` (`SafeArea.jslib`; şablonda `viewport-fit=cover` açık).
+- **Pencereler:** 720 genişliğe göre çizilmiş ayarlar pencereleri dar ekranda `FitInsideParent` ile küçülür.
+- **Kamera:** menüdeyken oyun kamerası kapalı, koşu başlarken geri açılır. `Camera.main` (TrackManager) değişmedi.
+- **Sis:** Start'ın sis ayarı menüde kullanılır, koşuda eskisine döner.
+
+### Değişen dosyalar
+- **Oyun kodu (küçük):** `LoadoutState.cs` (menü sahnesi alanları, `ShowMenuScene`, `GoToCharacterStore`; alanlar boşsa eski davranış), `ShopUI.cs` (`openCharacterListOnStart`).
+- **Yeni:** `_TabanlariYagla/Menu/` (`SafeAreaFitter`, `SafeArea.jslib`, `MenuCoinCounter`, `FitInsideParent`, `MenuBackdrop.prefab`, asmref).
+- **Sahne:** `Scenes/Main.unity` — `MenuUygula` aracıyla kaydedildi; Start sahnesi değişmedi.
+- **Araçlar:** `_TabanlariYagla/Editor/MenuUygula.cs` (tekrar çalıştırılabilir editör aracı), `_Dev/MenuShots.cs` (yalnızca test derlemesi).
+- **Metin:** `tr.txt` → `ui.characters KARAKTERLER`.
+
+### Test sonuçları
+- **Eğitim ve oyun akışı:** son derlemede otomatik testler **96/96**, hata kaydı 0. Kapsam: OYNA, eğitim, normal koşu, duraklatma, odak kaybı, oyun sonu, ikinci şans, menüye dönüş, kayıt.
+- **Ekran uyumu (Windows test derlemesi, pencereli, `MenuShots`):** 8 profilin hepsinde **39/39**.
+  - Profiller: 360x640 (16:9), 375x667 (iPhone SE), 390x844 (iPhone 13), 390x844 + iPhone uygulama güvenli payı (üst 47 / alt 34), 360x800 (20:9) + Android payı, 412x915 (Pixel) + pay, 430x932 (Pro Max) + pay, 360x840 (21:9) + pay.
+  - Denetimler: logo, altın, sıralama, karakter adı, OYNA, 4 alt düğme ve okların güvenli alan içinde olması ve üst üste binmemesi; yazıların kesilmemesi ve düğmeye sığması; alt düğmelerin dokunma genişliği; karakterin tamamen ekranda olması (yüksekliğin %41'i) ve arayüzün onu en çok %15 kapatması; ayarlar penceresinin sığması; "Karakterler" düğmesinin gerçek tıklama yoluyla mağazayı karakter sekmesiyle açması ve kapanınca menüye dönülmesi.
+  - Görüntüler: `_araclar/menu/ekran/`.
+- **Web (tarayıcı paneli, 390x844):** `/test/` açılıyor, menü doğru çiziliyor, eğitim perdesi doğru.
+- **Gerçek cihaz:** iPhone ya da Android'de **hiç denenmedi.** Web'deki güvenli alan (`env()`) yalnızca tarayıcı panelinde yüklendi, gerçek çentikli cihazda doğrulanmadı.
+
+### Bilinen sorunlar ve açık noktalar
+- **RenderPass hatası:** Tarayıcı panelinin konsolunda "RenderPass: dimensions ... (16384 x 16384)" ve "EndRenderPass" hataları görüldü. Menü açıkken artmıyor (5 sn boyunca sayı sabit), açılış/başlık ekranında oluşuyor. Panelin grafik sınırına özgü olabilir; canlı sürümde de olup olmadığını kesin ayıramadım. iPhone'da `/test/olcum/` ile bakılmalı.
+- **BestFit uyarısı:** "BestFit yalnızca dinamik yazı tiplerinde" uyarısı çıkıyor; LuckiestGuy dinamik değil. Alt şerit yazıları bu yüzden sabit boyuta alındı. Karakter adı ve altın sayısı en büyük boyutta çiziliyor (şimdiki değerlere sığıyor).
+- **Işık:** Start'ın ışık haritası ve yansıma probu taşınmadı (gerçek zamanlı ışık); görüntüler iyi ama Start'tan biraz farklı olabilir.
+- **Kapsam dışı:** Görevler ve Sıralama pencereleri ekran görüntüsünde sığıyor ama sayısal sığma denetimi yalnızca Ayarlar için yapıldı.
+
+### Devam
+1. Kullanıcı iPhone 13'te `/test/`'i değerlendirir. Eğitimi görmek için `/test/olcum/?kayitsil=1`.
+2. Geri bildirime göre düzeltme. Değişiklikler `MenuUygula.Uygula` ile yeniden uygulanır, sonra `MenuShots` ve eğitim testleri tekrar çalıştırılır.
+3. Onaylanırsa canlıya geçiş (0. bölümdeki adımlar), **yalnızca açık onayla**.
+4. **Yeniden çalıştırma:**
+   - `Unity.exe -batchmode -projectPath <proje> -executeMethod MenuUygula.Uygula`
+   - Ekran denetimi: `_araclar/menu/ekranlar.ps1` (Windows test derlemesi gerekir).
 
 ---
 
