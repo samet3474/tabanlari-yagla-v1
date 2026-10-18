@@ -4,11 +4,78 @@
 > Ayrıntılı geçmiş: [GELISTIRME_NOTLARI.md](GELISTIRME_NOTLARI.md) (bu dosya ondan daha güncel).
 
 **Son güncelleme:** 2026-10-18. **Canlıda ana menü + tek yükleme ekranı** (`main` `ea229d9`, gh-pages kökü `4924636`). Önceki canlı: gerçek engelli eğitim (`ac4cb60` / `e8777e3`).
-**Geliştirmede:** `istanbul-tema` dalı (`main` `e16c54d`'den). İstanbul teması: simit tezgâhı + ilk İstiklal test parçası. Yayın yok, `/test/` değişmedi.
+**Geliştirmede:** `istanbul-tema` dalı (`main` `e16c54d`'den). İstanbul teması 1. aşama (tema iskeleti) commit edildi (`4b2dcec`, `857a5cd`). Yayın yok, `/test/` değişmedi.
 
 ---
 
-## ▶ İSTANBUL TEMASI — AŞAMA 1: İLK İSTİKLAL TEST PARÇASI (2026-10-18, `istanbul-tema`)
+## ▶ İSTANBUL TEMASI — 1. AŞAMA: TEMA İSKELETİ (2026-10-18, `istanbul-tema`)
+
+> Kullanıcı onayıyla commit edildi ve yalnız `istanbul-tema` dalına push edildi. Yayın yok; `main`, `gh-pages`, `/test/` değişmedi. WebGL ve 2. aşama için kullanıcı kararı bekleniyor.
+
+**Commit'ler:** `4b2dcec` (tema iskeleti), `857a5cd` (geliştirme testi `IstanbulTemaTest.cs`), ardından bu not. Commit dışı: kullanıcı kaydı, `addressables_content_state.bin`, `Build/`, depo dışındaki `_araclar/istanbul/*`.
+
+**Kararlar (kullanıcı):**
+- İstanbul ayrı bir tema; fiyatı 0. Mağazadan alınır, menüden seçilir; Day varsayılan kalır.
+- Kayıt biçimi değişmez.
+- Simit tezgâhı (Meshy §2.4 belirsiz) üretim temasına ve üretim Addressables grubuna **konmadı**. Prototip dosyaları ve yedekleri duruyor.
+
+**Yapılan:**
+- `Assets/_TabanlariYagla/Istanbul/IstanbulTheme.asset`: Day temasının kopyası.
+  - Ad `Istanbul`, fiyat 0/0, tek bölge (İstiklal, 500 m), parça `Istiklal01`.
+  - Altın, premium, bulut, gökyüzü ve menü zemini Day ile paylaşılıyor.
+- `Assets/_TabanlariYagla/Istanbul/Istiklal/Istiklal01.prefab` + `Istiklal01Sokak.asset`: test parçasıyla aynı yapı ve mesh (3.353 üçgen).
+  - Olası engeller yalnız mevcut alçak bariyer, koni ve çöp kutusu; simit yok.
+  - Test parçası `IstiklalTest01` ve `Istanbul-Test` grubu değişmeden duruyor.
+- Tema simgesi `IstanbulOnizleme.png` (726x298, Day önizlemesiyle aynı oran): `Istiklal01` parçasının editörde çekilmiş görüntüsü. Yalnız proje geometrisi; indirme veya Meshy yok.
+- Addressables:
+  - `Themes.asset`: +5 satır (İstanbul teması, adres ve etiket `themeData`, Day/Night ile aynı biçim).
+  - Yeni `Istanbul-Zones` grubu (Default-Zones ayarları) → `Istiklal01`.
+  - `AddressableAssetSettings.asset`: +1 satır (grup listesi).
+  - Editör aracı iki dosyayı da Addressables 2.10 biçimine baştan yazmıştı (ayar dosyası 103 satır; `Themes.asset`'te mevcut kayıtlara alan ekleme). İkisi geri alınıp yalnız gerekli satırlar elle eklendi.
+  - `IstanbulUygula.TemaDogrula` (salt okunur) ile denetlendi: 18 grup, çözülemeyen 0, tema `Themes`'te `themeData` etiketiyle, parça `Istanbul-Zones`'ta, simit yalnız `Istanbul-Test`'te. Dosyalar yeniden yazılmadı.
+- `tr.txt`: +1 satır `theme.Istanbul İSTANBUL`.
+- `IstanbulUygula.cs`: `IstanbulTema` (iskeleti kurar, tekrar çalıştırılabilir), `RenderIcon`, `TemaDogrula`.
+- `Assets/_Dev/IstanbulTemaTest.cs` (`-istanbulTemaTest a|b`): yalnız geliştirme derlemesinde çalışır.
+  - Çalıştırma betiği: `_araclar/istanbul/istanbul_tema_test.ps1`. Kaydı yedekler ve geri koyar; kayıt yedekten farklıysa başlamaz.
+- Değişmeyenler: `TrackManager`, oyuncu kontrolü, eğitim, kayıt biçimi, `ThemeDatabase`, mağaza kodu, Day/Night temaları, `main`, `gh-pages`.
+
+**Test (Windows test derlemesi, 390x844; gerçek iPhone'da denenmedi):**
+- Eğitim 96/96. Menü 11 × 45/45. İstiklal testi 10/10. Kayıt her seferinde yedekle aynı (`F19B7495…`).
+- Tema testi a (18/18):
+  - tema yükleniyor (temalar: Istanbul, Day, NightTime);
+  - fiyat 0, simge ve ad `İSTANBUL`;
+  - bölge ve parça referansları çözülüyor, üretim parçasında simit yok;
+  - yeni kayıt yalnız Day ile başlıyor; tek temada tema seçici gizli;
+  - mağazada `İSTANBUL=0 | GÜNDÜZ=0 | GECE=1000`; 0 altınla alındı, altın 0→0, düğme "ALINDI";
+  - menüde seçici görünür; İstanbul seçildi (ad ve simge); Day ilk sırada.
+- Tema testi b (9/9):
+  - yeni süreçte kayıttan `Day,Istanbul`, seçili İstanbul; menüde `İSTANBUL`;
+  - koşu İstanbul temasıyla başladı (eğitim değil);
+  - 27 parçanın hepsi `Istiklal01`; birleşim boşluğu 0,0000 m, açı 0,00°;
+  - 3 engel türü; simit yok; altın-engel çakışması 0/106.
+- İki temalı kayıtla menü düzeni: iPhone 13 ve dar 16:9, ikisi de 45/45.
+- Paketler (Windows): `themes` 54 KB (İstanbul simgesi dahil), `istanbul-zones` 40 KB, `istanbul-test` 633 KB (prototip). WebGL ölçülmedi.
+- Otomatik sürüşler (İstiklal testi, bilgi — **başarılı sayılmaz**): zıplama 5 çarpma (hepsi çöp kutusu), şerit değiştirme 6 çarpma (5 alçak bariyer, 1 koni), dokunmadan 9 çarpma.
+- Görüntüler: `_araclar/istanbul/test/tema/tema-*.png`.
+
+**Yol boyunca çıkan sorunlar:**
+- İlk derlemede Unity'nin `BuildPlayerDataGenerator` aracı OutOfMemoryException verdi. Derleme "Succeeded" dedi ama Addressables içeriği derlemeye girmedi; karakter, engel ve tema yüklenmedi ve testler kaldı.
+  - Kod değişmeden yeniden derlemede hata yok; 22 dosya ve bütün testler geçti. Geçici bir derleme ortamı hatası gibi görünüyor, nedeni bulunmadı.
+  - Bundan sonra her derlemeden sonra StreamingAssets dosya sayısı kontrol edilmeli.
+- Tema testinin ilk sürümünde "alındıktan sonra düğme pasif" adımı kaldı. Neden test aracıydı: `Buy()` listeyi yeniden kurar, test eski düğmeye bakıyordu. Görüntüde "ALINDI" doğruydu; test düzeltildi ve geçti.
+
+**Bilinen sorunlar ve riskler:**
+- Menünün arka plan sahnesi temaya göre değişmiyor (Day sokağı kalıyor; mevcut menü tasarımı).
+- Mağazada GÜNDÜZ de "0 / ALINDI" görünüyor (mevcut davranış).
+- Canlıya çıktıktan sonra tema dosyası silinirse İstanbul'u almış oyuncuların menüsü ve koşusu bozulur. Kural: canlıdaki tema dosyası silinmez.
+- Addressables ayar dosyası, Unity içinden ilk kaydedildiğinde 2.10 biçimine dönüşecek; o zaman ayrı ele alınmalı.
+
+**Geri alma:**
+- Commit'ler: `git revert 857a5cd 4b2dcec` (gerekirse not commit'i de). Ya da `git switch main`.
+- Canlıya çıkmadan önce güvenli. Canlıya çıktıktan sonra tema dosyası silinmemeli (yukarıdaki kayıt riski).
+---
+
+## İstanbul teması — aşama 1: ilk İstiklal test parçası (2026-10-18, `istanbul-tema`, commit `f8a9cf1`…`8ad4d17`)
 
 > Kullanıcı onayıyla commit edildi ve yalnız `istanbul-tema` dalına push edildi. Yayın yok; `main`, `gh-pages`, `/test/` değişmedi.
 > Sonraki adım (Galata, Eminönü, yeni parçalar) için kullanıcı kararı bekleniyor.
