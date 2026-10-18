@@ -105,6 +105,10 @@ public class TrackManager : MonoBehaviour
     protected List<TrackSegment> m_PastSegments = new List<TrackSegment>();
     // Segment instantiations still in flight; End() releases them since their spawn coroutine is stopped with the run.
     protected List<AsyncOperationHandle> m_LoadingSegments = new List<AsyncOperationHandle>();
+    // Segments are placed in the order they were picked: several spawns start in the same frame and copies of the same
+    // prefab finish loading together, so placing on completion would put them side by side (pairs at the run start).
+    protected int m_SegmentTicket;
+    protected int m_NextSegmentToPlace;
     protected int m_SafeSegementLeft;
 
     protected ThemeData m_CurrentThemeData;
@@ -300,6 +304,8 @@ public class TrackManager : MonoBehaviour
         m_Segments.Clear();
         m_PastSegments.Clear();
         _spawnedSegments = 0;
+        m_SegmentTicket = 0;
+        m_NextSegmentToPlace = 0;
 
         // Coins attached to the released segments are destroyed with them; the free ones would leak since
         // the next run creates a new pool.
@@ -574,16 +580,22 @@ public class TrackManager : MonoBehaviour
         int segmentUse = Random.Range(0, m_CurrentThemeData.zones[m_CurrentZone].prefabList.Length);
         if (segmentUse == m_PreviousSegment) segmentUse = (segmentUse + 1) % m_CurrentThemeData.zones[m_CurrentZone].prefabList.Length;
         m_PreviousSegment = segmentUse;
+        int ticket = m_SegmentTicket++;
+        AssetReference segmentRef = m_CurrentThemeData.zones[m_CurrentZone].prefabList[segmentUse];
 
-        AsyncOperationHandle segmentToUseOp = m_CurrentThemeData.zones[m_CurrentZone].prefabList[segmentUse].InstantiateAsync(_offScreenSpawnPos, Quaternion.identity);
+        AsyncOperationHandle segmentToUseOp = segmentRef.InstantiateAsync(_offScreenSpawnPos, Quaternion.identity);
         m_LoadingSegments.Add(segmentToUseOp);
         yield return segmentToUseOp;
+        // Wait for the segments picked before this one (End() resets both counters along with these coroutines).
+        while (m_NextSegmentToPlace < ticket)
+            yield return null;
         RemoveLoadingSegment(segmentToUseOp);
         if (segmentToUseOp.Result == null || !(segmentToUseOp.Result is GameObject))
         {
-            Debug.LogWarning(string.Format("Unable to load segment {0}.", m_CurrentThemeData.zones[m_CurrentZone].prefabList[segmentUse].Asset.name));
+            Debug.LogWarning(string.Format("Unable to load segment {0}.", segmentRef.Asset != null ? segmentRef.Asset.name : segmentRef.RuntimeKey));
             // This spawn was counted in Update but will never be added to m_Segments.
             _spawnedSegments--;
+            m_NextSegmentToPlace++;
             yield break;
         }
         TrackSegment newSegment = (segmentToUseOp.Result as GameObject).GetComponent<TrackSegment>();
@@ -625,6 +637,7 @@ public class TrackManager : MonoBehaviour
         }
 
         m_Segments.Add(newSegment);
+        m_NextSegmentToPlace++;
 
         if (newSegmentCreated != null) newSegmentCreated.Invoke(newSegment);
     }
@@ -734,6 +747,8 @@ public class TrackManager : MonoBehaviour
     {
         int pending = 0;
         System.Action<GameObject> onObstacleDone = o => pending--;
+        // Mirrored segments (random flip in SpawnNewSegment) get the left-right mirrored variant of the design.
+        int ayna = segment.transform.localScale.x < 0.0f ? -1 : 1;
         foreach (TasarimliSatir.Satir satir in tasarim.satirlar)
         {
             if (satir.engel == null || !satir.engel.RuntimeKeyIsValid())
@@ -747,7 +762,7 @@ public class TrackManager : MonoBehaviour
                 if ((satir.seritler & (1 << (lane + 1))) == 0)
                     continue;
                 pending++;
-                StartCoroutine(SpawnObstacleAtRoutine(satir.engel.RuntimeKey, segment, t, lane, onObstacleDone));
+                StartCoroutine(SpawnObstacleAtRoutine(satir.engel.RuntimeKey, segment, t, lane * ayna, onObstacleDone));
             }
         }
 
@@ -769,11 +784,12 @@ public class TrackManager : MonoBehaviour
     private void SpawnAltinDeseni(TrackSegment segment, TasarimliSatir.Altin desen)
     {
         float uzunluk = desen.bitis - desen.baslangic;
+        int ayna = segment.transform.localScale.x < 0.0f ? -1 : 1;
         for (float m = desen.baslangic; m <= desen.bitis + 0.001f; m += TasarimliSatir.k_AltinAraligi)
         {
             float oran = uzunluk > 0.0f ? (m - desen.baslangic) / uzunluk : 0.0f;
-            float lane = desen.tip == TasarimliSatir.AltinTipi.Capraz ? Mathf.Lerp(desen.serit, desen.bitisSeridi, oran) : desen.serit;
-            float yukseklik = desen.tip == TasarimliSatir.AltinTipi.Yay ? Mathf.Sin(oran * Mathf.PI) * desen.yukseklik : desen.yukseklik;
+            float lane = TasarimliSatir.AltinSeridi(desen, oran) * ayna;
+            float yukseklik = TasarimliSatir.AltinYuksekligi(desen, oran);
 
             Vector3 pos;
             Quaternion rot;

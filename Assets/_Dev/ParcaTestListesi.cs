@@ -1,0 +1,10 @@
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || TY_DEVTOOLS
+// Üretildi: _araclar/parkur/kayit_uygula.js (IstanbulParkur.Kur kaydından). Elle değiştirmeyin.
+// Parça test akışının (ParcaTestAkisi) tasarlanmış parça listesi: prefab adı, başlık, GUID.
+public static class ParcaTestListesi
+{
+    public static readonly string[] ad = { "IstiklalI1", "IstiklalI2", "IstiklalI3", "IstiklalI4", "IstiklalI5", "IstiklalI6", "IstiklalK01", "IstiklalK02", "IstiklalK03", "IstiklalK04", "IstiklalK05", "IstiklalK06", "IstiklalK07", "IstiklalK08", "IstiklalK09", "IstiklalK10", "IstiklalK11", "IstiklalK12", "IstiklalK13" };
+    public static readonly string[] baslik = { "I1 Tek engel", "I2 Kaldirim kapaniyor", "I3 Bariyer atla", "I4 Kayarak gec", "I5 Risk-odul", "I6 Yol calismasi", "K01 Tramvay hatti", "K02 Zikzak", "K03 Atla ve sap", "K04 Kay ve sap", "K05 Zipla-kay koridoru", "K06 Uc secenek", "K07 Kademeli kapanma", "K08 Cift engel acik kacis", "K09 Rampa ve tavan", "K10 Yol calismasi", "K11 Dar gecit", "K12 Uzun kombinasyon", "K13 Karsidan tramvay" };
+    public static readonly string[] guid = { "572b95a7e11900047ae79005a1f26bae", "5e36f94e1c2710744a9fc1b00e470734", "8fc8f33e7dbcf5747a64e37dcb173b60", "b44396b3a6a4b934ba54390e5291066b", "981c09d3751b80641b6d612ca005c334", "0afa23de69ba19e46934858ffd479a21", "41c73c0b29d428540a0e770948b1abf0", "f244d7698ec227a429ccb234b3a347c6", "fa25c0d2290a10e45a2d452c3c981a81", "5328bd907ab043b4fbbe89568facd30a", "14e7bb4592c532a45a7f68bd24f6072d", "2335262d286362c47880d750eda711a1", "659d051e57b340d4b8db04713c9ee507", "beec65f9f269c4c4ebf6bff032a14fd5", "3b0224c8f20919d4f9ae22ceeb7f6fc6", "b6dc5bf62411b9543ad63f554ab81b50", "070b4b487c9a67f4088650ac252e91e8", "c2c7123d24a6a8147ba6cb9ae812c25f", "e74da7d44e589ee4b94e0254ad597735" };
+}
+#endif

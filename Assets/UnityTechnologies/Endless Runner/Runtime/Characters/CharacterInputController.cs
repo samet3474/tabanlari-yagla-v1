@@ -93,6 +93,20 @@ public class CharacterInputController : MonoBehaviour
     protected const float k_TrackSpeedToJumpAnimSpeedRatio = 0.6f;
     protected const float k_TrackSpeedToSlideAnimSpeedRatio = 0.9f;
 
+    // Walkable surfaces (tram roofs, ramps): trigger colliders on this layer. The character stands on the highest one
+    // under it, climbs only gentle steps (a ramp, not a tram side), and falls when it runs or swipes off one. With no
+    // such surface (Day/Night themes) the ground is 0 and the movement is exactly as before.
+    public const int k_ZeminKatmani = 11;
+    protected const float k_ZeminIsini = 6f;        // ray starts this far above the feet
+    protected const float k_TirmanmaAdimi = 0.6f;   // highest step climbed without jumping
+    protected const float k_Yercekimi = 30f;        // m/s² when falling off a surface
+    protected const float k_KameraTakip = 0.75f;    // share of the surface height the camera rises with
+    protected float m_Taban;                        // current standing height
+    protected float m_DusmeHizi;
+    protected float m_ZiplamaTabani;                // standing height the current jump started from
+    protected float m_KameraYukselme;               // camera offset currently applied
+    public float zeminYuksekligi { get { return m_Taban; } }
+
     protected void Awake ()
     {
         m_Premium = 0;
@@ -160,6 +174,11 @@ public class CharacterInputController : MonoBehaviour
 
 		m_CurrentLane = k_StartingLane;
 		characterCollider.transform.localPosition = Vector3.zero;
+		m_Taban = 0f;
+		m_DusmeHizi = 0f;
+		m_ZiplamaTabani = 0f;
+		// TrackManager puts the camera back to its original place at the end of each run.
+		m_KameraYukselme = 0f;
 
         currentLife = maxLife;
 
@@ -351,6 +370,11 @@ public class CharacterInputController : MonoBehaviour
 			}
 		}
 
+        float zemin = ZeminOlc();
+        if (!m_Jumping)
+            TabanGuncelle(zemin);
+        verticalTargetPosition.y = m_Taban;
+
         if(m_Jumping)
         {
 			if (trackManager.isMoving)
@@ -359,32 +383,40 @@ public class CharacterInputController : MonoBehaviour
                 // we slightly modify length with speed to make it more playable.
 				float correctJumpLength = jumpLength * (1.0f + trackManager.speedRatio);
 				float ratio = (trackManager.worldDistance - m_JumpStart) / correctJumpLength;
-				if (ratio >= 1.0f)
+				float jumpY = m_ZiplamaTabani + Mathf.Sin(ratio * Mathf.PI) * jumpHeight;
+				// Coming down onto a higher surface (a ramp or a roof) ends the jump there.
+				bool landed = ratio > 0.5f && ratio < 1.0f && jumpY <= zemin && zemin - jumpY <= k_TirmanmaAdimi;
+				if (ratio >= 1.0f || landed)
 				{
 					m_Jumping = false;
 					character.animator.SetBool(s_JumpingHash, false);
+					m_Taban = landed ? zemin : m_ZiplamaTabani;
+					m_DusmeHizi = 0f;
+					verticalTargetPosition.y = m_Taban;
 				}
 				else
 				{
-					verticalTargetPosition.y = Mathf.Sin(ratio * Mathf.PI) * jumpHeight;
+					verticalTargetPosition.y = jumpY;
 				}
 			}
 			else if(!AudioListener.pause)//use AudioListener.pause as it is an easily accessible singleton & it is set when the app is in pause too
 			{
-			    verticalTargetPosition.y = Mathf.MoveTowards (verticalTargetPosition.y, 0, k_GroundingSpeed * Time.deltaTime);
-				if (Mathf.Approximately(verticalTargetPosition.y, 0f))
+			    verticalTargetPosition.y = Mathf.MoveTowards (verticalTargetPosition.y, m_ZiplamaTabani, k_GroundingSpeed * Time.deltaTime);
+				if (Mathf.Approximately(verticalTargetPosition.y, m_ZiplamaTabani))
 				{
 					character.animator.SetBool(s_JumpingHash, false);
 					m_Jumping = false;
+					m_Taban = m_ZiplamaTabani;
 				}
 			}
         }
 
         characterCollider.transform.localPosition = Vector3.MoveTowards(characterCollider.transform.localPosition, verticalTargetPosition, laneChangeSpeed * Time.deltaTime);
+        KameraYukselt();
 
         // Put blob shadow under the character.
         RaycastHit hit;
-        if(Physics.Raycast(characterCollider.transform.position + Vector3.up, Vector3.down, out hit, k_ShadowRaycastDistance, m_ObstacleLayer))
+        if(Physics.Raycast(characterCollider.transform.position + Vector3.up, Vector3.down, out hit, k_ShadowRaycastDistance, m_ObstacleLayer | (1 << k_ZeminKatmani)))
         {
             blobShadow.transform.position = hit.point + Vector3.up * k_ShadowGroundOffset;
         }
@@ -395,6 +427,48 @@ public class CharacterInputController : MonoBehaviour
             blobShadow.transform.position = shadowPosition;
         }
 	}
+
+    // Height of the highest walkable surface under the character, relative to the track (0 when there is none).
+    protected float ZeminOlc()
+    {
+        Vector3 ayak = characterCollider.transform.position;
+        float iz = transform.position.y;
+        RaycastHit hit;
+        if (Physics.Raycast(new Vector3(ayak.x, iz + k_ZeminIsini, ayak.z), Vector3.down, out hit, k_ZeminIsini + 1f, 1 << k_ZeminKatmani, QueryTriggerInteraction.Collide))
+            return Mathf.Max(0f, hit.point.y - iz);
+        return 0f;
+    }
+
+    // Standing height when not jumping: up a gentle step at once, down by falling.
+    protected void TabanGuncelle(float zemin)
+    {
+        if (zemin >= m_Taban)
+        {
+            if (zemin - m_Taban <= k_TirmanmaAdimi)
+                m_Taban = zemin;
+            m_DusmeHizi = 0f;
+        }
+        else
+        {
+            m_DusmeHizi += k_Yercekimi * Time.deltaTime;
+            m_Taban = Mathf.Max(zemin, m_Taban - m_DusmeHizi * Time.deltaTime);
+            if (m_Taban <= zemin)
+                m_DusmeHizi = 0f;
+        }
+    }
+
+    // The camera is a child of this object; it follows part of the standing height so a roof run stays in view.
+    protected void KameraYukselt()
+    {
+        Camera cam = Camera.main;
+        if (cam == null || cam.transform.parent != transform)
+            return;
+        float hedef = Mathf.MoveTowards(m_KameraYukselme, m_Taban * k_KameraTakip, 6f * Time.deltaTime);
+        if (Mathf.Approximately(hedef, m_KameraYukselme))
+            return;
+        cam.transform.localPosition += Vector3.up * (hedef - m_KameraYukselme);
+        m_KameraYukselme = hedef;
+    }
 
     public void Jump()
     {
@@ -408,6 +482,8 @@ public class CharacterInputController : MonoBehaviour
 
 			float correctJumpLength = jumpLength * (1.0f + trackManager.speedRatio);
 			m_JumpStart = trackManager.worldDistance;
+			m_ZiplamaTabani = m_Taban;
+			m_DusmeHizi = 0f;
             float animSpeed = k_TrackSpeedToJumpAnimSpeedRatio * (trackManager.speed / correctJumpLength);
 
             character.animator.SetFloat(s_JumpingSpeedHash, animSpeed);
