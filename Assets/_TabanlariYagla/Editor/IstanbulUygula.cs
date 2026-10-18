@@ -285,6 +285,186 @@ public static class IstanbulUygula
         if (Application.isBatchMode) EditorApplication.Exit(s_Errors == 0 ? 0 : 1);
     }
 
+    // ------------------------------------------------------------------ İstanbul teması (üretim iskeleti)
+    // -executeMethod IstanbulUygula.IstanbulTema (tekrar çalıştırılabilir).
+    // Ayrı ve seçilebilir tema: fiyat 0, mağazadan alınır, menüden seçilir; Day varsayılan kalır (oyun kodu değişmez).
+    //  - Istanbul/Istiklal/Istiklal01.prefab: test parçasıyla aynı yapı (UrbanBuilding01 kopyası + İstiklal sokağı),
+    //    ancak simit tezgâhı YOK (Meshy §2.4 belirsiz): yalnız mevcut alçak bariyer, koni, çöp kutusu.
+    //  - Istanbul/IstanbulOnizleme.png: tema simgesi; bu parçanın editörde çekilmiş görüntüsü (yalnız proje geometrisi).
+    //  - Istanbul/IstanbulTheme.asset: Day teması kopyası; ad "Istanbul", fiyat 0, tek bölge (İstiklal, 500 m).
+    //    Altın, premium, bulut, gökyüzü ve menü zemini Day ile paylaşılır.
+    //  - Addressables: tema Themes grubuna (adres ve etiket "themeData", Day/Night gibi); parça yeni Istanbul-Zones
+    //    grubuna (Default-Zones ayarlarıyla). Simit ve Istanbul-Test prototipleri olduğu gibi kalır.
+    const string k_TemaFolder = "Assets/_TabanlariYagla/Istanbul";
+    const string k_UretimFolder = k_TemaFolder + "/Istiklal";
+    const string k_UretimPrefab = k_UretimFolder + "/Istiklal01.prefab";
+    const string k_UretimMesh = k_UretimFolder + "/Istiklal01Sokak.asset";
+    const string k_TemaAsset = k_TemaFolder + "/IstanbulTheme.asset";
+    const string k_TemaIcon = k_TemaFolder + "/IstanbulOnizleme.png";
+    const string k_DayTheme = "Assets/UnityTechnologies/Endless Runner/Prefabs/Themes/Default/themeData.asset";
+    const string k_ZonesGroup = "Istanbul-Zones";
+    const string k_ZonesSourceGroup = "Default-Zones";
+    const string k_ThemesGroup = "Themes";
+
+    public static void IstanbulTema()
+    {
+        s_Errors = 0;
+        Directory.CreateDirectory(k_UretimFolder);
+        AssetDatabase.Refresh();
+
+        // 1) Üretim parçası (simitsiz).
+        Mesh mesh = BuildIstiklalMesh();
+        var oldMesh = AssetDatabase.LoadAssetAtPath<Mesh>(k_UretimMesh);
+        if (oldMesh == null) AssetDatabase.CreateAsset(mesh, k_UretimMesh);
+        else { EditorUtility.CopySerialized(mesh, oldMesh); mesh = oldMesh; EditorUtility.SetDirty(oldMesh); }
+        if (!File.Exists(k_UretimPrefab) && !AssetDatabase.CopyAsset(k_SourceSegment, k_UretimPrefab)) { Fail("parça kopyalanamadı"); Bitir(); return; }
+        GameObject root = PrefabUtility.LoadPrefabContents(k_UretimPrefab);
+        try
+        {
+            root.name = Path.GetFileNameWithoutExtension(k_UretimPrefab);
+            foreach (string p in k_RemoveFromSegment) { var t = root.transform.Find(p); if (t != null) Object.DestroyImmediate(t.gameObject); }
+            var deco = root.transform.Find("Decorations");
+            Transform street = deco.Find("IstiklalSokak");
+            if (street == null) street = new GameObject("IstiklalSokak").transform;
+            street.SetParent(deco, false);
+            street.localPosition = Vector3.zero; street.localRotation = Quaternion.identity; street.localScale = Vector3.one;
+            street.gameObject.layer = deco.gameObject.layer;
+            var mf = street.GetComponent<MeshFilter>(); if (mf == null) mf = street.gameObject.AddComponent<MeshFilter>();
+            var mr = street.GetComponent<MeshRenderer>(); if (mr == null) mr = street.gameObject.AddComponent<MeshRenderer>();
+            mf.sharedMesh = mesh;
+            mr.sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(k_VcolMaterial);
+            mr.shadowCastingMode = ShadowCastingMode.Off; mr.receiveShadows = false;
+            mr.lightProbeUsage = LightProbeUsage.Off; mr.reflectionProbeUsage = ReflectionProbeUsage.Off;
+
+            var seg = root.GetComponent<TrackSegment>();
+            string simitGuid = AssetDatabase.AssetPathToGUID(k_Prefab);
+            seg.possibleObstacles = seg.possibleObstacles.Where(r => r.AssetGUID != simitGuid).ToArray();
+            if (seg.possibleObstacles.Length == 0) Fail("parçada engel kalmadı");
+            Out($"Istiklal01: engel noktaları=[{string.Join(",", seg.obstaclePositions)}] olası engel: {string.Join(", ", seg.possibleObstacles.Select(r => Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(r.AssetGUID))))}");
+            int tris = 0;
+            foreach (var f in root.GetComponentsInChildren<MeshFilter>(true))
+                if (f.sharedMesh != null && f.GetComponent<MeshRenderer>() != null)
+                    for (int i = 0; i < f.sharedMesh.subMeshCount; ++i) tris += (int)f.sharedMesh.GetIndexCount(i) / 3;
+            Out($"Istiklal01: engelsiz üçgen={tris}");
+            PrefabUtility.SaveAsPrefabAsset(root, k_UretimPrefab);
+        }
+        finally { PrefabUtility.UnloadPrefabContents(root); }
+        if (s_Errors > 0) { Bitir(); return; }
+
+        // 2) Tema simgesi: parçanın görüntüsü (Day önizlemesiyle aynı oran, 363x149 → 2 kat çözünürlük).
+        RenderIcon();
+        var icon = AssetDatabase.LoadAllAssetsAtPath(k_TemaIcon).OfType<Sprite>().FirstOrDefault();
+        if (icon == null) { Fail("simge sprite olarak yüklenemedi"); Bitir(); return; }
+
+        // 3) Tema: Day kopyası, alanları değiştirilir.
+        if (!File.Exists(k_TemaAsset) && !AssetDatabase.CopyAsset(k_DayTheme, k_TemaAsset)) { Fail("tema kopyalanamadı"); Bitir(); return; }
+        var theme = AssetDatabase.LoadAssetAtPath<ThemeData>(k_TemaAsset);
+        theme.themeName = "Istanbul";
+        theme.cost = 0;
+        theme.premiumCost = 0;
+        theme.themeIcon = icon;
+        theme.zones = new[]
+        {
+            new ThemeZone { length = 500, prefabList = new[] { new UnityEngine.AddressableAssets.AssetReference(AssetDatabase.AssetPathToGUID(k_UretimPrefab)) } },
+        };
+        EditorUtility.SetDirty(theme);
+        Out($"tema: ad={theme.themeName} fiyat={theme.cost}/{theme.premiumCost} bölge={theme.zones.Length} parça={theme.zones[0].prefabList.Length} simge={icon.rect.width}x{icon.rect.height}");
+
+        // 4) Addressables.
+        var settings = AddressableAssetSettingsDefaultObject.Settings;
+        var themes = settings.FindGroup(k_ThemesGroup);
+        var zonesSrc = settings.FindGroup(k_ZonesSourceGroup);
+        if (themes == null || zonesSrc == null) { Fail("Themes / Default-Zones grubu yok"); Bitir(); return; }
+        var te = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(k_TemaAsset), themes);
+        te.address = "themeData";
+        te.SetLabel("themeData", true, true);
+        var zones = settings.FindGroup(k_ZonesGroup) ?? settings.CreateGroup(k_ZonesGroup, false, false, true, zonesSrc.Schemas);
+        var se = settings.CreateOrMoveEntry(AssetDatabase.AssetPathToGUID(k_UretimPrefab), zones);
+        se.address = Path.GetFileNameWithoutExtension(k_UretimPrefab);
+        Out($"Addressables: {themes.Name} ← {k_TemaAsset} (etiket themeData); {zones.Name} ← {se.address}; grup guid={AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(zones))}");
+
+        AssetDatabase.SaveAssets();
+        Bitir();
+    }
+
+    static void Bitir()
+    {
+        Out(s_Errors == 0 ? "BITTI" : $"BITTI hata={s_Errors}");
+        if (Application.isBatchMode) EditorApplication.Exit(s_Errors == 0 ? 0 : 1);
+    }
+
+    static void RenderIcon()
+    {
+        const int w = 726, h = 298;
+        var scene = UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene, UnityEditor.SceneManagement.NewSceneMode.Single);
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(k_UretimPrefab);
+        for (int i = 0; i < 4; ++i)
+        {
+            var s = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            s.transform.position = new Vector3(0f, 0f, i * 17.99f);
+        }
+        var day = AssetDatabase.LoadAssetAtPath<ThemeData>(k_DayTheme);
+        RenderSettings.fog = true;
+        RenderSettings.fogMode = FogMode.Linear;
+        RenderSettings.fogColor = day.fogColor;
+        RenderSettings.fogStartDistance = 40f;
+        RenderSettings.fogEndDistance = 70f;
+        Shader.SetGlobalFloat("_CurveStrength", 0.005f);
+        var cam = new GameObject("IconCamera").AddComponent<Camera>();
+        cam.transform.position = new Vector3(0f, 2.6f, -7.5f);
+        cam.transform.rotation = Quaternion.LookRotation(new Vector3(0f, 1.6f, 30f) - cam.transform.position);
+        cam.fieldOfView = 34f;
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = day.fogColor;
+        cam.nearClipPlane = 0.3f; cam.farClipPlane = 200f;
+        var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+        cam.targetTexture = rt; cam.aspect = (float)w / h;
+        cam.Render();
+        RenderTexture.active = rt;
+        var tex = new Texture2D(w, h, TextureFormat.RGB24, false);
+        tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+        tex.Apply();
+        File.WriteAllBytes(k_TemaIcon, tex.EncodeToPNG());
+        RenderTexture.active = null; cam.targetTexture = null;
+        Object.DestroyImmediate(tex); rt.Release();
+        Shader.SetGlobalFloat("_CurveStrength", 0f);
+        AssetDatabase.ImportAsset(k_TemaIcon, ImportAssetOptions.ForceUpdate);
+        var ti = (TextureImporter)AssetImporter.GetAtPath(k_TemaIcon);
+        ti.textureType = TextureImporterType.Sprite;
+        ti.spriteImportMode = SpriteImportMode.Single;
+        ti.mipmapEnabled = false;
+        ti.alphaIsTransparency = false;
+        ti.maxTextureSize = 1024;
+        ti.SaveAndReimport();
+        Out($"simge: {k_TemaIcon} {w}x{h}");
+    }
+
+    // Salt okunur denetim (-executeMethod IstanbulUygula.TemaDogrula): tema ve Addressables kayıtları. Kaydetmez.
+    public static void TemaDogrula()
+    {
+        s_Errors = 0;
+        var settings = AddressableAssetSettingsDefaultObject.Settings;
+        int nulls = settings.groups.Count(g => g == null);
+        Out($"gruplar={settings.groups.Count} cozulemeyen={nulls}: {string.Join(", ", settings.groups.Where(g => g != null).Select(g => g.Name))}");
+        if (nulls > 0) Fail("çözülemeyen grup kaydı var");
+        var te = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(k_TemaAsset));
+        if (te == null || te.parentGroup.Name != k_ThemesGroup || !te.labels.Contains("themeData")) Fail("tema kaydı Themes grubunda 'themeData' etiketiyle değil");
+        else Out($"tema kaydı: grup={te.parentGroup.Name} adres={te.address} etiket={string.Join(",", te.labels)}");
+        var se = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(k_UretimPrefab));
+        if (se == null || se.parentGroup.Name != k_ZonesGroup) Fail("Istiklal01 Istanbul-Zones grubunda değil");
+        else Out($"parça kaydı: grup={se.parentGroup.Name} adres={se.address} sema={string.Join(",", se.parentGroup.Schemas.Select(s => s.GetType().Name))}");
+        var simit = settings.FindAssetEntry(AssetDatabase.AssetPathToGUID(k_Prefab));
+        Out($"simit kaydı: grup={(simit != null ? simit.parentGroup.Name : "yok")} (üretim grubunda olmamalı)");
+        if (simit != null && simit.parentGroup.Name != k_Group) Fail("simit üretim grubunda");
+        var theme = AssetDatabase.LoadAssetAtPath<ThemeData>(k_TemaAsset);
+        var deps = AssetDatabase.GetDependencies(k_TemaAsset, true).Where(d => !d.EndsWith(".cs")).ToArray();
+        Out($"tema bağımlılıkları ({deps.Length}): {string.Join(", ", deps.Select(Path.GetFileName))}");
+        if (deps.Any(d => d.Contains("SimitTezgahi"))) Fail("tema simite bağımlı");
+        Out($"etkin derleyici={settings.ActivePlayerDataBuilder?.Name} ({settings.ActivePlayerDataBuilderIndex}/{settings.DataBuilders.Count})");
+        Out(s_Errors == 0 ? "DOGRULAMA TAMAM" : $"DOGRULAMA hata={s_Errors}");
+        if (Application.isBatchMode) EditorApplication.Exit(s_Errors == 0 ? 0 : 1);
+    }
+
     // Basit kutu/dörtgen geometri; renk köşe renginde. Işık yok (CurvedUnlit), derinlik hissi için yüz yönüne göre
     // gölgeleme köşe rengine işlenir. Sol taraf kurulur, sağ taraf x aynasıyla eklenir (farklı renk dizisiyle).
     class MeshBuilder
