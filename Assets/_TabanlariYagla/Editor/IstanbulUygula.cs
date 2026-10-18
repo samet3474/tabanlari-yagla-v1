@@ -676,4 +676,146 @@ public static class IstanbulUygula
         EditorUtility.SetDirty(settings);
         Out($"Addressables: grup={group.Name} adres={entry.address} guid={guid}");
     }
+
+    // ---------------------------------------------------------------------------------------------------------------
+    // İstiklal tasarlanmış parçaları İ1–İ6 (batchmode: -executeMethod IstanbulUygula.IstiklalTasarim).
+    // Her parça Istiklal01'in prefab varyantıdır (aynı 18 m geometri); köke TasarimliSatir eklenir: engeller ortada
+    // (9. metre) sabit şeritlerde, altınlar düz/yay/çapraz desenle. Tekrar çalıştırılabilir (varyantlar yeniden yazılır).
+    // Addressables grubu ve tema bu menüyle DEĞİŞMEZ (dosyalar 2.10 biçimine yeniden yazılmasın diye elle eklenir).
+    // Görseller proje dışına yazılır: ../_araclar/istanbul/test/tasarim/.
+    const string k_TasarimFolder = k_UretimFolder + "/Tasarim";
+    const string k_TasarimGorsel = "../_araclar/istanbul/test/tasarim";
+    const string k_Engeller = "Assets/UnityTechnologies/Endless Runner/Prefabs/Themes/Default/Obstacles/";
+    const string k_Altin = "Assets/UnityTechnologies/Endless Runner/Prefabs/Pickup.prefab";
+    const float k_SatirKonum = 9f;   // Istiklal01'in engel noktasıyla aynı (0,5 x 18 m)
+    const int k_Sol = 1, k_Orta = 2, k_Sag = 4;
+
+    class ParcaTasarim
+    {
+        public string ad, baslik;
+        public (string engel, int seritler)[] satirlar;
+        public TasarimliSatir.Altin[] altinlar;
+    }
+
+    static TasarimliSatir.Altin Duz(int serit, float bas, float bit) => new TasarimliSatir.Altin { tip = TasarimliSatir.AltinTipi.Duz, serit = serit, bitisSeridi = serit, baslangic = bas, bitis = bit };
+    static TasarimliSatir.Altin Yay(int serit, float bas, float bit, float tepe) => new TasarimliSatir.Altin { tip = TasarimliSatir.AltinTipi.Yay, serit = serit, bitisSeridi = serit, baslangic = bas, bitis = bit, yukseklik = tepe };
+    static TasarimliSatir.Altin Capraz(int bas, int bit, float m0, float m1) => new TasarimliSatir.Altin { tip = TasarimliSatir.AltinTipi.Capraz, serit = bas, bitisSeridi = bit, baslangic = m0, bitis = m1 };
+
+    static readonly ParcaTasarim[] k_Parcalar =
+    {
+        new ParcaTasarim { ad = "IstiklalI1", baslik = "I1 Tek engel",
+            satirlar = new[] { ("ObstacleBin", k_Orta) },
+            altinlar = new[] { Duz(-1, 0f, 16.5f) } },
+        new ParcaTasarim { ad = "IstiklalI2", baslik = "I2 Kaldirim kapaniyor",
+            satirlar = new[] { ("ObstacleBin", k_Sol | k_Orta) },
+            altinlar = new[] { Duz(1, 0f, 16.5f) } },
+        new ParcaTasarim { ad = "IstiklalI3", baslik = "I3 Bariyer atla",
+            satirlar = new[] { ("ObstacleLowBarrier", k_Orta) },
+            altinlar = new[] { Duz(0, 0f, 3f), Yay(0, 4.5f, 13.5f, 1.6f), Duz(0, 15f, 16.5f) } },
+        new ParcaTasarim { ad = "IstiklalI4", baslik = "I4 Kayarak gec",
+            satirlar = new[] { ("ObstacleHighBarrier", k_Orta) },
+            altinlar = new[] { Duz(0, 0f, 16.5f) } },
+        new ParcaTasarim { ad = "IstiklalI5", baslik = "I5 Risk-odul",
+            satirlar = new[] { ("ObstacleRoadworksCone", k_Sol), ("ObstacleWheelyBin", k_Sag) },
+            altinlar = new[] { Yay(-1, 4.5f, 13.5f, 1.9f) } },
+        new ParcaTasarim { ad = "IstiklalI6", baslik = "I6 Yol calismasi",
+            satirlar = new[] { ("ObstacleRoadworksBarrier", k_Orta), ("ObstacleRoadworksCone", k_Sag) },
+            altinlar = new[] { Capraz(1, -1, 0f, 6f), Duz(-1, 7.5f, 16.5f) } },
+    };
+
+    public static void IstiklalTasarim()
+    {
+        s_Errors = 0;
+        if (!AssetDatabase.IsValidFolder(k_TasarimFolder)) AssetDatabase.CreateFolder(k_UretimFolder, "Tasarim");
+        var temel = AssetDatabase.LoadAssetAtPath<GameObject>(k_UretimPrefab);
+        if (temel == null) { Fail("Istiklal01 yok"); Bitir(); return; }
+        foreach (var p in k_Parcalar)
+        {
+            var inst = (GameObject)PrefabUtility.InstantiatePrefab(temel);
+            inst.name = p.ad;
+            var tas = inst.AddComponent<TasarimliSatir>();
+            tas.satirlar = p.satirlar.Select(s =>
+            {
+                string guid = AssetDatabase.AssetPathToGUID(k_Engeller + s.engel + ".prefab");
+                if (string.IsNullOrEmpty(guid)) Fail($"{p.ad}: engel yok {s.engel}");
+                return new TasarimliSatir.Satir { konum = k_SatirKonum, engel = new UnityEngine.AddressableAssets.AssetReference(guid), seritler = s.seritler };
+            }).ToArray();
+            tas.altinlar = p.altinlar;
+            string yol = $"{k_TasarimFolder}/{p.ad}.prefab";
+            PrefabUtility.SaveAsPrefabAsset(inst, yol, out bool ok);
+            Object.DestroyImmediate(inst);
+            if (!ok) { Fail($"kaydedilemedi {yol}"); continue; }
+            Out($"parca: {p.ad} ({p.baslik}) guid={AssetDatabase.AssetPathToGUID(yol)} satir={string.Join(" + ", p.satirlar.Select(s => s.engel + "/" + s.seritler))} altin={string.Join(" + ", p.altinlar.Select(a => $"{a.tip}({a.serit}->{a.bitisSeridi} {a.baslangic}-{a.bitis}m h{a.yukseklik})"))}");
+        }
+        AssetDatabase.SaveAssets();
+        IstiklalTasarimGorselUret();
+        Bitir();
+    }
+
+    // Görseller (-executeMethod IstanbulUygula.IstiklalTasarimGorsel): kaydedilmiş varyantlardan, oyundaki gibi yerleşmiş
+    // engel ve altınlarla: oyun kamerası (6 m arkada, 4 m yukarıda, 15 derece, 58,7 FOV, 390x844) ve tepeden görünüm.
+    public static void IstiklalTasarimGorsel() { s_Errors = 0; IstiklalTasarimGorselUret(); Bitir(); }
+
+    static void IstiklalTasarimGorselUret()
+    {
+        Directory.CreateDirectory(k_TasarimGorsel);
+        var day = AssetDatabase.LoadAssetAtPath<ThemeData>(k_DayTheme);
+        var temel = AssetDatabase.LoadAssetAtPath<GameObject>(k_UretimPrefab);
+        var altin = AssetDatabase.LoadAssetAtPath<GameObject>(k_Altin);
+        foreach (var p in k_Parcalar)
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene, UnityEditor.SceneManagement.NewSceneMode.Single);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{k_TasarimFolder}/{p.ad}.prefab");
+            if (prefab == null) { Fail($"görsel: {p.ad} yok"); continue; }
+            // önceki ve sonraki parça düz Istiklal01 (engelsiz), ortadaki tasarlanmış parça
+            for (int i = -1; i <= 1; ++i) ((GameObject)PrefabUtility.InstantiatePrefab(i == 0 ? prefab : temel)).transform.position = new Vector3(0f, 0f, i * 17.99f);
+            var seg = prefab.GetComponent<TrackSegment>();
+            var tas = prefab.GetComponent<TasarimliSatir>();
+            var pts = Enumerable.Range(0, seg.pathParent.childCount).Select(i => seg.pathParent.GetChild(i).position).ToArray();
+            float L = 0f; for (int i = 1; i < pts.Length; ++i) L += Vector3.Distance(pts[i - 1], pts[i]);
+            Vector3 Nokta(float m) => Vector3.Lerp(pts[0], pts[pts.Length - 1], m / L); // düz yol: giriş-çıkış doğrusu
+            foreach (var s in tas.satirlar)
+                for (int lane = -1; lane <= 1; ++lane)
+                    if ((s.seritler & (1 << (lane + 1))) != 0)
+                        ((GameObject)PrefabUtility.InstantiatePrefab(s.engel.editorAsset)).transform.position = Nokta(s.konum) + Vector3.right * lane * 1.5f;
+            int adet = 0;
+            foreach (var a in tas.altinlar)
+                for (float m = a.baslangic; m <= a.bitis + 0.001f; m += TasarimliSatir.k_AltinAraligi)
+                {
+                    float o = a.bitis > a.baslangic ? (m - a.baslangic) / (a.bitis - a.baslangic) : 0f;
+                    float lane = a.tip == TasarimliSatir.AltinTipi.Capraz ? Mathf.Lerp(a.serit, a.bitisSeridi, o) : a.serit;
+                    float y = a.tip == TasarimliSatir.AltinTipi.Yay ? Mathf.Sin(o * Mathf.PI) * a.yukseklik : a.yukseklik;
+                    ((GameObject)PrefabUtility.InstantiatePrefab(altin)).transform.position = Nokta(m) + Vector3.right * lane * 1.5f + Vector3.up * y;
+                    adet++;
+                }
+            Vector3 satir = Nokta(k_SatirKonum);
+            RenderSettings.fog = true; RenderSettings.fogMode = FogMode.Linear; RenderSettings.fogColor = day.fogColor;
+            RenderSettings.fogStartDistance = 40f; RenderSettings.fogEndDistance = 70f;
+            // oyun kamerası: karakter satırdan 12 m önce; kamera karakterin 6 m arkasında, 4 m yukarıda
+            Shader.SetGlobalFloat("_CurveStrength", 0.005f);
+            GorselCek($"{p.ad}-oyun", 390 * 2, 844 * 2, satir + new Vector3(0f, 4f, -18f), Quaternion.Euler(14.94f, 0f, 0f), 58.7f, 0f, day.fogColor);
+            Shader.SetGlobalFloat("_CurveStrength", 0f);
+            RenderSettings.fog = false;
+            GorselCek($"{p.ad}-tepe", 600, 1200, satir + new Vector3(0f, 30f, 0f), Quaternion.Euler(90f, 0f, 0f), 0f, 9.5f, day.fogColor);
+            Out($"gorsel: {p.ad} engel={tas.satirlar.Sum(s => System.Convert.ToString(s.seritler, 2).Count(c => c == '1'))} altin={adet}");
+        }
+    }
+
+    static void GorselCek(string ad, int w, int h, Vector3 pos, Quaternion rot, float fov, float ortho, Color arka)
+    {
+        var cam = new GameObject("TasarimKamera").AddComponent<Camera>();
+        cam.transform.SetPositionAndRotation(pos, rot);
+        if (ortho > 0f) { cam.orthographic = true; cam.orthographicSize = ortho; } else cam.fieldOfView = fov;
+        cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = arka;
+        cam.nearClipPlane = 0.3f; cam.farClipPlane = 200f;
+        var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+        cam.targetTexture = rt; cam.aspect = (float)w / h;
+        cam.Render();
+        RenderTexture.active = rt;
+        var tex = new Texture2D(w, h, TextureFormat.RGB24, false);
+        tex.ReadPixels(new Rect(0, 0, w, h), 0, 0); tex.Apply();
+        File.WriteAllBytes($"{k_TasarimGorsel}/{ad}.png", tex.EncodeToPNG());
+        RenderTexture.active = null; cam.targetTexture = null;
+        Object.DestroyImmediate(tex); rt.Release(); Object.DestroyImmediate(cam.gameObject);
+    }
 }

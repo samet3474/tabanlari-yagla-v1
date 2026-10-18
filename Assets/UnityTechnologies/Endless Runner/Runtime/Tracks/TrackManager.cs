@@ -227,6 +227,7 @@ public class TrackManager : MonoBehaviour
 
             m_CurrentZone = 0;
             m_CurrentZoneDistance = 0;
+            m_PreviousSegment = -1;
 
             skyMeshFilter.sharedMesh = m_CurrentThemeData.skyMesh;
             RenderSettings.fogColor = m_CurrentThemeData.fogColor;
@@ -536,6 +537,7 @@ public class TrackManager : MonoBehaviour
 
         m_CurrentZone = 0;
         m_CurrentZoneDistance = 0;
+        m_PreviousSegment = -1;
 
         // The tutorial's segments were spawned empty. The ones that still start beyond the fog get their obstacles and
         // coins now, where they cannot be seen appearing; the nearer ones stay a short obstacle-free run-up, like the
@@ -556,6 +558,8 @@ public class TrackManager : MonoBehaviour
             m_CurrentZone = 0;
 
         m_CurrentZoneDistance = 0;
+        // Segment indices belong to the zone's own prefab list, so the previous one means nothing in the new zone.
+        m_PreviousSegment = -1;
     }
 
     private readonly Vector3 _offScreenSpawnPos = new Vector3(-100f, -100f, -100f);
@@ -569,6 +573,7 @@ public class TrackManager : MonoBehaviour
 
         int segmentUse = Random.Range(0, m_CurrentThemeData.zones[m_CurrentZone].prefabList.Length);
         if (segmentUse == m_PreviousSegment) segmentUse = (segmentUse + 1) % m_CurrentThemeData.zones[m_CurrentZone].prefabList.Length;
+        m_PreviousSegment = segmentUse;
 
         AsyncOperationHandle segmentToUseOp = m_CurrentThemeData.zones[m_CurrentZone].prefabList[segmentUse].InstantiateAsync(_offScreenSpawnPos, Quaternion.identity);
         m_LoadingSegments.Add(segmentToUseOp);
@@ -716,7 +721,73 @@ public class TrackManager : MonoBehaviour
 
     public void SpawnObstacle(TrackSegment segment)
     {
-        StartCoroutine(SpawnObstaclesThenCollectibles(segment));
+        // Designed pieces (TasarimliSatir) get fixed obstacles and coin patterns; every other segment is random as before.
+        TasarimliSatir tasarim = segment.GetComponent<TasarimliSatir>();
+        if (tasarim != null)
+            StartCoroutine(SpawnTasarimli(segment, tasarim));
+        else
+            StartCoroutine(SpawnObstaclesThenCollectibles(segment));
+    }
+
+    // Obstacles in their fixed lanes (loaded by GUID through the AssetReference), then the coin patterns. No Random call.
+    private IEnumerator SpawnTasarimli(TrackSegment segment, TasarimliSatir tasarim)
+    {
+        int pending = 0;
+        System.Action<GameObject> onObstacleDone = o => pending--;
+        foreach (TasarimliSatir.Satir satir in tasarim.satirlar)
+        {
+            if (satir.engel == null || !satir.engel.RuntimeKeyIsValid())
+            {
+                Debug.LogWarning(string.Format("Designed row without obstacle on {0}.", segment.name));
+                continue;
+            }
+            float t = satir.konum / segment.worldLength;
+            for (int lane = -1; lane <= 1; ++lane)
+            {
+                if ((satir.seritler & (1 << (lane + 1))) == 0)
+                    continue;
+                pending++;
+                StartCoroutine(SpawnObstacleAtRoutine(satir.engel.RuntimeKey, segment, t, lane, onObstacleDone));
+            }
+        }
+
+        float timeout = k_ObstacleSpawnTimeout;
+        while (pending > 0 && timeout > 0.0f)
+        {
+            timeout -= Time.deltaTime;
+            yield return null;
+        }
+
+        // The segment may have been released while its obstacles were loading.
+        if (segment == null || m_IsTutorial)
+            yield break;
+
+        foreach (TasarimliSatir.Altin desen in tasarim.altinlar)
+            SpawnAltinDeseni(segment, desen);
+    }
+
+    private void SpawnAltinDeseni(TrackSegment segment, TasarimliSatir.Altin desen)
+    {
+        float uzunluk = desen.bitis - desen.baslangic;
+        for (float m = desen.baslangic; m <= desen.bitis + 0.001f; m += TasarimliSatir.k_AltinAraligi)
+        {
+            float oran = uzunluk > 0.0f ? (m - desen.baslangic) / uzunluk : 0.0f;
+            float lane = desen.tip == TasarimliSatir.AltinTipi.Capraz ? Mathf.Lerp(desen.serit, desen.bitisSeridi, oran) : desen.serit;
+            float yukseklik = desen.tip == TasarimliSatir.AltinTipi.Yay ? Mathf.Sin(oran * Mathf.PI) * desen.yukseklik : desen.yukseklik;
+
+            Vector3 pos;
+            Quaternion rot;
+            segment.GetPointAtInWorldUnit(m, out pos, out rot);
+            pos += rot * (Vector3.right * lane * laneOffset + Vector3.up * yukseklik);
+
+            GameObject coin = Coin.coinPool.Get(pos, rot);
+            coin.transform.SetParent(segment.collectibleTransform, true);
+
+            //TODO : remove that hack related to #issue7
+            Vector3 oldPos = coin.transform.position;
+            coin.transform.position += Vector3.back;
+            coin.transform.position = oldPos;
+        }
     }
 
     // Coins avoid obstacles with Physics.CheckSphere, so they must only be placed once every obstacle of the

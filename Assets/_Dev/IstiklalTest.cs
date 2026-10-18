@@ -1,6 +1,6 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 // Test aracı: yalnızca geliştirme derlemesinde ve "-istiklalTest" argümanıyla çalışır; yayın derlemesine girmez.
-// İstiklal test parçasını (IstiklalTest01, Addressables "Istanbul-Test") gerçek koşuda dener. Day temasının bölgeleri
+// İstiklal üretim parçasını (Istiklal01, Addressables "Istanbul-Zones") gerçek koşuda dener. Day temasının bölgeleri
 // YALNIZCA bu sürecin belleğinde bu parçayı kullanacak şekilde ayarlanır (dosyalar ve tema değişmez); engeller ve altınlar
 // oyunun kendi akışıyla yerleşir. Ölçer: parça birleşimi, engel yerleşimi, altın çakışması, simit sayısı, üçgen/çizici.
 // Argümanlar: -istiklalTest [-istiklalShots <klasör>] [-diagSeed <n>]
@@ -14,8 +14,8 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class IstiklalTest : MonoBehaviour
 {
-    const string k_SegmentGuid = "d68c1f73f201ce54d842f67b45c884c1"; // IstiklalTest01.prefab
-    const string k_SegmentAddress = "IstiklalTest01";
+    const string k_SegmentGuid = "db82ae717e8d4dc4ba51769c4134177a"; // Istiklal01.prefab (üretim; simitsiz)
+    const string k_SegmentAddress = "Istiklal01";
     const string k_Simit = "SimitTezgahi";
     const int k_ObstacleMask = 1 << 9;
 
@@ -77,7 +77,7 @@ public class IstiklalTest : MonoBehaviour
         yield return probe;
         var prefab = probe.Status == AsyncOperationStatus.Succeeded ? probe.Result : null;
         var segPrefab = prefab != null ? prefab.GetComponent<TrackSegment>() : null;
-        Check(segPrefab != null, "IstiklalTest01 Addressables'tan yuklendi (TrackSegment)");
+        Check(segPrefab != null, "Istiklal01 Addressables'tan yuklendi (TrackSegment)");
         if (segPrefab == null) { Finish(); yield break; }
         m_Held.Add(probe);
         int decor = 0, rend = 0;
@@ -91,7 +91,7 @@ public class IstiklalTest : MonoBehaviour
         var day = ThemeDatabase.GetThemeData("Day");
         var segRef = new AssetReference(k_SegmentGuid);
         for (int i = 0; i < day.zones.Length; ++i) day.zones[i].prefabList = new[] { segRef };
-        Out($"bolge ayari: {day.zones.Length} bolge yalniz IstiklalTest01 (bellekte)");
+        Out($"bolge ayari: {day.zones.Length} bolge yalniz Istiklal01 (bellekte)");
 
         PlayerData.instance.tutorialDone = true;
         m_TM.trackSeed = m_Seed;
@@ -194,7 +194,7 @@ public class IstiklalTest : MonoBehaviour
         Check(m_Segments >= 20 && m_OtherSegments == 0, $"kosu yalniz Istiklal parcasindan olustu ({m_Segments} parca, baska={m_OtherSegments})");
         Check(m_Joins >= 10 && m_MaxGap < 0.01f && m_MaxAngle < 0.5f, $"parca girisi onceki parcanin cikisina oturuyor (bosluk={m_MaxGap:F4}m aci={m_MaxAngle:F2})");
         Check(m_ObstacleTypes.Count >= 3, $"engeller yerlesiyor ({m_ObstacleTypes.Count} tur)");
-        Check(m_ObstacleTypes.ContainsKey("ObstacleSimitTezgahi"), "simit tezgahi bu parcada cikiyor");
+        Check(!m_ObstacleTypes.ContainsKey("ObstacleSimitTezgahi"), "uretim parcasinda simit tezgahi yok (Meshy §2.4)");
         Check(m_SimitMaxPerSeg <= 2, $"parca basina en fazla 2 simit ({m_SimitMaxPerSeg})");
         Check(m_AdjacentBlocked == 0, $"simit komsu seridi kapatmiyor (degen={m_AdjacentBlocked}/{m_Simits * 2})");
         Check(m_Coins > 50 && m_CoinsInObstacle == 0, $"altinlar engellerin icine dogmuyor ({m_CoinsInObstacle}/{m_Coins})");
