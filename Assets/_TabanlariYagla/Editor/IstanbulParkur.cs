@@ -107,6 +107,19 @@ public static class IstanbulParkur
         new Kombo { ad = "IstiklalK13", baslik = "K13 Karsidan tramvay", karar = "sagda duran tramvay, ortada kutu; soldan karsidan gelen tramvay: saga gec",
             satir = new[] { (14f, "Tramvay", k_Sag), (30f, "Bin", k_Orta), (40f, "TramvayHareketli", k_Sol) },
             altin = new[] { Duz(0, 3f, 25.5f), Capraz(0, 1, 25.5f, 28.5f), Duz(1, 30f, 52.5f) } },
+        // Subway Surfers tarzı uzun / paralel katarlar (vagonlar 9,5 m arayla; tavanlar aynı yükseklikte, tavandan tavana geçilir)
+        new Kombo { ad = "IstiklalK14", baslik = "K14 Tren tarlasi", karar = "uc seritte kademeli katarlar: soldaki rampadan tavana cik, tavandan tavana gecerek sikkeleri topla",
+            satir = new[] { (16f, "RampaliTramvay", k_Sol), (25.5f, "Tramvay", k_Sol), (35f, "Tramvay", k_Sol), (20f, "Tramvay", k_Orta), (29.5f, "Tramvay", k_Orta), (24f, "Tramvay", k_Sag), (33.5f, "Tramvay", k_Sag) },
+            altin = new[] { RampaAltin(-1, 16f - k_RampaBoy, 10f, 14.5f), Duz(-1, 17f, 22f, k_Tavan), Capraz(-1, 0, 23.5f, 26.5f, k_Tavan), Duz(0, 28f, 32f, k_Tavan), Capraz(0, 1, 33.5f, 36.5f, k_Tavan), Duz(1, 38f, 41f, k_Tavan) } },
+        new Kombo { ad = "IstiklalK15", baslik = "K15 Katar ve secim", karar = "ortada uc vagon: solda kay+zipla ya da sagdaki rampadan tavana cik",
+            satir = new[] { (8f, "Tramvay", k_Orta), (17.5f, "Tramvay", k_Orta), (27f, "Tramvay", k_Orta), (14f, "SeritKay", k_Sol), (28f, "SeritZipla", k_Sol), (24f, "RampaliTramvay", k_Sag) },
+            altin = new[] { Duz(-1, 3f, 18f), Yay(-1, 24f, 32f, 1.6f), RampaAltin(1, 24f - k_RampaBoy, 18f, 22.5f), Duz(1, 25f, 32f, k_Tavan), Duz(0, 40f, 52f) } },
+        new Kombo { ad = "IstiklalK16", baslik = "K16 Karsidan tren ve katar", karar = "sagda iki vagon, solda karsidan gelen tramvay, ortada kutu: katar bitince saga gec",
+            satir = new[] { (10f, "Tramvay", k_Sag), (19.5f, "Tramvay", k_Sag), (36f, "Bin", k_Orta), (46f, "TramvayHareketli", k_Sol) },
+            altin = new[] { Duz(0, 3f, 31.5f), Capraz(0, 1, 31.5f, 34.5f), Duz(1, 36f, 52.5f) } },
+        new Kombo { ad = "IstiklalK17", baslik = "K17 Catidan catiya", karar = "ortadaki rampadan tavana cik; ortadaki katar bitmeden sol ya da sag katarin tavanina gec",
+            satir = new[] { (14f, "RampaliTramvay", k_Orta), (23.5f, "Tramvay", k_Orta), (26f, "Tramvay", k_Sol | k_Sag), (35.5f, "Tramvay", k_Sol | k_Sag) },
+            altin = new[] { RampaAltin(0, 14f - k_RampaBoy, 8f, 12.5f), Duz(0, 15f, 24f, k_Tavan), Capraz(0, -1, 27f, 30f, k_Tavan), Duz(-1, 31.5f, 43f, k_Tavan) } },
     };
 
     // ------------------------------------------------------------------------------------------------ giriş
@@ -297,7 +310,7 @@ public static class IstanbulParkur
             }
             if (hareketli)
             {
-                var h = root.AddComponent<HareketliTramvay>(); h.hiz = 6f; h.baslamaMesafesi = 45f;
+                var h = root.AddComponent<HareketliTramvay>(); h.hiz = 8f; h.baslamaMesafesi = 45f;
             }
             PrefabUtility.SaveAsPrefabAsset(root, yol);
             Out($"engel {ad}: tetikleyici={root.GetComponents<BoxCollider>().Length} hareketli={hareketli} rampali={rampali}");

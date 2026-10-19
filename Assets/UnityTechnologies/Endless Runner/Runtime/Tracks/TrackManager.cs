@@ -777,32 +777,69 @@ public class TrackManager : MonoBehaviour
         if (segment == null || m_IsTutorial)
             yield break;
 
+        // Bonuslar (mıknatıs, çarpan, kalkan, can…) ve premium, rastgele parçalardaki aynı şans kuralıyla, ama yalnız
+        // tasarlanmış altın dizisinin üstünde (güvenli rotada) bir altının yerine çıkar.
+        float powerupChance = Mathf.Clamp01(Mathf.Floor(m_TimeSincePowerup) * 0.5f * 0.001f);
+        float premiumChance = Mathf.Clamp01(Mathf.Floor(m_TimeSinceLastPremium) * 0.5f * 0.0001f);
         foreach (TasarimliSatir.Altin desen in tasarim.altinlar)
-            SpawnAltinDeseni(segment, desen);
-    }
-
-    private void SpawnAltinDeseni(TrackSegment segment, TasarimliSatir.Altin desen)
-    {
-        float uzunluk = desen.bitis - desen.baslangic;
-        int ayna = segment.transform.localScale.x < 0.0f ? -1 : 1;
-        for (float m = desen.baslangic; m <= desen.bitis + 0.001f; m += TasarimliSatir.k_AltinAraligi)
         {
-            float oran = uzunluk > 0.0f ? (m - desen.baslangic) / uzunluk : 0.0f;
-            float lane = TasarimliSatir.AltinSeridi(desen, oran) * ayna;
-            float yukseklik = TasarimliSatir.AltinYuksekligi(desen, oran);
+            float uzunluk = desen.bitis - desen.baslangic;
+            for (float m = desen.baslangic; m <= desen.bitis + 0.001f; m += TasarimliSatir.k_AltinAraligi)
+            {
+                if (segment == null)
+                    yield break;
+                float oran = uzunluk > 0.0f ? (m - desen.baslangic) / uzunluk : 0.0f;
+                float lane = TasarimliSatir.AltinSeridi(desen, oran) * ayna; // satırlardaki ayna ile aynı
+                float yukseklik = TasarimliSatir.AltinYuksekligi(desen, oran);
 
-            Vector3 pos;
-            Quaternion rot;
-            segment.GetPointAtInWorldUnit(m, out pos, out rot);
-            pos += rot * (Vector3.right * lane * laneOffset + Vector3.up * yukseklik);
+                Vector3 pos;
+                Quaternion rot;
+                segment.GetPointAtInWorldUnit(m, out pos, out rot);
+                pos += rot * (Vector3.right * lane * laneOffset + Vector3.up * yukseklik);
 
-            GameObject coin = Coin.coinPool.Get(pos, rot);
-            coin.transform.SetParent(segment.collectibleTransform, true);
+                GameObject toUse = null;
+                string bonus = null;
+                if (Random.value < powerupChance)
+                {
+                    int picked = Random.Range(0, consumableDatabase.consumbales.Length);
+                    if (consumableDatabase.consumbales[picked].canBeSpawned)
+                    {
+                        m_TimeSincePowerup = 0.0f;
+                        powerupChance = 0.0f;
+                        bonus = consumableDatabase.consumbales[picked].gameObject.name;
+                    }
+                }
+                else if (Random.value < premiumChance)
+                {
+                    m_TimeSinceLastPremium = 0.0f;
+                    premiumChance = 0.0f;
+                    bonus = currentTheme.premiumCollectible.name;
+                }
 
-            //TODO : remove that hack related to #issue7
-            Vector3 oldPos = coin.transform.position;
-            coin.transform.position += Vector3.back;
-            coin.transform.position = oldPos;
+                if (bonus != null)
+                {
+                    AsyncOperationHandle op = Addressables.InstantiateAsync(bonus, pos, rot);
+                    yield return op;
+                    if (op.Result == null || !(op.Result is GameObject) || segment == null)
+                    {
+                        if (op.Result is GameObject orphan) Addressables.ReleaseInstance(orphan);
+                        Debug.LogWarning(string.Format("Unable to load collectable {0}.", bonus));
+                        continue;
+                    }
+                    toUse = op.Result as GameObject;
+                    toUse.transform.SetParent(segment.transform, true);
+                }
+                else
+                {
+                    toUse = Coin.coinPool.Get(pos, rot);
+                    toUse.transform.SetParent(segment.collectibleTransform, true);
+                }
+
+                //TODO : remove that hack related to #issue7
+                Vector3 oldPos = toUse.transform.position;
+                toUse.transform.position += Vector3.back;
+                toUse.transform.position = oldPos;
+            }
         }
     }
 

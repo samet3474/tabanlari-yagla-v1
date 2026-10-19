@@ -107,6 +107,16 @@ public class CharacterInputController : MonoBehaviour
     protected float m_KameraYukselme;               // camera offset currently applied
     public float zeminYuksekligi { get { return m_Taban; } }
 
+    // Yandan çarpma / tökezleme (Subway Surfers mantığı)
+    static int s_TokezHash = Animator.StringToHash("Hit");
+    protected const float k_YanEsik = 0.05f;       // şerit değişimi sürüyor sayılması için hedefe kalan en az mesafe (m)
+    protected const float k_YanDerinlik = 0.2f;    // karakter merkezi engelin ön yüzünü bu kadar geçtiyse yandan
+    protected const float k_TokezSure = 5f;        // bu süre içinde ikinci tökezleme normal çarpma olur (s)
+    protected const float k_HizliDusus = 4f;       // havadayken kayınca düşüş ivmesi çarpanı
+    protected int m_OncekiSerit = k_StartingLane;
+    protected float m_SonTokezleme = -100f;
+    [HideInInspector] public int tokezlemeSayisi;
+
     protected void Awake ()
     {
         m_Premium = 0;
@@ -176,6 +186,9 @@ public class CharacterInputController : MonoBehaviour
 		characterCollider.transform.localPosition = Vector3.zero;
 		m_Taban = 0f;
 		m_DusmeHizi = 0f;
+		m_OncekiSerit = k_StartingLane;
+		m_SonTokezleme = -100f;
+		tokezlemeSayisi = 0;
 		m_ZiplamaTabani = 0f;
 		// TrackManager puts the camera back to its original place at the end of each run.
 		m_KameraYukselme = 0f;
@@ -450,7 +463,8 @@ public class CharacterInputController : MonoBehaviour
         }
         else
         {
-            m_DusmeHizi += k_Yercekimi * Time.deltaTime;
+            // havadayken aşağı kaydırmak (kayma) hızla yere indirir
+            m_DusmeHizi += k_Yercekimi * (m_Sliding ? k_HizliDusus : 1f) * Time.deltaTime;
             m_Taban = Mathf.Max(zemin, m_Taban - m_DusmeHizi * Time.deltaTime);
             if (m_Taban <= zemin)
                 m_DusmeHizi = 0f;
@@ -548,8 +562,34 @@ public class CharacterInputController : MonoBehaviour
             // Ignore, we are on the borders.
             return;
 
+        m_OncekiSerit = m_CurrentLane;
         m_CurrentLane = targetLane;
         m_TargetPosition = new Vector3((m_CurrentLane - 1) * trackManager.laneOffset, 0, 0);
+    }
+
+    // Yandan çarpma: karakter şerit değiştiriyor ve engelin önü karakterin önünün yeterince gerisinde kalmış
+    // (karakter engelin yanından içeri giriyor). Önden çarpma (engel tam önünde) her zaman normal çarpmadır.
+    public bool YandanCarpti(Collider engel)
+    {
+        Transform t = characterCollider.transform;
+        if (Mathf.Abs(t.localPosition.x - m_TargetPosition.x) < k_YanEsik)
+            return false;
+        Bounds b = engel.bounds;
+        float onu = Vector3.Dot(t.position - b.center, transform.forward) + Vector3.Dot(b.extents, new Vector3(Mathf.Abs(transform.forward.x), Mathf.Abs(transform.forward.y), Mathf.Abs(transform.forward.z)));
+        return onu > k_YanDerinlik; // karakterin merkezi engelin ön yüzünü bu kadar geçmiş
+    }
+
+    // Eski şeride geri sek ve tökezle. Son tökezlemeden k_TokezSure içinde ikinci kez olursa false (normal çarpma).
+    public bool Tokezle()
+    {
+        if (Time.time - m_SonTokezleme < k_TokezSure)
+            return false;
+        m_SonTokezleme = Time.time;
+        m_CurrentLane = m_OncekiSerit;
+        m_TargetPosition = new Vector3((m_CurrentLane - 1) * trackManager.laneOffset, 0, 0);
+        character.animator.SetTrigger(s_TokezHash);
+        tokezlemeSayisi++;
+        return true;
     }
 
     public void UseInventory()

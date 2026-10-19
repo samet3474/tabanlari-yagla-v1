@@ -56,7 +56,7 @@ public static class ParkurAdaletOlcum
         public Bounds b; public int[] seritler;
         // şerit başına (kapalı şeritler): engel kutusu, mesafe aralığı, rampa, hareket
         public Bounds[] sb = new Bounds[3]; public float[] kz0 = new float[3], kz1 = new float[3];
-        public bool[] uzun = new bool[3], rampa = new bool[3]; public float[] rampaBas = new float[3], hiz = new float[3], baslama = new float[3];
+        public bool[] uzun = new bool[3], rampa = new bool[3], tavan = new bool[3]; public float[] rampaBas = new float[3], hiz = new float[3], baslama = new float[3];
         public float zMinKisa, zMaxKisa; // kısa engellerin aralığı (yoksa d) — serbest şeritler için
     }
 
@@ -206,8 +206,10 @@ public static class ParkurAdaletOlcum
                 Vector3 c = k.center + new Vector3(lane * s_LaneOffset, y, m); adet++;
                 if (Physics.CheckBox(c, k.extents, Quaternion.identity, 1 << k_EngelKatmani, QueryTriggerInteraction.Collide))
                 { cakisma++; if (ornek.Count < 4) ornek.Add($"engel_ici {m:F1}m serit{lane:F1} y{y:F2}"); }
+                // yüzey: kesirli şeritte (tavandan tavana geçiş) iki komşu şeridin yüksek olanı
                 float yuzey = 0f;
-                if (Physics.Raycast(new Vector3(lane * s_LaneOffset, 8f, m), Vector3.down, out RaycastHit hit, 9f, 1 << k_ZeminKatmani, QueryTriggerInteraction.Collide)) yuzey = hit.point.y;
+                foreach (float ls in new[] { Mathf.Floor(lane), Mathf.Ceil(lane) })
+                    if (Physics.Raycast(new Vector3(ls * s_LaneOffset, 8f, m), Vector3.down, out RaycastHit hit, 9f, 1 << k_ZeminKatmani, QueryTriggerInteraction.Collide)) yuzey = Mathf.Max(yuzey, hit.point.y);
                 if (y < yuzey - 0.05f) { alt++; if (ornek.Count < 4) ornek.Add($"yuzey_alti {m:F1}m serit{lane:F1} y{y:F2} yuzey{yuzey:F2}"); }
                 else if (y + k.min.y > yuzey + erisim) { yuksek++; if (ornek.Count < 4) ornek.Add($"ulasilamaz {m:F1}m serit{lane:F1} y{y:F2} yuzey{yuzey:F2}"); }
             }
@@ -320,6 +322,7 @@ public static class ParkurAdaletOlcum
                     sr.uzun[k] |= e.uzun;
                     if (!float.IsNaN(e.rampaBas)) { sr.rampa[k] = true; sr.rampaBas[k] = d + e.rampaBas; }
                     if (e.hiz > 0) { sr.hiz[k] = e.hiz; sr.baslama[k] = e.baslama; }
+                    if (e.tavan > 0 && e.hiz <= 0) sr.tavan[k] = true; // yürünen tavan (hareketli tramvay hariç)
                 }
             }
             b.Encapsulate(e.b); zMin = Mathf.Min(zMin, d + e.b.min.z); zMax = Mathf.Max(zMax, d + e.b.max.z);
@@ -429,11 +432,39 @@ public static class ParkurAdaletOlcum
                 g.e[l] = g.zp[l] > 0 ? Eylem.Zipla : g.kp[l] > 0 ? Eylem.Kay : Eylem.Kapali;
             }
         }
-        // uzun engeller, aralıklarına düşen diğer sıraların şeritlerini de kapatır
+        // Tavan zincirleri: rampalı tramvayın tavanına çıkılır; aynı şeritte hemen ardından gelen vagonun (≤1 m ara)
+        // ve yandaki şeritte en az 2 m örtüşen tavanın üstüne geçilir. Ulaşılabilen tavanlar o şeritte SpanRampa olur;
+        // yerden girişi yalnız zincirin rampasından (rampa başlamadan) mümkündür, yandan geçilen tavana yerden girilmez.
+        var tavanlar = new List<(int j, int l, float z0, float z1, bool rampa, float giris)>();
+        for (int j = 0; j < G.Count; j++)
+            for (int l = 0; l < 3; l++)
+                if (G[j].s.tavan[l] && G[j].s.serit[l] == Eylem.Kapali)
+                    tavanlar.Add((j, l, G[j].z0[l], G[j].z1[l], G[j].s.rampa[l], G[j].s.rampa[l] ? G[j].s.rampaBas[l] : float.NaN));
+        bool degisti = true;
+        while (degisti)
+        {
+            degisti = false;
+            for (int k = 0; k < tavanlar.Count; k++)
+            {
+                if (!float.IsNaN(tavanlar[k].giris)) continue;
+                var t = tavanlar[k]; float g = float.NaN;
+                foreach (var p in tavanlar)
+                {
+                    if (float.IsNaN(p.giris)) continue;
+                    if (p.l == t.l && t.z0 >= p.z1 - 0.01f && t.z0 - p.z1 <= 1f) { g = float.IsNaN(g) ? p.giris : Mathf.Min(g, p.giris); }
+                    else if (Mathf.Abs(p.l - t.l) == 1 && Mathf.Min(p.z1, t.z1) - Mathf.Max(p.z0, t.z0) >= 2f && float.IsNaN(g)) g = float.NegativeInfinity;
+                }
+                if (!float.IsNaN(g)) { tavanlar[k] = (t.j, t.l, t.z0, t.z1, t.rampa, g); degisti = true; }
+            }
+        }
+        var ulasilir = new Dictionary<(int, int), float>();
+        foreach (var t in tavanlar) if (!float.IsNaN(t.giris)) { ulasilir[(t.j, t.l)] = t.giris; if (!t.rampa) { G[t.j].e[t.l] = Eylem.SpanRampa; G[t.j].ekBas[t.l] = Mathf.Min(G[t.j].ekBas[t.l], t.giris); } }
+        // uzun engeller, aralıklarına düşen diğer sıraların şeritlerini de kapatır (ulaşılabilen tavan: SpanRampa)
         for (int j = 0; j < G.Count; j++)
             for (int l = 0; l < 3; l++)
             {
                 var gj = G[j]; if (!gj.s.uzun[l] || gj.s.serit[l] != Eylem.Kapali) continue;
+                bool tavanli = ulasilir.TryGetValue((j, l), out float giris);
                 float bas = gj.s.rampa[l] ? gj.s.rampaBas[l] : gj.z0[l];
                 for (int i = 0; i < G.Count; i++)
                 {
@@ -442,8 +473,8 @@ public static class ParkurAdaletOlcum
                     if (gi.d < bas - 1f) continue;
                     if (gi.d >= bas && gi.d <= gj.z1[l])
                     {
-                        if (gi.e[l] != Eylem.Kapali) gi.e[l] = gj.s.rampa[l] ? Eylem.SpanRampa : Eylem.Kapali;
-                        gi.ekSon[l] = Mathf.Max(gi.ekSon[l], gj.z1[l]); gi.ekBas[l] = Mathf.Min(gi.ekBas[l], bas);
+                        if (gi.e[l] != Eylem.Kapali) gi.e[l] = tavanli ? Eylem.SpanRampa : Eylem.Kapali;
+                        gi.ekSon[l] = Mathf.Max(gi.ekSon[l], gj.z1[l]); gi.ekBas[l] = Mathf.Min(gi.ekBas[l], tavanli ? Mathf.Min(bas, giris) : bas);
                     }
                 }
             }
@@ -483,6 +514,12 @@ public static class ParkurAdaletOlcum
                 for (int l2 = 0; l2 < 3; l2++)
                 {
                     var e2 = b.e[l2]; if (e2 == Eylem.Kapali) continue;
+                    if (l1 != l2 && Mathf.Abs(l1 - l2) == 1 && Tavan(e1) && e2 == Eylem.SpanRampa)
+                    {
+                        // tavandan komşu tavana (aynı yükseklik, örtüşen katarlar): zaman sınırı yok
+                        if (float.PositiveInfinity > enIyi) { enIyi = float.PositiveInfinity; yol = $"{"SOS"[l1]}:{e1}->{"SOS"[l2]}:{e2} (tavandan tavana)"; }
+                        continue;
+                    }
                     int lo = Mathf.Min(l1, l2), hi = Mathf.Max(l1, l2);
                     float x1Son = float.NegativeInfinity, x2Bas = float.PositiveInfinity;
                     for (int l = lo; l <= hi; l++) { x1Son = Mathf.Max(x1Son, Mathf.Max(Son(a, l), a0.s.serit[l] == Eylem.Kapali || a0.ekSon[l] > float.NegativeInfinity ? Son(a0, l) : float.NegativeInfinity)); x2Bas = Mathf.Min(x2Bas, Bas(b, l)); }

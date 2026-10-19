@@ -31,7 +31,7 @@ public class ParcaTestAkisi : MonoBehaviour
     TrackManager m_TM;
     FieldInfo m_SpeedField;
     TrackSegment m_SonParca;
-    int m_ParcaGiris, m_ParcaTasarim, m_Carpma, m_SonCan = -1;
+    int m_ParcaGiris, m_ParcaTasarim, m_Carpma, m_SonCan = -1, m_SonTokez;
     string m_ParcaAd = "-", m_OncekiOzet = "";
     GUIStyle m_Stil;
 
@@ -125,6 +125,11 @@ public class ParcaTestAkisi : MonoBehaviour
         var cc = m_TM.characterController;
         if (m_SonCan >= 0 && cc.currentLife < m_SonCan) { m_Carpma++; Debug.Log($"PARCATEST| carpma {m_ParcaAd} mesafe={m_TM.worldDistance:F0}m"); }
         m_SonCan = cc.currentLife;
+        if (cc.tokezlemeSayisi != m_SonTokez)
+        {
+            m_SonTokez = cc.tokezlemeSayisi;
+            if (m_SonTokez > 0) Debug.Log($"PARCATEST| tokezleme {m_ParcaAd} mesafe={m_TM.worldDistance:F0}m (yandan carpma, geri sekti)");
+        }
         bool tavan = cc.zeminYuksekligi > 0.5f;
         if (tavan != m_Tavanda)
         {
@@ -162,7 +167,7 @@ public class ParcaTestAkisi : MonoBehaviour
         }
         string metin = m_Durum;
         if (m_TM != null && m_TM.isMoving)
-            metin = $"PARCA: {m_ParcaAd} | altin {m_TM.characterController.coins - m_ParcaGiris}/{m_ParcaTasarim} | carpma {m_Carpma} | hiz {m_TM.speed:F0}{(m_TM.characterController.zeminYuksekligi > 0.5f ? " | TAVAN" : "")}\n{m_OncekiOzet}";
+            metin = $"PARCA: {m_ParcaAd} | altin {m_TM.characterController.coins - m_ParcaGiris}/{m_ParcaTasarim} | carpma {m_Carpma} | tokez {m_TM.characterController.tokezlemeSayisi} | hiz {m_TM.speed:F0}{(m_TM.characterController.zeminYuksekligi > 0.5f ? " | TAVAN" : "")}\n{m_OncekiOzet}";
         var r = new Rect(8, Screen.height * 0.16f, Screen.width - 16, Screen.height * 0.12f);
         GUI.color = new Color(0, 0, 0, 0.55f);
         GUI.DrawTexture(new Rect(r.x - 4, r.y - 2, r.width + 8, m_Stil.CalcHeight(new GUIContent(metin), r.width) + 4), Texture2D.whiteTexture);

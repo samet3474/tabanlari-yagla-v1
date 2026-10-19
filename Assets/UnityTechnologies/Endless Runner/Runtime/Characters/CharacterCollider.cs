@@ -127,6 +127,17 @@ public class CharacterCollider : MonoBehaviour
             if (m_Invincible || controller.IsCheatInvincible())
                 return;
 
+            // Subway Surfers'taki gibi: şerit değiştirirken bir engelin yanına çarpmak koşuyu bitirmez; karakter
+            // eski şeridine geri seker ve tökezler. Kısa süre içinde ikinci kez tökezlerse normal çarpma sayılır.
+            if (!TrackManager.instance.isTutorial && controller.YandanCarpti(c))
+            {
+                if (controller.Tokezle())
+                {
+                    m_Audio.PlayOneShot(controller.character.hitSound);
+                    return;
+                }
+            }
+
             controller.StopMoving();
 
 			c.enabled = false;
