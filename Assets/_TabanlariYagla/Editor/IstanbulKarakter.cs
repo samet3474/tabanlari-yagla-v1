@@ -311,7 +311,7 @@ public class IstanbulKarakterKlip : AssetPostprocessor
 {
     void OnPostprocessAnimation(GameObject kok, AnimationClip klip)
     {
-        if (!assetPath.StartsWith("Assets/_TabanlariYagla/Karakterler/")) return;
+        if (!assetPath.StartsWith("Assets/_TabanlariYagla/Karakterler/") && !assetPath.StartsWith("Assets/_TabanlariYagla/Kovalayan/")) return;
         // iskeletin üst düğümü (Armature) için yazılan konum/ölçek/dönüş eğrileri içe aktarma artığı: ölçeği ezip bedeni
         // ~0,6 m kaldırıyordu; silinir (düğüm prefabdaki hâlinde kalır)
         foreach (var b in AnimationUtility.GetCurveBindings(klip).Where(b => !b.path.Contains("/") && !b.path.EndsWith("Hips") && b.type == typeof(Transform)).ToList())
@@ -463,6 +463,46 @@ public static class IstanbulAyakkabiYan
             }
         sonuc.Apply();
         System.IO.File.WriteAllBytes("../_araclar/parkur/ayakkabi-yan.png", sonuc.EncodeToPNG());
+        if (Application.isBatchMode) EditorApplication.Exit(0);
+    }
+}
+
+// Ayak yakın çekim (-executeMethod IstanbulAyakYakin.Cek): bağlanma pozu, bekleme, koşu; önden, yandan, arkadan
+public static class IstanbulAyakYakin
+{
+    public static void Cek()
+    {
+        UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene);
+        Shader.SetGlobalFloat("_CurveStrength", 0f); RenderSettings.fog = false;
+        // -tekKemik: telefondaki web kalite seviyesini (köşe başına 1 kemik) taklit et
+        var eski = QualitySettings.skinWeights;
+        if (System.Environment.GetCommandLineArgs().Contains("-tekKemik")) QualitySettings.skinWeights = SkinWeights.OneBone;
+        foreach (var ad in new[] { "Samet", "Berivan" })
+        {
+            var fbx = $"Assets/_TabanlariYagla/Karakterler/{ad}/{ad}.fbx";
+            var klipler = AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<AnimationClip>().Where(c => !c.name.StartsWith("__")).ToDictionary(c => c.name);
+            var pozlar = new (string, AnimationClip, float)[] { ("bag", null, 0f), ("bekle0", klipler["Bekleme"], 0f), ("bekle2", klipler["Bekleme"], 2f), ("kosu", klipler["Kosu"], 0.12f) };
+            var rt = new RenderTexture(300, 360, 24) { antiAliasing = 4 };
+            var sonuc = new Texture2D(300 * 4, 360 * 3, TextureFormat.RGB24, false);
+            for (int p = 0; p < pozlar.Length; ++p)
+                for (int g = 0; g < 3; ++g)
+                {
+                    var go = (GameObject)Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/_TabanlariYagla/Karakterler/{ad}/{ad}.prefab"));
+                    var gorsel = go.transform.Find("Gorsel").gameObject;
+                    if (pozlar[p].Item2 != null) pozlar[p].Item2.SampleAnimation(gorsel, pozlar[p].Item3);
+                    var cam = new GameObject("k").AddComponent<Camera>(); cam.fieldOfView = 30;
+                    Vector3[] yer = { new Vector3(0, 0.5f, 2.2f), new Vector3(2.2f, 0.5f, 0), new Vector3(0, 0.7f, -2.2f) };
+                    cam.transform.position = yer[g]; cam.transform.LookAt(new Vector3(0, 0.3f, 0));
+                    cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.55f, 0.6f, 0.68f);
+                    cam.targetTexture = rt; cam.Render(); RenderTexture.active = rt;
+                    var tx = new Texture2D(300, 360, TextureFormat.RGB24, false); tx.ReadPixels(new Rect(0, 0, 300, 360), 0, 0); tx.Apply();
+                    sonuc.SetPixels(p * 300, (2 - g) * 360, 300, 360, tx.GetPixels());
+                    Object.DestroyImmediate(cam.gameObject); Object.DestroyImmediate(go);
+                }
+            sonuc.Apply();
+            System.IO.File.WriteAllBytes($"../_araclar/parkur/ayak-yakin-{ad}{(QualitySettings.skinWeights == SkinWeights.OneBone ? "-tek" : "")}.png", sonuc.EncodeToPNG());
+        }
+        QualitySettings.skinWeights = eski;
         if (Application.isBatchMode) EditorApplication.Exit(0);
     }
 }

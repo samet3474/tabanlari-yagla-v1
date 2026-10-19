@@ -150,12 +150,22 @@ public static class IstanbulParkur
             if (File.Exists(Path.Combine(k_Kaynak, "yenicami/YeniCami.fbx"))) s_CamiMat = ModelAl("yenicami/YeniCami.fbx", "yenicami/YeniCami_base_color.png", "YeniCami");
             if (File.Exists(Path.Combine(k_Kaynak, "katener/Katener.fbx"))) s_KatenerMat = ModelAl("katener/Katener.fbx", "katener/Katener_base_color.png", "Katener");
             if (File.Exists(Path.Combine(k_Kaynak, "ayakkabi/Ayakkabi.fbx"))) AyakkabiKur();
+            KenneyAl();
             AltinYap();
             KatenerEkle();
             var engeller = new Dictionary<string, string>();
             engeller["Tramvay"] = TramvayPrefab("ObstacleTramvay", tramvayMat, false, false);
             engeller["TramvayHareketli"] = TramvayPrefab("ObstacleTramvayHareketli", tramvayMat, true, false);
             engeller["RampaliTramvay"] = TramvayPrefab("ObstacleRampaliTramvay", tramvayMat, false, true, rampaMat);
+            // Meshy bariyerleri (Subway tarzı, kırmızı-beyaz çizgili): tetikleyiciler aynı, adalet ölçüsü değişmez
+            s_BariyerModel = new Dictionary<string, (string, float, float, bool)>
+            {
+                ["ObstacleSeritZipla"] = ("BariyerIkiKat", 0.85f, 0f, false),      // zıplanır: iki katlı alçak çit
+                ["ObstacleSeritKay"] = ("BariyerYuksek", 2.45f, 0f, false),        // kayılır: tabela 0,96..2,1 m
+                ["ObstacleSeritZiplaKay"] = ("BariyerAlcak", 0.93f, 0.4f, true),   // ikisi de: ayaklar üstünde 0,65..1,15 m
+            };
+            foreach (var (k, fbx) in new[] { ("BariyerAlcak", "bariyer-alcak/BariyerAlcak"), ("BariyerYuksek", "bariyer-yuksek/BariyerYuksek"), ("BariyerIkiKat", "bariyer-ikikat/BariyerIkiKat") })
+                if (File.Exists(Path.Combine(k_Kaynak, fbx + ".fbx"))) s_BariyerMat[k] = ModelAl(fbx + ".fbx", fbx + "_base_color.png", k);
             engeller["SeritZipla"] = SeritBariyeri("ObstacleSeritZipla", "ObstacleLowBarrier", 1f, 0f, 0.6f);
             engeller["SeritKay"] = SeritBariyeri("ObstacleSeritKay", "ObstacleHighBarrier", 1f, 1.01f, 1.51f);
             engeller["SeritZiplaKay"] = SeritBariyeri("ObstacleSeritZiplaKay", "ObstacleHighBarrier", 0.72f, 0.75f, 1.05f);
@@ -340,11 +350,38 @@ public static class IstanbulParkur
     }
 
     // Tek şerit bariyeri: mevcut tüm-şerit bariyerin görseli şerit genişliğine (1,4 m) daraltılır; tetikleyici y0..y1.
+    static Dictionary<string, (string, float, float, bool)> s_BariyerModel = new Dictionary<string, (string, float, float, bool)>();
+    static readonly Dictionary<string, Material> s_BariyerMat = new Dictionary<string, Material>();
+
     static string SeritBariyeri(string ad, string kaynak, float yOlcek, float y0, float y1)
     {
         var root = KoniKopyasi(ad, out string yol); if (root == null) return null;
         try
         {
+            if (s_BariyerModel.TryGetValue(ad, out var bm) && s_BariyerMat.TryGetValue(bm.Item1, out var bmat) && ModelVar(bm.Item1))
+            {
+                // Meshy modeli: uzun kenarı x (şerit eni k_SeritEn), boyu bm.Item2, tabanı bm.Item3 yükseklikte
+                var hb = HamKutu(bm.Item1, out _);
+                var don = hb.size.z > hb.size.x ? Quaternion.Euler(0, 90, 0) : Quaternion.identity;
+                var g = new GameObject("Gorsel").transform; g.SetParent(root.transform, false);
+                var k = ModelKoy(bm.Item1, bmat, g, don, 1, bm.Item2, new Vector3(0f, bm.Item3, 0f));
+                var kb = KutuKap(k, k.GetChild(0).gameObject);
+                k.localScale = new Vector3(k.localScale.x * k_SeritEn / kb.size.x, k.localScale.y, k.localScale.z);
+                kb = KutuKap(k, k.GetChild(0).gameObject); k.localPosition += new Vector3(-kb.center.x, bm.Item3 - kb.min.y, -kb.center.z);
+                if (bm.Item4)
+                {
+                    // yükseltilmiş bariyerin ayakları: şerit kenarında gri direkler
+                    var yp = new Yapici();
+                    yp.Cift(k_SeritEn * 0.5f - 0.14f, k_SeritEn * 0.5f - 0.02f, 0f, bm.Item3 + 0.08f, -0.08f, 0.08f, P_TasKoyu);
+                    Cizici(g, "Ayak", yp.Bitir(k_Kok + "/Sokak", ad + "_Ayak"), PaletMalzemesi());
+                }
+                Tetik(root, new Vector3(0f, (y0 + y1) * 0.5f, 0f), new Vector3(k_SeritEn - 0.1f, y1 - y0, 0.3f), root.GetComponent<BoxCollider>());
+                root.layer = k_EngelKatmani;
+                var mgb = Kutu(Noktalar(g.gameObject));
+                Out($"engel {ad}: Meshy {bm.Item1} x={mgb.min.x:F2}..{mgb.max.x:F2} y={mgb.min.y:F2}..{mgb.max.y:F2}, tetikleyici y={y0}..{y1}");
+                PrefabUtility.SaveAsPrefabAsset(root, yol);
+                return yol;
+            }
             var src = AssetDatabase.LoadAssetAtPath<GameObject>(k_Engeller + kaynak + ".prefab");
             var inst = (GameObject)PrefabUtility.InstantiatePrefab(src);
             PrefabUtility.UnpackPrefabInstance(inst, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
@@ -1024,6 +1061,49 @@ public static class IstanbulParkur
         }
         Cek("ayakkabi-onizleme", 900, 700, new Vector3(0, 1.0f, -3.6f), Quaternion.Euler(8, 0, 0), 45f, 0f, new Color(0.55f, 0.75f, 0.95f));
         if (Application.isBatchMode) EditorApplication.Exit(0);
+    }
+
+    // ------------------------------------------------------------------------------------------------ Kenney (CC0)
+    // Kenney Train Kit / City Kit Roads / Commercial: düz renk paletli (colormap) temiz modeller, CC0 (kenney.nl).
+    // Palet dokusu sıkıştırmasız ve mipmap'siz: renkler keskin kalır, uzakta bulanıklaşmaz.
+    const string k_Kenney = "../_araclar/kenney";
+    static Material s_KenneyMat;
+    static readonly string[] k_KenneyParca = { "roads/Models/FBX format/traffic-light.fbx", "roads/Models/FBX format/light-curved-double.fbx", "roads/Models/FBX format/construction-light.fbx" };
+
+    static void KenneyAl()
+    {
+        if (!Directory.Exists(k_Kenney)) return;
+        string klasor = k_Modeller + "/Kenney";
+        if (!AssetDatabase.IsValidFolder(klasor)) AssetDatabase.CreateFolder(k_Modeller, "Kenney");
+        string palet = klasor + "/colormap.png";
+        if (!File.Exists(palet)) { File.Copy(Path.Combine(k_Kenney, "roads/Models/FBX format/Textures/colormap.png"), palet); AssetDatabase.ImportAsset(palet); }
+        var ti = (TextureImporter)AssetImporter.GetAtPath(palet);
+        ti.textureCompression = TextureImporterCompression.Uncompressed; ti.mipmapEnabled = false; ti.filterMode = FilterMode.Bilinear; ti.SaveAndReimport();
+        foreach (var p in k_KenneyParca)
+        {
+            string hedef = $"{k_Modeller}/Kenney_{Path.GetFileNameWithoutExtension(p)}.fbx";
+            if (!File.Exists(hedef)) { File.Copy(Path.Combine(k_Kenney, p), hedef); AssetDatabase.ImportAsset(hedef); }
+            var mi = (ModelImporter)AssetImporter.GetAtPath(hedef);
+            mi.importAnimation = false; mi.importCameras = false; mi.importLights = false; mi.animationType = ModelImporterAnimationType.None;
+            mi.materialImportMode = ModelImporterMaterialImportMode.None; mi.SaveAndReimport();
+        }
+        string matYol = klasor + "/Kenney.mat";
+        s_KenneyMat = AssetDatabase.LoadAssetAtPath<Material>(matYol);
+        if (s_KenneyMat == null) { s_KenneyMat = new Material(Shader.Find("Unlit/CurvedUnlit")); AssetDatabase.CreateAsset(s_KenneyMat, matYol); }
+        s_KenneyMat.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(palet); EditorUtility.SetDirty(s_KenneyMat);
+        Out($"kenney: {k_KenneyParca.Length} parca, palet sikistirmasiz");
+    }
+
+    // Kenney modelini yolun iki yanına aralıkla dizer (boy: metre, x: merkezden yan uzaklık)
+    static void KenneyDiz(Transform ebeveyn, string ad, float z0, float z1, float ara, float x, float boy)
+    {
+        if (s_KenneyMat == null || !ModelVar("Kenney_" + ad)) return;
+        for (float z = z0; z < z1; z += ara)
+            foreach (int yon in new[] { -1, 1 })
+            {
+                var k = ModelKoy("Kenney_" + ad, s_KenneyMat, ebeveyn, Quaternion.Euler(0, 90, 0), 1, boy, new Vector3(yon * x, 0f, z)); // lambalar koşucuya bakar
+                k.name = "Kenney_" + ad;
+            }
     }
 
     static bool ModelVar(string ad) => File.Exists($"{k_Modeller}/{ad}.fbx");

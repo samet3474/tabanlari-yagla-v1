@@ -485,6 +485,7 @@ public class CharacterInputController : MonoBehaviour
         characterCollider.transform.localPosition = Vector3.MoveTowards(characterCollider.transform.localPosition, verticalTargetPosition, laneChangeSpeed * Time.deltaTime);
         KameraYukselt();
         KameraYanVeYatma();
+        KosuTemposu();
 
         // Put blob shadow under the character.
         RaycastHit hit;
@@ -566,12 +567,28 @@ public class CharacterInputController : MonoBehaviour
         }
     }
 
+    // Subway gibi seri koşu: koşu animasyonu oyun hızıyla sıklaşır (10 m/s'de 1x, 30 m/s'de 1,6x). Zıplama ve kayma
+    // kendi hızlarını JumpSpeed ile alır; onların sırasında 1x. İnişte kısa bir çökme (yaylanma).
+    const float k_KosuTempoMax = 1.6f, k_InisSure = 0.14f;
+    float m_InisZaman = -1f; bool m_OncekiHavada;
+    protected void KosuTemposu()
+    {
+        if (character == null || character.animator == null || trackManager == null || trackManager.currentTheme == null || trackManager.currentTheme.seritAraligi <= 0f) return;
+        bool havada = m_Jumping;
+        character.animator.speed = (m_IsRunning && !m_Jumping && !m_Sliding) ? Mathf.Lerp(1f, k_KosuTempoMax, trackManager.speedRatio) : 1f;
+        if (m_OncekiHavada && !havada) m_InisZaman = Time.time;
+        m_OncekiHavada = havada;
+        float t = m_InisZaman < 0f ? 1f : (Time.time - m_InisZaman) / k_InisSure;
+        float c = t < 1f ? Mathf.Sin(t * Mathf.PI) * 0.12f : 0f;
+        character.transform.localScale = new Vector3(1f + c * 0.5f, 1f - c, 1f + c * 0.5f);
+    }
+
     public void KameraYanSifirla()
     {
         Camera cam = Camera.main;
         if (cam != null && cam.transform.parent == transform) cam.transform.localPosition -= Vector3.right * m_KameraYan;
         m_KameraYan = 0f;
-        if (character != null) character.transform.localRotation = Quaternion.identity;
+        if (character != null) { character.transform.localRotation = Quaternion.identity; character.transform.localScale = Vector3.one; if (character.animator != null) character.animator.speed = 1f; }
     }
 
     public void Jump()

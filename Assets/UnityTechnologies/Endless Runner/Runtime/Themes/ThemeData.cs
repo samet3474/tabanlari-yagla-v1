@@ -37,6 +37,8 @@ public class ThemeData : ScriptableObject
 
     [Tooltip("Süper ayakkabı bonusu (SuperAyakkabi); boşsa bu temada çıkmaz")]
     public GameObject superAyakkabi;
+    [Tooltip("Arkadan kovalayan (Kovalayan): boşsa bu temada yok")]
+    public GameObject kovalayan;
 
     [Header("Track (0 = TrackManager defaults)")]
     [Tooltip("Distance between lanes in metres for this theme; 0 keeps TrackManager.laneOffset.")]

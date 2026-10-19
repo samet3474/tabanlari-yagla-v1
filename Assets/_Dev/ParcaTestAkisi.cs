@@ -161,7 +161,7 @@ public class ParcaTestAkisi : MonoBehaviour
         // -karesay N -kareara S: kare sayısı ve aralığı (uzun koşuda mavi boşluk avı için)
         int kareSay = int.TryParse(Param("karesay"), out var ks) ? ks : 12;
         float kareAra = float.TryParse(Param("kareara"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var ka) ? ka : 0.1f;
-        if (m_KareSayisi < kareSay && Param("kare") != null && Param("kare") != "1" && m_TM.worldDistance > 25f && Time.time - m_KareZaman >= kareAra)
+        if (m_KareSayisi < kareSay && Param("kare") != null && Param("kare") != "1" && m_TM.worldDistance > (Param("karebas") != null && float.TryParse(Param("karebas"), out var kb) ? kb : 25f) && Time.time - m_KareZaman >= kareAra)
         {
             m_KareZaman = Time.time;
             ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(Param("kare"), "kosu-" + (m_KareSayisi++).ToString("000") + "-" + m_TM.worldDistance.ToString("0") + "m.png"));

@@ -130,6 +130,7 @@ public class TrackManager : MonoBehaviour
     protected const float k_CountdownSpeed = 1.5f;
     protected const float k_StartingSegmentDistance = 2f;
     protected const float k_TemaBaslangicMesafesi = 14f;
+    Kovalayan m_Kovalayan;
     protected const float k_SuperAyakkabiPayi = 0.4f; // bonus çıktığında süper ayakkabı olma olasılığı (tasarlanmış parçalar)
     protected const int k_StartingSafeSegments = 2;
     protected const int k_StartingCoinPoolSize = 256;
@@ -224,6 +225,8 @@ public class TrackManager : MonoBehaviour
             
             //Instantiate(CharacterDatabase.GetCharacter(PlayerData.instance.characters[PlayerData.instance.usedCharacter]), Vector3.zero, Quaternion.identity);
             player.transform.SetParent(characterController.characterCollider.transform, false);
+            if (m_Kovalayan != null) Destroy(m_Kovalayan.gameObject);
+            m_Kovalayan = null;
             Camera.main.transform.SetParent(characterController.transform, true);
 
             if (m_IsTutorial)
@@ -235,6 +238,12 @@ public class TrackManager : MonoBehaviour
             m_CurrentZoneDistance = 0;
             m_PreviousSegment = -1;
             TemaPistiUygula();
+            // Subway gibi arkadan kovalayan (tema tanımlıysa; eğitimde yok)
+            if (!m_IsTutorial && m_CurrentThemeData.kovalayan != null)
+            {
+                var kv = Instantiate(m_CurrentThemeData.kovalayan).GetComponent<Kovalayan>();
+                if (kv != null) { kv.Baslat(characterController); m_Kovalayan = kv; }
+            }
             // alçak tema kamerası koşu başında ilk parçanın gerisini (boşluğu) görmesin: karakter ilk parçanın içinden başlar
             if (!m_IsTutorial && m_CurrentThemeData.seritAraligi > 0.0f) m_CurrentSegmentDistance = k_TemaBaslangicMesafesi;
 
@@ -324,6 +333,7 @@ public class TrackManager : MonoBehaviour
         characterController.character = null;
 
         characterController.KameraYanSifirla();
+        if (m_Kovalayan != null) { Destroy(m_Kovalayan.gameObject); m_Kovalayan = null; }
         TemaPistiGeriAl();
         Camera.main.transform.SetParent(null);
         Camera.main.transform.position = m_CameraOriginalPos;
