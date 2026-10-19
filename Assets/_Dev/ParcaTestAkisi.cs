@@ -155,10 +155,13 @@ public class ParcaTestAkisi : MonoBehaviour
             }
         }
         // -kare <klasör>: 25 m'den sonra 0,1 sn arayla 12 kare (koşu animasyonunu incelemek için, Windows)
-        if (m_KareSayisi < 12 && Param("kare") != null && Param("kare") != "1" && m_TM.worldDistance > 25f && Time.time - m_KareZaman >= 0.1f)
+        // -karesay N -kareara S: kare sayısı ve aralığı (uzun koşuda mavi boşluk avı için)
+        int kareSay = int.TryParse(Param("karesay"), out var ks) ? ks : 12;
+        float kareAra = float.TryParse(Param("kareara"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var ka) ? ka : 0.1f;
+        if (m_KareSayisi < kareSay && Param("kare") != null && Param("kare") != "1" && m_TM.worldDistance > 25f && Time.time - m_KareZaman >= kareAra)
         {
             m_KareZaman = Time.time;
-            ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(Param("kare"), "kosu-" + (m_KareSayisi++).ToString("00") + ".png"));
+            ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(Param("kare"), "kosu-" + (m_KareSayisi++).ToString("000") + "-" + m_TM.worldDistance.ToString("0") + "m.png"));
         }
         // &ayakkabi=1 / -ayakkabi <klasör>: koşunun başında süper ayakkabıyı giydirir; Windows'ta klasöre 3 ekran görüntüsü
         if (m_AyakkabiAsama == 0 && Param("ayakkabi") != null && m_TM.worldDistance > 20f && m_TM.currentTheme.superAyakkabi != null)

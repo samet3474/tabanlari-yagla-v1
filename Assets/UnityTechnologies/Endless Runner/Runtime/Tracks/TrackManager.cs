@@ -478,7 +478,9 @@ public class TrackManager : MonoBehaviour
         // Still move past segment until they aren't visible anymore.
         for (int i = 0; i < m_PastSegments.Count; ++i)
         {
-            if ((m_PastSegments[i].transform.position - currentPos).z < k_SegmentRemovalDistance)
+            // parçanın SONU kameranın gerisinde kalınca kaldırılır (başlangıcına bakmak uzun İstanbul parçalarını, karakter
+            // henüz sonundayken siliyor, kameranın altında mavi boşluk açıyordu)
+            if ((m_PastSegments[i].transform.position - currentPos).z + m_PastSegments[i].worldLength < k_SegmentRemovalDistance)
             {
                 m_PastSegments[i].Cleanup();
                 m_PastSegments.RemoveAt(i);

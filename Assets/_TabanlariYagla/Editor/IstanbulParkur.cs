@@ -872,8 +872,14 @@ public static class IstanbulParkur
             {
                 // Haliç silüeti (Meshy): ileride, dünya eğriliğiyle batmayacak kadar yakın, dar portre görüşe girer
                 float zm = z1 + 15f;
-                if (GalataSirasi(inst.name + "_Kopru")) ModelKoy("Galata", s_GalataMat, inst.transform, Quaternion.identity, 1, 46f, new Vector3(13f, -4f, zm));
-                else ModelKoy("YeniCami", s_CamiMat, inst.transform, Quaternion.Euler(0, 90, 0), 1, 40f, new Vector3(-24f, -4f, zm - 5f));
+                // modelin gerçek taban izi ölçülüp yoldan en az 9 m uzağa itilir (cami modelinin avlusu yola taşıp önü kapatıyordu)
+                Transform siluet;
+                if (GalataSirasi(inst.name + "_Kopru")) siluet = ModelKoy("Galata", s_GalataMat, inst.transform, Quaternion.identity, 1, 46f, new Vector3(13f, -4f, zm));
+                else siluet = ModelKoy("YeniCami", s_CamiMat, inst.transform, Quaternion.Euler(0, 90, 0), 1, 34f, new Vector3(-30f, -4f, zm - 5f));
+                var iz = KutuKap(siluet, siluet.GetChild(0).gameObject);
+                float it = siluet.localPosition.x > 0 ? Mathf.Max(0f, 9f - iz.min.x) : -Mathf.Max(0f, iz.max.x + 9f);
+                siluet.localPosition += new Vector3(it, 0f, 0f);
+                Out($"silüet {siluet.name}: x {iz.min.x:F1}..{iz.max.x:F1} -> itme {it:F1}");
             }
             if (ModelVar("Kopru") && s_KopruMat != null)
             {
