@@ -116,6 +116,7 @@ public class ParcaTestAkisi : MonoBehaviour
         }
         var loadout = (LoadoutState)GameManager.instance.topState;
         loadout.Refresh();
+        loadout.tutorialBlocker.SetActive(false); // eğitim bitti sayıldı: menü perdesiz
 
         var gs = GameManager.instance.FindState("Game") as GameState;
         m_TM = gs.trackManager;

@@ -93,6 +93,7 @@ public class LoadoutState : AState
         tutorialPrompt.SetActive(false);
 
         inventoryCanvas.gameObject.SetActive(true);
+        SubwayMenu.Uygula(this);
         missionPopup.gameObject.SetActive(false);
 
         charNameDisplay.text = "";
