@@ -156,7 +156,7 @@ public class ParcaTestAkisi : MonoBehaviour
             m_ParcaTasarim = 0;
             if (tas != null)
                 foreach (var a in tas.altinlar)
-                    for (float m = a.baslangic; m <= a.bitis + 0.001f; m += TasarimliSatir.k_AltinAraligi) m_ParcaTasarim++;
+                    foreach (var _ in TasarimliSatir.Konumlar(a)) m_ParcaTasarim++;
             Debug.Log($"PARCATEST| parca {m_ParcaAd} mesafe={m_TM.worldDistance:F0}m hiz={m_TM.speed:F1} {m_OncekiOzet}");
         }
     }

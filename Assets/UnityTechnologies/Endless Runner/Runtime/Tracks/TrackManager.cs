@@ -820,14 +820,13 @@ public class TrackManager : MonoBehaviour
         float premiumChance = Mathf.Clamp01(Mathf.Floor(m_TimeSinceLastPremium) * 0.5f * 0.0001f);
         foreach (TasarimliSatir.Altin desen in tasarim.altinlar)
         {
-            float uzunluk = desen.bitis - desen.baslangic;
-            for (float m = desen.baslangic; m <= desen.bitis + 0.001f; m += TasarimliSatir.k_AltinAraligi)
+            foreach (var konum in TasarimliSatir.Konumlar(desen))
             {
                 if (segment == null)
                     yield break;
-                float oran = uzunluk > 0.0f ? (m - desen.baslangic) / uzunluk : 0.0f;
-                float lane = TasarimliSatir.AltinSeridi(desen, oran) * ayna; // satırlardaki ayna ile aynı
-                float yukseklik = TasarimliSatir.AltinYuksekligi(desen, oran);
+                float m = konum.m;
+                float lane = konum.serit * ayna; // satırlardaki ayna ile aynı
+                float yukseklik = konum.y;
 
                 Vector3 pos;
                 Quaternion rot;

@@ -13,10 +13,10 @@ GameObject:
   - component: {fileID: 65000011930901984}
   - component: {fileID: 82000012834193994}
   - component: {fileID: 114210978944063774}
-  - component: {fileID: 1902174222226972541}
-  - component: {fileID: 7012089252112233218}
-  - component: {fileID: 6350182319052523746}
-  - component: {fileID: 3771369409307188756}
+  - component: {fileID: 5797554156920870586}
+  - component: {fileID: 6102015024854996614}
+  - component: {fileID: 3098295508867016442}
+  - component: {fileID: 3317452358243051062}
   m_Layer: 9
   m_Name: ObstacleRampaliTramvay
   m_TagString: Untagged
@@ -37,10 +37,10 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5415166529013270794}
-  - {fileID: 4089165792143216264}
-  - {fileID: 250940180108264420}
-  - {fileID: 2559049847282091930}
+  - {fileID: 4992123244748120428}
+  - {fileID: 3623544059688377893}
+  - {fileID: 2012887471718704976}
+  - {fileID: 6176923214609106799}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114000013297908680
@@ -187,7 +187,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mixerGroup: SFX
---- !u!65 &1902174222226972541
+--- !u!65 &5797554156920870586
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -208,7 +208,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.9, y: 0.30000004, z: 1.40625}
   m_Center: {x: 0, y: 0.15000002, z: -4.921875}
---- !u!65 &7012089252112233218
+--- !u!65 &6102015024854996614
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -229,7 +229,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.9, y: 0.75000006, z: 1.40625}
   m_Center: {x: 0, y: 0.37500003, z: -3.515625}
---- !u!65 &6350182319052523746
+--- !u!65 &3098295508867016442
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -250,7 +250,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.9, y: 1.2, z: 1.40625}
   m_Center: {x: 0, y: 0.6, z: -2.109375}
---- !u!65 &3771369409307188756
+--- !u!65 &3317452358243051062
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -271,7 +271,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.9, y: 1.6500001, z: 1.40625}
   m_Center: {x: 0, y: 0.82500005, z: -0.703125}
---- !u!1 &133413848929758395
+--- !u!1 &877721954608836414
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -279,9 +279,94 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3350857772681665575}
-  - component: {fileID: 5711240926680988858}
-  - component: {fileID: 3372673794085906472}
+  - component: {fileID: 4992123244748120428}
+  m_Layer: 0
+  m_Name: Tramvay
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4992123244748120428
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 877721954608836414}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.0017262697, y: 1.2546201, z: 4.5}
+  m_LocalScale: {x: 7.062072, y: 6.5799212, z: 9.399281}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5676086269194759958}
+  m_Father: {fileID: 4000010619009142}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4044180014355370015
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6176923214609106799}
+  - component: {fileID: 2123669154933706816}
+  m_Layer: 11
+  m_Name: RampaZemin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6176923214609106799
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4044180014355370015}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.15423338, y: 0, z: 0, w: 0.9880345}
+  m_LocalPosition: {x: 0, y: 1.2, z: -3.75}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4000010619009142}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &2123669154933706816
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4044180014355370015}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 2, y: 0.1, z: 7.874643}
+  m_Center: {x: 0, y: -0.05, z: 0}
+--- !u!1 &4081720508529695640
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5676086269194759958}
+  - component: {fileID: 7826970032077109206}
+  - component: {fileID: 1090212636654322608}
   m_Layer: 0
   m_Name: TramvayModel
   m_TagString: Untagged
@@ -289,36 +374,36 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3350857772681665575
+--- !u!4 &5676086269194759958
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 133413848929758395}
+  m_GameObject: {fileID: 4081720508529695640}
   serializedVersion: 2
   m_LocalRotation: {x: -0.00000002669254, y: 0.7071068, z: 0.00000002669254, w: 0.7071068}
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 100, y: 100, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 5415166529013270794}
+  m_Father: {fileID: 4992123244748120428}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &5711240926680988858
+--- !u!33 &7826970032077109206
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 133413848929758395}
+  m_GameObject: {fileID: 4081720508529695640}
   m_Mesh: {fileID: 5461320835613783329, guid: 22613fde1bc1329409c3927a7b920a5d, type: 3}
---- !u!23 &3372673794085906472
+--- !u!23 &1090212636654322608
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 133413848929758395}
+  m_GameObject: {fileID: 4081720508529695640}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -361,7 +446,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &1397969671407924024
+--- !u!1 &7403526999832011969
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -369,94 +454,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4089165792143216264}
-  - component: {fileID: 4832734588808325609}
-  m_Layer: 11
-  m_Name: TavanZemin
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4089165792143216264
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1397969671407924024}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.4, z: 4.5}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4000010619009142}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &4832734588808325609
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1397969671407924024}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2, y: 0.2, z: 9}
-  m_Center: {x: 0, y: -0.1, z: 0}
---- !u!1 &3370668727173864007
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 250940180108264420}
-  m_Layer: 0
-  m_Name: Rampa
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &250940180108264420
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3370668727173864007}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.018057883, y: 1.214782, z: -3.75191}
-  m_LocalScale: {x: 9.246074, y: 12.106416, z: 7.8287435}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 2221734767594502434}
-  m_Father: {fileID: 4000010619009142}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &3585700482348738186
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2221734767594502434}
-  - component: {fileID: 5855477802628745501}
-  - component: {fileID: 1748067145854601229}
+  - component: {fileID: 5530054904808539970}
+  - component: {fileID: 9209153540378093902}
+  - component: {fileID: 7628784713643349545}
   m_Layer: 0
   m_Name: RampaModel
   m_TagString: Untagged
@@ -464,36 +464,36 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2221734767594502434
+--- !u!4 &5530054904808539970
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3585700482348738186}
+  m_GameObject: {fileID: 7403526999832011969}
   serializedVersion: 2
   m_LocalRotation: {x: 0.000000026692542, y: 0.70710677, z: 0.000000026692538, w: -0.7071069}
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 100, y: 100, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 250940180108264420}
+  m_Father: {fileID: 2012887471718704976}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &5855477802628745501
+--- !u!33 &9209153540378093902
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3585700482348738186}
+  m_GameObject: {fileID: 7403526999832011969}
   m_Mesh: {fileID: 5461320835613783329, guid: b5df51f79388f62458402ff59d78dcbb, type: 3}
---- !u!23 &1748067145854601229
+--- !u!23 &7628784713643349545
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3585700482348738186}
+  m_GameObject: {fileID: 7403526999832011969}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -536,7 +536,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &6734489933055223101
+--- !u!1 &7567572548248982224
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -544,31 +544,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5415166529013270794}
+  - component: {fileID: 2012887471718704976}
   m_Layer: 0
-  m_Name: Tramvay
+  m_Name: Rampa
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5415166529013270794
+--- !u!4 &2012887471718704976
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6734489933055223101}
+  m_GameObject: {fileID: 7567572548248982224}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.0017262697, y: 1.2546201, z: 4.5}
-  m_LocalScale: {x: 7.062072, y: 6.5799212, z: 9.399281}
+  m_LocalPosition: {x: -0.018057883, y: 1.214782, z: -3.75191}
+  m_LocalScale: {x: 9.246074, y: 12.106416, z: 7.8287435}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3350857772681665575}
+  - {fileID: 5530054904808539970}
   m_Father: {fileID: 4000010619009142}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &9188666625162009232
+--- !u!1 &8230281659381589959
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -576,37 +576,37 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2559049847282091930}
-  - component: {fileID: 5694255191018757575}
+  - component: {fileID: 3623544059688377893}
+  - component: {fileID: 8458894616088142498}
   m_Layer: 11
-  m_Name: RampaZemin
+  m_Name: TavanZemin
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2559049847282091930
+--- !u!4 &3623544059688377893
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9188666625162009232}
+  m_GameObject: {fileID: 8230281659381589959}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.15423338, y: 0, z: 0, w: 0.9880345}
-  m_LocalPosition: {x: 0, y: 1.2, z: -3.75}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 2.4, z: 4.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4000010619009142}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &5694255191018757575
+--- !u!65 &8458894616088142498
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9188666625162009232}
+  m_GameObject: {fileID: 8230281659381589959}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -619,5 +619,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 2, y: 0.1, z: 7.874643}
-  m_Center: {x: 0, y: -0.05, z: 0}
+  m_Size: {x: 2, y: 0.2, z: 9}
+  m_Center: {x: 0, y: -0.1, z: 0}

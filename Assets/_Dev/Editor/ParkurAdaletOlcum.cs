@@ -202,10 +202,8 @@ public static class ParkurAdaletOlcum
         Bounds k = s_AltinKutu.Value; int adet = 0, cakisma = 0, alt = 0, yuksek = 0; var ornek = new List<string>();
         float erisim = s_JumpH + s_CB + s_CH; // zıplama tepesinde karakter kutusunun üstü (yüzeye göre)
         foreach (var a in tas.altinlar)
-            for (float m = a.baslangic; m <= a.bitis + 0.001f; m += TasarimliSatir.k_AltinAraligi)
+            foreach (var (m, lane, y) in TasarimliSatir.Konumlar(a))
             {
-                float o = a.bitis > a.baslangic ? (m - a.baslangic) / (a.bitis - a.baslangic) : 0f;
-                float lane = TasarimliSatir.AltinSeridi(a, o), y = TasarimliSatir.AltinYuksekligi(a, o);
                 Vector3 c = k.center + new Vector3(lane * s_LaneOffset, y, m); adet++;
                 if (Physics.CheckBox(c, k.extents, Quaternion.identity, 1 << k_EngelKatmani, QueryTriggerInteraction.Collide))
                 { cakisma++; if (ornek.Count < 4) ornek.Add($"engel_ici {m:F1}m serit{lane:F1} y{y:F2}"); }

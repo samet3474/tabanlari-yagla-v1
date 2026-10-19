@@ -25,7 +25,11 @@ public class TasarimliSatir : MonoBehaviour
     }
 
     // Egim: a straight line whose height goes from yukseklik to bitisYukseklik (coins up a ramp).
-    public enum AltinTipi { Duz, Yay, Capraz, Egim }
+    // Sutun: a vertical column at baslangic, from yukseklik up to bitisYukseklik (coins stacked above a tram roof).
+    public enum AltinTipi { Duz, Yay, Capraz, Egim, Sutun }
+
+    // Vertical spacing of a Sutun column.
+    public const float k_SutunAraligi = 0.5f;
 
     [System.Serializable]
     public class Altin
@@ -56,5 +60,22 @@ public class TasarimliSatir : MonoBehaviour
     public static float AltinSeridi(Altin a, float oran)
     {
         return a.tip == AltinTipi.Capraz ? Mathf.Lerp(a.serit, a.bitisSeridi, oran) : a.serit;
+    }
+
+    // Every coin of a pattern: distance from the segment entry, lane (-1..1, fractional on Capraz) and height.
+    public static System.Collections.Generic.IEnumerable<(float m, float serit, float y)> Konumlar(Altin a)
+    {
+        if (a.tip == AltinTipi.Sutun)
+        {
+            for (float y = a.yukseklik; y <= a.bitisYukseklik + 0.001f; y += k_SutunAraligi)
+                yield return (a.baslangic, a.serit, y);
+            yield break;
+        }
+        float uzunluk = a.bitis - a.baslangic;
+        for (float m = a.baslangic; m <= a.bitis + 0.001f; m += k_AltinAraligi)
+        {
+            float oran = uzunluk > 0.0f ? (m - a.baslangic) / uzunluk : 0.0f;
+            yield return (m, AltinSeridi(a, oran), AltinYuksekligi(a, oran));
+        }
     }
 }
