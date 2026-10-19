@@ -129,6 +129,8 @@ public class TrackManager : MonoBehaviour
     protected const float k_CountdownToStartLength = 5f;
     protected const float k_CountdownSpeed = 1.5f;
     protected const float k_StartingSegmentDistance = 2f;
+    protected const float k_TemaBaslangicMesafesi = 14f;
+    protected const float k_SuperAyakkabiPayi = 0.4f; // bonus çıktığında süper ayakkabı olma olasılığı (tasarlanmış parçalar)
     protected const int k_StartingSafeSegments = 2;
     protected const int k_StartingCoinPoolSize = 256;
     protected const int k_DesiredSegmentCount = 10;
@@ -233,6 +235,8 @@ public class TrackManager : MonoBehaviour
             m_CurrentZoneDistance = 0;
             m_PreviousSegment = -1;
             TemaPistiUygula();
+            // alçak tema kamerası koşu başında ilk parçanın gerisini (boşluğu) görmesin: karakter ilk parçanın içinden başlar
+            if (!m_IsTutorial && m_CurrentThemeData.seritAraligi > 0.0f) m_CurrentSegmentDistance = k_TemaBaslangicMesafesi;
 
             skyMeshFilter.sharedMesh = m_CurrentThemeData.skyMesh;
             RenderSettings.fogColor = m_CurrentThemeData.fogColor;
@@ -852,7 +856,16 @@ public class TrackManager : MonoBehaviour
 
                 GameObject toUse = null;
                 string bonus = null;
-                if (Random.value < powerupChance)
+                if (Random.value < powerupChance && currentTheme.superAyakkabi != null && Random.value < k_SuperAyakkabiPayi)
+                {
+                    // bonus sırası süper ayakkabıya düştü (Subway'deki gibi en sık çıkan bonuslardan): altının yerine
+                    m_TimeSincePowerup = 0.0f;
+                    powerupChance = 0.0f;
+                    toUse = Instantiate(currentTheme.superAyakkabi, pos, rot);
+                    toUse.transform.SetParent(segment.transform, true);
+                    continue;
+                }
+                else if (Random.value < powerupChance)
                 {
                     int picked = Random.Range(0, consumableDatabase.consumbales.Length);
                     if (consumableDatabase.consumbales[picked].canBeSpawned)

@@ -191,6 +191,12 @@ public class CharacterCollider : MonoBehaviour
             {
                 controller.UseConsumable(consumable);
             }
+            SuperAyakkabi ayakkabi = c.GetComponent<SuperAyakkabi>();
+            if (ayakkabi != null)
+            {
+                controller.SuperAyakkabiGiy(ayakkabi);
+                Destroy(c.gameObject);
+            }
         }
     }
 

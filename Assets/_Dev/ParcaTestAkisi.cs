@@ -106,6 +106,14 @@ public class ParcaTestAkisi : MonoBehaviour
         if (!pd.themes.Contains("Istanbul")) pd.themes.Add("Istanbul");
         pd.usedTheme = pd.themes.IndexOf("Istanbul");
         pd.tutorialDone = true;
+        // &karakter=Samet / -karakter Berivan: koşu bu karakterle (test kaydında yoksa eklenir)
+        string karakter = Param("karakter");
+        if (!string.IsNullOrEmpty(karakter) && karakter != "1")
+        {
+            if (!pd.characters.Contains(karakter)) pd.characters.Add(karakter);
+            pd.usedCharacter = pd.characters.IndexOf(karakter);
+            Debug.Log("PARCATEST| karakter " + karakter);
+        }
         var loadout = (LoadoutState)GameManager.instance.topState;
         loadout.Refresh();
 
@@ -120,12 +128,30 @@ public class ParcaTestAkisi : MonoBehaviour
         if (Param("otobasla") == "1") { yield return new WaitForSecondsRealtime(1f); loadout.StartGame(); Debug.Log("PARCATEST| otomatik basladi"); }
     }
 
+    int m_AyakkabiAsama; float m_AyakkabiZaman;
+
     void Update()
     {
         if (!m_Hazir || m_TM == null || !m_TM.isMoving) return;
         if (m_Hiz > 0f && m_SpeedField != null) m_SpeedField.SetValue(m_TM, Mathf.Clamp(m_Hiz, m_TM.minSpeed, m_TM.maxSpeed));
 
         var cc = m_TM.characterController;
+        // &ayakkabi=1 / -ayakkabi <klasör>: koşunun başında süper ayakkabıyı giydirir; Windows'ta klasöre 3 ekran görüntüsü
+        if (m_AyakkabiAsama == 0 && Param("ayakkabi") != null && m_TM.worldDistance > 20f && m_TM.currentTheme.superAyakkabi != null)
+        {
+            cc.SuperAyakkabiGiy(m_TM.currentTheme.superAyakkabi.GetComponent<SuperAyakkabi>());
+            m_AyakkabiAsama = 1; m_AyakkabiZaman = Time.time;
+            Debug.Log("PARCATEST| super ayakkabi giydirildi");
+        }
+        else if (m_AyakkabiAsama >= 1 && m_AyakkabiAsama <= 3 && Time.time - m_AyakkabiZaman > m_AyakkabiAsama * 0.9f)
+        {
+            if (m_AyakkabiAsama == 2) cc.Jump();
+            string klasor = Param("ayakkabi");
+            if (klasor != "1" && Application.platform != RuntimePlatform.WebGLPlayer)
+                ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(klasor, "ayakkabi-oyun-" + m_AyakkabiAsama + ".png"));
+            Debug.Log("PARCATEST| ayakkabi kalan=" + cc.superAyakkabiKalan.ToString("F1") + " zemin=" + cc.zeminYuksekligi.ToString("F2"));
+            m_AyakkabiAsama++;
+        }
         if (m_SonCan >= 0 && cc.currentLife < m_SonCan) { m_Carpma++; Debug.Log($"PARCATEST| carpma {m_ParcaAd} mesafe={m_TM.worldDistance:F0}m"); }
         m_SonCan = cc.currentLife;
         if (cc.tokezlemeSayisi != m_SonTokez)

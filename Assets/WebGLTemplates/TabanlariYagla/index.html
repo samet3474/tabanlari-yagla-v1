@@ -157,8 +157,8 @@
         canvas.className = "unity-mobile";
         document.body.classList.add("ty-mobile");
 
-        // Telefon ekranları 3x yoğunlukta; tam çözünürlükte çizmek kare hızını düşürür.
-        config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+        // Telefon ekranları 3x yoğunlukta; 3x kare hızını düşürür, 1,5x karakterleri bulanık gösterir: 2x.
+        config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 2);
       } else {
         // Masaüstünde telefon oranında dikey pencere.
         document.body.className = "ty-desktop";

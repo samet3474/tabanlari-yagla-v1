@@ -146,7 +146,10 @@ public static class IstanbulParkur
             if (File.Exists(Path.Combine(k_Kaynak, "altin/Altin.fbx"))) s_AltinMat = ModelAl("altin/Altin.fbx", "altin/Altin_base_color.png", "Altin");
             if (File.Exists(Path.Combine(k_Kaynak, "tunel/Tunel.fbx"))) s_TunelMat = ModelAl("tunel/Tunel.fbx", "tunel/Tunel_base_color.png", "Tunel");
             if (File.Exists(Path.Combine(k_Kaynak, "kopru/Kopru.fbx"))) s_KopruMat = ModelAl("kopru/Kopru.fbx", "kopru/Kopru_base_color.png", "Kopru");
+            if (File.Exists(Path.Combine(k_Kaynak, "galata/Galata.fbx"))) s_GalataMat = ModelAl("galata/Galata.fbx", "galata/Galata_base_color.png", "Galata");
+            if (File.Exists(Path.Combine(k_Kaynak, "yenicami/YeniCami.fbx"))) s_CamiMat = ModelAl("yenicami/YeniCami.fbx", "yenicami/YeniCami_base_color.png", "YeniCami");
             if (File.Exists(Path.Combine(k_Kaynak, "katener/Katener.fbx"))) s_KatenerMat = ModelAl("katener/Katener.fbx", "katener/Katener_base_color.png", "Katener");
+            if (File.Exists(Path.Combine(k_Kaynak, "ayakkabi/Ayakkabi.fbx"))) AyakkabiKur();
             AltinYap();
             KatenerEkle();
             var engeller = new Dictionary<string, string>();
@@ -594,16 +597,16 @@ public static class IstanbulParkur
         }
     }
 
-    // İstiklal tramvayına özgü hafif katener: direkler arasında gergi teli (7,3 m), her şeridin üstünde kontak teli (6,9 m)
+    // İstiklal tramvayına özgü hafif katener: direkler arasında gergi teli (10,3 m), her şeridin üstünde kontak teli (9,9 m)
     // ve aralarında askılar. Ağır kiriş yok; kameranın (koşuda ~4,8 m, tavanda ~6 m) üstünde kalır, görüşü kapatmaz.
     static void IstiklalKatener(Yapici y, float z0, float z1, float direkX)
     {
         for (float z = z0 + 4.5f; z < z1; z += 9f)
         {
-            y.Kutu(new Vector3(-direkX, 7.28f, z - 0.015f), new Vector3(direkX, 7.31f, z + 0.015f), P_Tel);
-            for (int l = -1; l <= 1; ++l) y.Kutu(new Vector3(l * k_SeritAraligi - 0.012f, 6.9f, z - 0.012f), new Vector3(l * k_SeritAraligi + 0.012f, 7.29f, z + 0.012f), P_Tel);
+            y.Kutu(new Vector3(-direkX, 10.28f, z - 0.02f), new Vector3(direkX, 10.32f, z + 0.02f), P_Tel);
+            for (int l = -1; l <= 1; ++l) y.Kutu(new Vector3(l * k_SeritAraligi - 0.015f, 9.9f, z - 0.015f), new Vector3(l * k_SeritAraligi + 0.015f, 10.3f, z + 0.015f), P_Tel);
         }
-        for (int l = -1; l <= 1; ++l) y.Kutu(new Vector3(l * k_SeritAraligi - 0.018f, 6.88f, z0), new Vector3(l * k_SeritAraligi + 0.018f, 6.92f, z1), P_Tel);
+        for (int l = -1; l <= 1; ++l) y.Kutu(new Vector3(l * k_SeritAraligi - 0.022f, 9.88f, z0), new Vector3(l * k_SeritAraligi + 0.022f, 9.93f, z1), P_Tel);
     }
 
     static Material PaletMalzemesi()
@@ -686,12 +689,12 @@ public static class IstanbulParkur
             y.Cift(4.35f, 4.6f, 3.95f, 4.2f, z - 0.15f, z + 0.15f, P_Isik);
         }
         // köprünün iki yanında ince direkler ve İstiklal'deki gibi hafif katener
-        for (float z = z0 + 4.5f; z < z1; z += 9f) y.Cift(3.4f, 3.52f, 0f, 7.6f, z - 0.06f, z + 0.06f, P_Yesil);
+        for (float z = z0 + 4.5f; z < z1; z += 9f) y.Cift(3.4f, 3.56f, 0f, 10.6f, z - 0.08f, z + 0.08f, P_Yesil);
         IstiklalKatener(y, z0, z1, 3.46f);
         // Haliç silüeti: çift parçalarda Galata Kulesi (sağ), tek parçalarda Yeni Cami (sol) — uzakta
         float zm = z1 + 15f; // ileride ama dünya eğriliğiyle batmayacak kadar yakın, dar portre görüşe girer
-        int h = 0; foreach (char ch in ad) h += ch;
-        if (h % 2 == 0)
+        if (SiluetModeli) { } // Meshy modelleri CevreUygula'da konur
+        else if (GalataSirasi(ad))
         {
             var k = new Vector3(20f, -4f, zm);
             y.Silindir(k, 4.2f, 30f, 16, P_Tas); y.Silindir(k + Vector3.up * 30f, 4.9f, 1.2f, 16, P_TasKoyu);
@@ -865,6 +868,13 @@ public static class IstanbulParkur
         {
             var kokR = inst.GetComponent<MeshRenderer>(); if (kokR != null) kokR.enabled = false; // kök yol ağı
             Cizici(inst.transform, "Kopru", KopruAgi(z0, z1, inst.name + "_Kopru"), mat);
+            if (SiluetModeli)
+            {
+                // Haliç silüeti (Meshy): ileride, dünya eğriliğiyle batmayacak kadar yakın, dar portre görüşe girer
+                float zm = z1 + 15f;
+                if (GalataSirasi(inst.name + "_Kopru")) ModelKoy("Galata", s_GalataMat, inst.transform, Quaternion.identity, 1, 46f, new Vector3(13f, -4f, zm));
+                else ModelKoy("YeniCami", s_CamiMat, inst.transform, Quaternion.Euler(0, 90, 0), 1, 40f, new Vector3(-24f, -4f, zm - 5f));
+            }
             if (ModelVar("Kopru") && s_KopruMat != null)
             {
                 var hb = HamKutu("Kopru", out var hn);
@@ -887,7 +897,128 @@ public static class IstanbulParkur
     // ------------------------------------------------------------------------------------------------ Meshy çevre modelleri
     // Meshy modelleri (…/Parkur/Modeller): Altin, Tunel (portal), Kopru (kenar modülü), Katener (direk geçidi).
     // Yoksa kodla çizilen hâller kullanılır.
-    static Material s_TunelMat, s_KopruMat, s_KatenerMat, s_AltinMat;
+    static Material s_TunelMat, s_KopruMat, s_KatenerMat, s_AltinMat, s_GalataMat, s_CamiMat;
+    static bool SiluetModeli => ModelVar("Galata") && ModelVar("YeniCami") && s_GalataMat != null && s_CamiMat != null;
+    // köprü parçası başına bir silüet (çift/tek ad toplamına göre): Galata Kulesi sağda ya da Yeni Cami solda
+    static bool GalataSirasi(string ad) { int h = 0; foreach (char ch in ad) h += ch; return h % 2 == 0; }
+    // ------------------------------------------------------------------------------------------------ Süper ayakkabı
+    // Meshy "Ayakkabi" modelinden iki prefab: yolda dönen, haleli bonus (SuperAyakkabi, güç katmanı 10) ve ayaklara
+    // takılan iri ayakkabı. İstanbul temasının superAyakkabi alanına bağlanır.
+    static void AyakkabiKur()
+    {
+        var mat = ModelAl("ayakkabi/Ayakkabi.fbx", "ayakkabi/Ayakkabi_base_color.png", "Ayakkabi");
+        if (mat == null) return;
+        string klasor = k_Kok + "/Bonus";
+        if (!AssetDatabase.IsValidFolder(klasor)) AssetDatabase.CreateFolder(k_Kok, "Bonus");
+
+        // yön: uzun yatay eksen z olsun; burun (alçak taraf) +z'ye baksın
+        var hb = HamKutu("Ayakkabi", out var hn);
+        var don = hb.size.x > hb.size.z ? Quaternion.Euler(0, 90, 0) : Quaternion.identity;
+        float on = 0, arka = 0; int no = 0, na = 0; var c = don * hb.center;
+        foreach (var p in hn) { var q = don * p; if (q.z > c.z) { on += q.y; no++; } else { arka += q.y; na++; } }
+        if (no > 0 && na > 0 && on / no > arka / na) don = Quaternion.Euler(0, 180, 0) * don;
+
+        // simge: Meshy görseli (beyaz zemin) → sprite
+        string ikonYol = $"{klasor}/AyakkabiIkon.png";
+        if (!File.Exists(ikonYol)) { File.Copy(Path.Combine(k_Kaynak, "ayakkabi-gorsel.png"), ikonYol); AssetDatabase.ImportAsset(ikonYol); }
+        var ti = (TextureImporter)AssetImporter.GetAtPath(ikonYol);
+        ti.textureType = TextureImporterType.Sprite; ti.maxTextureSize = 256; ti.SaveAndReimport();
+        var ikon = AssetDatabase.LoadAssetAtPath<Sprite>(ikonYol);
+
+        // hale: yumuşak sarı ışık dairesi
+        string haleYol = $"{klasor}/AyakkabiHale.png";
+        var tx = new Texture2D(128, 128, TextureFormat.RGBA32, false);
+        for (int y = 0; y < 128; ++y) for (int x = 0; x < 128; ++x)
+        {
+            float d = new Vector2(x - 63.5f, y - 63.5f).magnitude / 63.5f;
+            float a = Mathf.Clamp01(1f - d); a = a * a * 0.85f;
+            tx.SetPixel(x, y, new Color(1f, 0.85f, 0.25f, a));
+        }
+        File.WriteAllBytes(haleYol, tx.EncodeToPNG()); Object.DestroyImmediate(tx); AssetDatabase.ImportAsset(haleYol);
+        var hti = (TextureImporter)AssetImporter.GetAtPath(haleYol);
+        hti.textureType = TextureImporterType.Sprite; hti.alphaIsTransparency = true; hti.textureCompression = TextureImporterCompression.Uncompressed; hti.SaveAndReimport();
+        var hale = AssetDatabase.LoadAssetAtPath<Sprite>(haleYol);
+
+        // ayağa takılan: 0,75 m boy (Subway gibi ayağın iki katı iri), tabanı y=0 (ayak kemiğinin biraz altında)
+        var giy = new GameObject("IstanbulAyakkabiGiyilen");
+        ModelKoy("Ayakkabi", mat, giy.transform, don, 2, 0.75f, Vector3.zero);
+        var giyPrefab = PrefabUtility.SaveAsPrefabAsset(giy, $"{klasor}/IstanbulAyakkabiGiyilen.prefab");
+        Object.DestroyImmediate(giy);
+
+        // yoldaki bonus: 1,1 m boy, yerden 0,5 m yukarıda döner; arkasında hale
+        var bon = new GameObject("IstanbulSuperAyakkabi");
+        bon.layer = 10;
+        var col = bon.AddComponent<SphereCollider>(); col.isTrigger = true; col.radius = 0.8f; col.center = new Vector3(0, 0.9f, 0);
+        var gorsel = new GameObject("Gorsel").transform; gorsel.SetParent(bon.transform, false);
+        ModelKoy("Ayakkabi", mat, gorsel, Quaternion.Euler(0, 90, 0) * don, 0, 1.1f, new Vector3(0, 0.5f, 0)); // yana dönük: boy x ekseninde
+        var haleGo = new GameObject("Hale"); haleGo.transform.SetParent(bon.transform, false); haleGo.transform.localPosition = new Vector3(0, 0.95f, 0.3f);
+        var sr = haleGo.AddComponent<SpriteRenderer>(); sr.sprite = hale; sr.sortingOrder = -1;
+        var sa = bon.AddComponent<SuperAyakkabi>();
+        sa.giyilenModel = giyPrefab; sa.ikon = ikon; sa.gorsel = gorsel; sa.hale = haleGo.transform;
+        var bonPrefab = PrefabUtility.SaveAsPrefabAsset(bon, $"{klasor}/IstanbulSuperAyakkabi.prefab");
+        Object.DestroyImmediate(bon);
+
+        AyakKemikleriniAc();
+
+        var tema = AssetDatabase.LoadAssetAtPath<ThemeData>("Assets/_TabanlariYagla/Istanbul/IstanbulTheme.asset");
+        if (tema != null) { tema.superAyakkabi = bonPrefab; EditorUtility.SetDirty(tema); AssetDatabase.SaveAssets(); }
+        Out($"super ayakkabi: bonus + giyilen prefab, tema={(tema != null)}");
+    }
+
+    // Karakter modelleri "Optimize Game Objects" ile gelir: kemikler gizli. Ayakkabı ayağı izlesin diye yalnız iki ayak
+    // kemiği dışarı açılır (extraExposedTransformPaths) ve karakter prefablarında Animator'ın altına aynı adla boş nesne konur
+    // (Animator bunları kendisi sürer). Görünüm ve animasyon değişmez.
+    static void AyakKemikleriniAc()
+    {
+        const string kok = "Assets/UnityTechnologies/Endless Runner";
+        foreach (var (fbx, prefab) in new[] { ($"{kok}/Art/Models/Cat.fbx", $"{kok}/Prefabs/Characters/Cat/character.prefab"), ($"{kok}/Art/Models/Racoon.fbx", $"{kok}/Prefabs/Characters/Raccoon/character.prefab") })
+        {
+            var mi = (ModelImporter)AssetImporter.GetAtPath(fbx);
+            if (mi == null) { Out("model yok " + fbx); continue; }
+            var ayaklar = mi.transformPaths.Where(p => p.EndsWith("/LeftFoot") || p.EndsWith("/RightFoot")).ToArray();
+            var acik = mi.extraExposedTransformPaths.Union(ayaklar).ToArray();
+            if (acik.Length != mi.extraExposedTransformPaths.Length) { mi.extraExposedTransformPaths = acik; mi.SaveAndReimport(); }
+            var ic = PrefabUtility.LoadPrefabContents(prefab);
+            var an = ic.GetComponentInChildren<Animator>(true);
+            bool degisti = false;
+            foreach (var yol in ayaklar)
+            {
+                string ad = yol.Substring(yol.LastIndexOf('/') + 1);
+                if (an.transform.Find(ad) == null) { new GameObject(ad).transform.SetParent(an.transform, false); degisti = true; }
+            }
+            if (degisti) PrefabUtility.SaveAsPrefabAsset(ic, prefab);
+            PrefabUtility.UnloadPrefabContents(ic);
+            Out($"ayak kemikleri {Path.GetFileName(fbx)}: {string.Join(", ", ayaklar)}");
+        }
+    }
+
+    // Süper ayakkabı önizlemesi (-executeMethod IstanbulParkur.AyakkabiGorsel, grafik açık): yoldaki bonus ve kedide giyilmiş hâli
+    public static void AyakkabiGorsel()
+    {
+        Directory.CreateDirectory(k_Gorsel);
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        Shader.SetGlobalFloat("_CurveStrength", 0f); RenderSettings.fog = false;
+        RenderSettings.ambientLight = Color.white;
+        var bon = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(k_Kok + "/Bonus/IstanbulSuperAyakkabi.prefab"));
+        bon.transform.position = new Vector3(-1.2f, 0, 0);
+        bon.GetComponent<SuperAyakkabi>().hale.LookAt(bon.GetComponent<SuperAyakkabi>().hale.position + Vector3.forward);
+        var kedi = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/UnityTechnologies/Endless Runner/Prefabs/Characters/Cat/character.prefab"));
+        kedi.transform.position = new Vector3(1.0f, 0, 0); kedi.transform.rotation = Quaternion.Euler(0, 200, 0);
+        var giy = AssetDatabase.LoadAssetAtPath<GameObject>(k_Kok + "/Bonus/IstanbulAyakkabiGiyilen.prefab");
+        var an = kedi.GetComponentInChildren<Animator>();
+        an.Rebind(); an.Update(0.2f);
+        foreach (var ad in new[] { "LeftFoot", "RightFoot" })
+        {
+            var ayak = kedi.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name.EndsWith(ad));
+            if (ayak == null) { Out("ayak yok " + ad); continue; }
+            var g = (GameObject)Object.Instantiate(giy, kedi.transform, false);
+            g.transform.position = ayak.position + Vector3.down * 0.04f; g.transform.rotation = kedi.transform.rotation;
+            Out("ayak " + ad + " " + ayak.position);
+        }
+        Cek("ayakkabi-onizleme", 900, 700, new Vector3(0, 1.0f, -3.6f), Quaternion.Euler(8, 0, 0), 45f, 0f, new Color(0.55f, 0.75f, 0.95f));
+        if (Application.isBatchMode) EditorApplication.Exit(0);
+    }
+
     static bool ModelVar(string ad) => File.Exists($"{k_Modeller}/{ad}.fbx");
 
     // Modeli bir kapsayıcıya koyar: önce döndür, sonra eşit ölçekle (eksendeki boyu = boy), tabanı (x,z orta, y alt) hedefe.
@@ -1022,17 +1153,17 @@ public static class IstanbulParkur
             }
         for (float z = z0 + 4.5f; z < z1; z += 9f)
         {
-            yp.Cift(4.2f, 4.32f, 0f, 7.6f, z - 0.06f, z + 0.06f, P_Yesil);
-            yp.Cift(4.17f, 4.35f, 7.6f, 7.8f, z - 0.09f, z + 0.09f, P_Isik);
-            // üçgen bayrak dizisi: iki direk arasında sarkan ip (6,4 m → ortada 6,1 m), altında üçgenler (kameranın üstünde)
-            const int parca = 16; Vector3 Ip(float u) => new Vector3(Mathf.Lerp(-4.2f, 4.2f, u), 6.4f - 0.3f * Mathf.Sin(u * Mathf.PI), z);
+            yp.Cift(4.18f, 4.34f, 0f, 10.6f, z - 0.08f, z + 0.08f, P_Yesil);
+            yp.Cift(4.14f, 4.38f, 10.6f, 10.85f, z - 0.12f, z + 0.12f, P_Isik);
+            // üçgen bayrak dizisi: iki direk arasında sarkan ip (9,6 m → ortada 9,2 m), altında büyük üçgenler; tren tavanındaki kameranın (~6 m) da epey üstünde
+            const int parca = 16; Vector3 Ip(float u) => new Vector3(Mathf.Lerp(-4.2f, 4.2f, u), 9.6f - 0.4f * Mathf.Sin(u * Mathf.PI), z);
             for (int i = 0; i < parca; ++i)
             {
                 Vector3 a = Ip(i / (float)parca), b = Ip((i + 1) / (float)parca);
-                yp.Kutu(a + new Vector3(0, -0.012f, -0.012f), new Vector3(b.x, a.y + 0.012f, z + 0.012f), P_Tel);
+                yp.Kutu(a + new Vector3(0, -0.02f, -0.02f), new Vector3(b.x, a.y + 0.02f, z + 0.02f), P_Tel);
                 int[] renk = { 14, P_Isik, P_Yesil, P_Iznik, 15 };
                 Vector3 orta = (a + b) * 0.5f;
-                yp.Ucgen(a + new Vector3(0.04f, 0, 0), b - new Vector3(0.04f, 0, 0), orta + new Vector3(0, -0.34f, 0), renk[i % renk.Length]);
+                yp.Ucgen(a + new Vector3(0.04f, 0, 0), b - new Vector3(0.04f, 0, 0), orta + new Vector3(0, -0.6f, 0), renk[i % renk.Length]);
             }
         }
         IstiklalKatener(yp, z0, z1, 4.26f);
@@ -1042,8 +1173,8 @@ public static class IstanbulParkur
         var bayrak = new List<Vector3>(); var buv = new List<Vector2>(); var bt = new List<int>();
         for (float z = z0 + 4.5f; z < z1; z += 18f)
         {
-            int s = bayrak.Count; float yy = 6.1f;
-            bayrak.AddRange(new[] { new Vector3(-0.45f, yy - 0.62f, z), new Vector3(-0.45f, yy - 0.02f, z), new Vector3(0.45f, yy - 0.02f, z), new Vector3(0.45f, yy - 0.62f, z) });
+            int s = bayrak.Count; float yy = 9.25f;
+            bayrak.AddRange(new[] { new Vector3(-0.75f, yy - 1.02f, z), new Vector3(-0.75f, yy - 0.02f, z), new Vector3(0.75f, yy - 0.02f, z), new Vector3(0.75f, yy - 1.02f, z) });
             buv.AddRange(new[] { new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0) });
             bt.AddRange(new[] { s, s + 1, s + 2, s, s + 2, s + 3, s, s + 2, s + 1, s, s + 3, s + 2 });
         }

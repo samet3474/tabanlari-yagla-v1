@@ -46,6 +46,15 @@ public class CharacterInputController : MonoBehaviour
 
 	public float slideLength = 2.0f;
 
+	// Süper ayakkabı (SuperAyakkabi.cs): süre boyunca zıplama daha yüksek ve uzun, tramvay tavanına rampasız çıkılır.
+	public const float k_SuperAyakkabiSure = 12f;
+	const float k_SuperZiplamaYuk = 2.6f;   // 1,2 m → ~3,1 m: tavanın (2,4 m) üstünden geçer
+	const float k_SuperZiplamaUzun = 1.7f;
+	public float superAyakkabiKalan { get; private set; }
+	float m_ZiplamaYukCarpan = 1f, m_ZiplamaUzunCarpan = 1f;
+	GameObject[] m_GiyilenAyakkabi;
+	Sprite m_AyakkabiIkon;
+
 	[Header("Sounds")]
 	public AudioClip slideSound;
 	public AudioClip powerUpUseSound;
@@ -190,6 +199,7 @@ public class CharacterInputController : MonoBehaviour
 		m_SonTokezleme = -100f;
 		tokezlemeSayisi = 0;
 		m_ZiplamaTabani = 0f;
+		AyakkabiCikar();
 		// TrackManager puts the camera back to its original place at the end of each run.
 		m_KameraYukselme = 0f;
 
@@ -214,6 +224,7 @@ public class CharacterInputController : MonoBehaviour
 	public void End()
 	{
         CleanConsumable();
+        AyakkabiCikar();
 
         // A run can end mid-jump or mid-slide (quit from the pause menu). The next run re-enables this object before its
         // character is loaded, so stale flags would touch a missing animator and keep the slide collider shrunk.
@@ -223,6 +234,44 @@ public class CharacterInputController : MonoBehaviour
             characterCollider.Slide(false);
         }
         m_Jumping = false;
+    }
+
+    // Süper ayakkabıyı giydirir (yeniden alınırsa süre baştan başlar): her ayak kemiğine bir model kopyası.
+    public void SuperAyakkabiGiy(SuperAyakkabi bonus)
+    {
+        superAyakkabiKalan = k_SuperAyakkabiSure;
+        m_AyakkabiIkon = bonus.ikon;
+        if (bonus.alinmaSesi != null && m_Audio != null) m_Audio.PlayOneShot(bonus.alinmaSesi);
+        SuperAyakkabi.Goster(m_AyakkabiIkon, 1f);
+        if (m_GiyilenAyakkabi != null && m_GiyilenAyakkabi[0] != null) return;
+        if (bonus.giyilenModel == null || character == null || character.animator == null) return;
+        var ayaklar = new[] { AyakBul(HumanBodyBones.LeftFoot, "LeftFoot"), AyakBul(HumanBodyBones.RightFoot, "RightFoot") };
+        m_GiyilenAyakkabi = new GameObject[ayaklar.Length];
+        for (int i = 0; i < ayaklar.Length; ++i)
+        {
+            if (ayaklar[i] == null) continue;
+            // karakterin altında (onunla silinir); ayak kemiğini konumca izler, yönü hep koşu yönü (AyakTakip)
+            var a = Instantiate(bonus.giyilenModel, character.transform, false);
+            a.AddComponent<AyakTakip>().ayak = ayaklar[i];
+            m_GiyilenAyakkabi[i] = a;
+        }
+    }
+
+    Transform AyakBul(HumanBodyBones kemik, string ad)
+    {
+        Transform t = character.animator.isHuman ? character.animator.GetBoneTransform(kemik) : null;
+        if (t != null) return t;
+        foreach (var c in character.GetComponentsInChildren<Transform>(true)) if (c.name.EndsWith(ad)) return c;
+        return null;
+    }
+
+    public void AyakkabiCikar()
+    {
+        superAyakkabiKalan = 0f;
+        SuperAyakkabi.Gizle();
+        if (m_GiyilenAyakkabi == null) return;
+        foreach (var a in m_GiyilenAyakkabi) if (a != null) Destroy(a);
+        m_GiyilenAyakkabi = null;
     }
 
     public void CleanConsumable()
@@ -312,6 +361,12 @@ public class CharacterInputController : MonoBehaviour
 
 	protected void Update ()
     {
+        if (superAyakkabiKalan > 0f && trackManager != null && trackManager.isMoving)
+        {
+            superAyakkabiKalan -= Time.deltaTime;
+            if (superAyakkabiKalan <= 0f) AyakkabiCikar();
+            else SuperAyakkabi.Goster(m_AyakkabiIkon, superAyakkabiKalan / k_SuperAyakkabiSure);
+        }
 #if UNITY_EDITOR || UNITY_STANDALONE
         // Use key input in editor or standalone
 
@@ -394,9 +449,9 @@ public class CharacterInputController : MonoBehaviour
 			{
                 // Same as with the sliding, we want a fixed jump LENGTH not fixed jump TIME. Also, just as with sliding,
                 // we slightly modify length with speed to make it more playable.
-				float correctJumpLength = jumpLength * (1.0f + trackManager.speedRatio);
+				float correctJumpLength = jumpLength * m_ZiplamaUzunCarpan * (1.0f + trackManager.speedRatio);
 				float ratio = (trackManager.worldDistance - m_JumpStart) / correctJumpLength;
-				float jumpY = m_ZiplamaTabani + Mathf.Sin(ratio * Mathf.PI) * jumpHeight;
+				float jumpY = m_ZiplamaTabani + Mathf.Sin(ratio * Mathf.PI) * jumpHeight * m_ZiplamaYukCarpan;
 				// Coming down onto a higher surface (a ramp or a roof) ends the jump there.
 				bool landed = ratio > 0.5f && ratio < 1.0f && jumpY <= zemin && zemin - jumpY <= k_TirmanmaAdimi;
 				if (ratio >= 1.0f || landed)
@@ -494,7 +549,10 @@ public class CharacterInputController : MonoBehaviour
 			if (m_Sliding)
 				StopSliding();
 
-			float correctJumpLength = jumpLength * (1.0f + trackManager.speedRatio);
+			bool super = superAyakkabiKalan > 0f;
+			m_ZiplamaYukCarpan = super ? k_SuperZiplamaYuk : 1f;
+			m_ZiplamaUzunCarpan = super ? k_SuperZiplamaUzun : 1f;
+			float correctJumpLength = jumpLength * m_ZiplamaUzunCarpan * (1.0f + trackManager.speedRatio);
 			m_JumpStart = trackManager.worldDistance;
 			m_ZiplamaTabani = m_Taban;
 			m_DusmeHizi = 0f;

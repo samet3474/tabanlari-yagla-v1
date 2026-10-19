@@ -1,144 +1,379 @@
 fileFormatVersion: 2
 guid: 4aed8c63f75928c40a2709007cecbee8
-timeCreated: 1464703710
-licenseType: Pro
 ModelImporter:
-  serializedVersion: 19
-  fileIDToRecycleName:
-    100000: ConstructionGearMesh
-    100002: Controls
-    100004: FezAndBowtieMesh
-    100006: Head
-    100008: HeadEnd
-    100010: Hips
-    100012: LeftArm
-    100014: LeftEar
-    100016: LeftEarEnd
-    100018: LeftEye
-    100020: LeftFoot
-    100022: LeftForeArm
-    100024: LeftHand
-    100026: LeftHandEnd
-    100028: LeftLeg
-    100030: LeftLowerLid
-    100032: LeftLowerLidEnd
-    100034: LeftShoulder
-    100036: LeftToe
-    100038: LeftToeEnd
-    100040: LeftUpLeg
-    100042: LeftUpperLid
-    100044: LeftUpperLidEnd
-    100046: Mesh
-    100048: Neck
-    100050: //RootNode
-    100052: RacoonMesh
-    100054: RightArm
-    100056: RightEar
-    100058: RightEarEnd
-    100060: RightEye
-    100062: RightFoot
-    100064: RightForeArm
-    100066: RightHand
-    100068: RightHandEnd
-    100070: RightLeg
-    100072: RightLowerLid
-    100074: RightLowerLidEnd
-    100076: RightShoulder
-    100078: RightToe
-    100080: RightToeEnd
-    100082: RightUpLeg
-    100084: RightUpperLid
-    100086: RightUpperLidEnd
-    100088: Skeleton
-    100090: Spine1
-    100092: Spine2
-    100094: Tail1
-    100096: Tail2
-    100098: Tail3
-    100100: Tail4
-    100102: PartHatandBowtie
-    400000: ConstructionGearMesh
-    400002: Controls
-    400004: FezAndBowtieMesh
-    400006: Head
-    400008: HeadEnd
-    400010: Hips
-    400012: LeftArm
-    400014: LeftEar
-    400016: LeftEarEnd
-    400018: LeftEye
-    400020: LeftFoot
-    400022: LeftForeArm
-    400024: LeftHand
-    400026: LeftHandEnd
-    400028: LeftLeg
-    400030: LeftLowerLid
-    400032: LeftLowerLidEnd
-    400034: LeftShoulder
-    400036: LeftToe
-    400038: LeftToeEnd
-    400040: LeftUpLeg
-    400042: LeftUpperLid
-    400044: LeftUpperLidEnd
-    400046: Mesh
-    400048: Neck
-    400050: //RootNode
-    400052: RacoonMesh
-    400054: RightArm
-    400056: RightEar
-    400058: RightEarEnd
-    400060: RightEye
-    400062: RightFoot
-    400064: RightForeArm
-    400066: RightHand
-    400068: RightHandEnd
-    400070: RightLeg
-    400072: RightLowerLid
-    400074: RightLowerLidEnd
-    400076: RightShoulder
-    400078: RightToe
-    400080: RightToeEnd
-    400082: RightUpLeg
-    400084: RightUpperLid
-    400086: RightUpperLidEnd
-    400088: Skeleton
-    400090: Spine1
-    400092: Spine2
-    400094: Tail1
-    400096: Tail2
-    400098: Tail3
-    400100: Tail4
-    400102: PartHatandBowtie
-    4300000: FezAndBowtieMesh
-    4300002: RacoonMesh
-    4300004: ConstructionGearMesh
-    4300006: PartHatandBowtie
-    7400000: Take 001
-    9500000: //RootNode
-    13700000: ConstructionGearMesh
-    13700002: FezAndBowtieMesh
-    13700004: RacoonMesh
-    13700006: PartHatandBowtie
+  serializedVersion: 24300
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: ConstructionGearMesh
+  - first:
+      1: 100002
+    second: Controls
+  - first:
+      1: 100004
+    second: FezAndBowtieMesh
+  - first:
+      1: 100006
+    second: Head
+  - first:
+      1: 100008
+    second: HeadEnd
+  - first:
+      1: 100010
+    second: Hips
+  - first:
+      1: 100012
+    second: LeftArm
+  - first:
+      1: 100014
+    second: LeftEar
+  - first:
+      1: 100016
+    second: LeftEarEnd
+  - first:
+      1: 100018
+    second: LeftEye
+  - first:
+      1: 100020
+    second: LeftFoot
+  - first:
+      1: 100022
+    second: LeftForeArm
+  - first:
+      1: 100024
+    second: LeftHand
+  - first:
+      1: 100026
+    second: LeftHandEnd
+  - first:
+      1: 100028
+    second: LeftLeg
+  - first:
+      1: 100030
+    second: LeftLowerLid
+  - first:
+      1: 100032
+    second: LeftLowerLidEnd
+  - first:
+      1: 100034
+    second: LeftShoulder
+  - first:
+      1: 100036
+    second: LeftToe
+  - first:
+      1: 100038
+    second: LeftToeEnd
+  - first:
+      1: 100040
+    second: LeftUpLeg
+  - first:
+      1: 100042
+    second: LeftUpperLid
+  - first:
+      1: 100044
+    second: LeftUpperLidEnd
+  - first:
+      1: 100046
+    second: Mesh
+  - first:
+      1: 100048
+    second: Neck
+  - first:
+      1: 100050
+    second: //RootNode
+  - first:
+      1: 100052
+    second: RacoonMesh
+  - first:
+      1: 100054
+    second: RightArm
+  - first:
+      1: 100056
+    second: RightEar
+  - first:
+      1: 100058
+    second: RightEarEnd
+  - first:
+      1: 100060
+    second: RightEye
+  - first:
+      1: 100062
+    second: RightFoot
+  - first:
+      1: 100064
+    second: RightForeArm
+  - first:
+      1: 100066
+    second: RightHand
+  - first:
+      1: 100068
+    second: RightHandEnd
+  - first:
+      1: 100070
+    second: RightLeg
+  - first:
+      1: 100072
+    second: RightLowerLid
+  - first:
+      1: 100074
+    second: RightLowerLidEnd
+  - first:
+      1: 100076
+    second: RightShoulder
+  - first:
+      1: 100078
+    second: RightToe
+  - first:
+      1: 100080
+    second: RightToeEnd
+  - first:
+      1: 100082
+    second: RightUpLeg
+  - first:
+      1: 100084
+    second: RightUpperLid
+  - first:
+      1: 100086
+    second: RightUpperLidEnd
+  - first:
+      1: 100088
+    second: Skeleton
+  - first:
+      1: 100090
+    second: Spine1
+  - first:
+      1: 100092
+    second: Spine2
+  - first:
+      1: 100094
+    second: Tail1
+  - first:
+      1: 100096
+    second: Tail2
+  - first:
+      1: 100098
+    second: Tail3
+  - first:
+      1: 100100
+    second: Tail4
+  - first:
+      1: 100102
+    second: PartHatandBowtie
+  - first:
+      4: 400000
+    second: ConstructionGearMesh
+  - first:
+      4: 400002
+    second: Controls
+  - first:
+      4: 400004
+    second: FezAndBowtieMesh
+  - first:
+      4: 400006
+    second: Head
+  - first:
+      4: 400008
+    second: HeadEnd
+  - first:
+      4: 400010
+    second: Hips
+  - first:
+      4: 400012
+    second: LeftArm
+  - first:
+      4: 400014
+    second: LeftEar
+  - first:
+      4: 400016
+    second: LeftEarEnd
+  - first:
+      4: 400018
+    second: LeftEye
+  - first:
+      4: 400020
+    second: LeftFoot
+  - first:
+      4: 400022
+    second: LeftForeArm
+  - first:
+      4: 400024
+    second: LeftHand
+  - first:
+      4: 400026
+    second: LeftHandEnd
+  - first:
+      4: 400028
+    second: LeftLeg
+  - first:
+      4: 400030
+    second: LeftLowerLid
+  - first:
+      4: 400032
+    second: LeftLowerLidEnd
+  - first:
+      4: 400034
+    second: LeftShoulder
+  - first:
+      4: 400036
+    second: LeftToe
+  - first:
+      4: 400038
+    second: LeftToeEnd
+  - first:
+      4: 400040
+    second: LeftUpLeg
+  - first:
+      4: 400042
+    second: LeftUpperLid
+  - first:
+      4: 400044
+    second: LeftUpperLidEnd
+  - first:
+      4: 400046
+    second: Mesh
+  - first:
+      4: 400048
+    second: Neck
+  - first:
+      4: 400050
+    second: //RootNode
+  - first:
+      4: 400052
+    second: RacoonMesh
+  - first:
+      4: 400054
+    second: RightArm
+  - first:
+      4: 400056
+    second: RightEar
+  - first:
+      4: 400058
+    second: RightEarEnd
+  - first:
+      4: 400060
+    second: RightEye
+  - first:
+      4: 400062
+    second: RightFoot
+  - first:
+      4: 400064
+    second: RightForeArm
+  - first:
+      4: 400066
+    second: RightHand
+  - first:
+      4: 400068
+    second: RightHandEnd
+  - first:
+      4: 400070
+    second: RightLeg
+  - first:
+      4: 400072
+    second: RightLowerLid
+  - first:
+      4: 400074
+    second: RightLowerLidEnd
+  - first:
+      4: 400076
+    second: RightShoulder
+  - first:
+      4: 400078
+    second: RightToe
+  - first:
+      4: 400080
+    second: RightToeEnd
+  - first:
+      4: 400082
+    second: RightUpLeg
+  - first:
+      4: 400084
+    second: RightUpperLid
+  - first:
+      4: 400086
+    second: RightUpperLidEnd
+  - first:
+      4: 400088
+    second: Skeleton
+  - first:
+      4: 400090
+    second: Spine1
+  - first:
+      4: 400092
+    second: Spine2
+  - first:
+      4: 400094
+    second: Tail1
+  - first:
+      4: 400096
+    second: Tail2
+  - first:
+      4: 400098
+    second: Tail3
+  - first:
+      4: 400100
+    second: Tail4
+  - first:
+      4: 400102
+    second: PartHatandBowtie
+  - first:
+      43: 4300000
+    second: FezAndBowtieMesh
+  - first:
+      43: 4300002
+    second: RacoonMesh
+  - first:
+      43: 4300004
+    second: ConstructionGearMesh
+  - first:
+      43: 4300006
+    second: PartHatandBowtie
+  - first:
+      74: 7400000
+    second: Take 001
+  - first:
+      95: 9500000
+    second: //RootNode
+  - first:
+      137: 13700000
+    second: ConstructionGearMesh
+  - first:
+      137: 13700002
+    second: FezAndBowtieMesh
+  - first:
+      137: 13700004
+    second: RacoonMesh
+  - first:
+      137: 13700006
+    second: PartHatandBowtie
+  externalObjects: {}
   materials:
-    importMaterials: 1
+    materialImportMode: 1
     materialName: 1
     materialSearch: 1
+    materialLocation: 0
+    searchTexturesGlobally: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 1
+    removeConstantScaleCurves: 0
     motionNodeName: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
     animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
     animationCompression: 1
     animationRotationError: 0.5
     animationPositionError: 0.5
     animationScaleError: 0.5
     animationWrapMode: 0
-    extraExposedTransformPaths: []
+    extraExposedTransformPaths:
+    - Skeleton/Hips/LeftUpLeg/LeftLeg/LeftFoot
+    - Skeleton/Hips/RightUpLeg/RightLeg/RightFoot
+    extraUserProperties: []
     clipAnimations: []
     isReadable: 0
   meshes:
@@ -146,26 +381,52 @@ ModelImporter:
     globalScale: 1
     meshCompression: 0
     addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 0
+    importVisibility: 0
     importBlendShapes: 0
+    importCameras: 0
+    importLights: 0
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    optimizeMeshForGPU: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: -1
+    indexFormat: 1
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
     tangentImportMode: 3
+    normalCalculationMode: 0
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
   importAnimation: 0
-  copyAvatar: 0
   humanDescription:
-    serializedVersion: 2
+    serializedVersion: 3
     human: []
     skeleton: []
     armTwist: 0.5
@@ -175,14 +436,19 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
+    globalScale: 1
     rootMotionBoneName: 
-    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
     hasTranslationDoF: 0
     hasExtraRoot: 0
     skeletonHasParents: 0
   lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 2
   humanoidOversampling: 1
+  avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 

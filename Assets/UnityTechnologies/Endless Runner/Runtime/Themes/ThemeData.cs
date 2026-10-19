@@ -35,6 +35,9 @@ public class ThemeData : ScriptableObject
     public Mesh UIGroundMesh;
     public Color fogColor;
 
+    [Tooltip("Süper ayakkabı bonusu (SuperAyakkabi); boşsa bu temada çıkmaz")]
+    public GameObject superAyakkabi;
+
     [Header("Track (0 = TrackManager defaults)")]
     [Tooltip("Distance between lanes in metres for this theme; 0 keeps TrackManager.laneOffset.")]
     public float seritAraligi;
