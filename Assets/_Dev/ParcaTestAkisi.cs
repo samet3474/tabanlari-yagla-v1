@@ -126,6 +126,10 @@ public class ParcaTestAkisi : MonoBehaviour
         Debug.Log("PARCATEST| " + m_Durum);
         // &otobasla=1 / -otobasla: OYNA'ya basılmış gibi koşuyu başlat (otomatik testler için)
         if (Param("otobasla") == "1") { yield return new WaitForSecondsRealtime(1f); loadout.StartGame(); Debug.Log("PARCATEST| otomatik basladi"); }
+        // -kare <klasör>: geri sayım sırasında da 3 kare (karakter beklemede mi, koşuyor mu)
+        string kk = Param("kare");
+        if (Param("otobasla") == "1" && kk != null && kk != "1")
+            for (int i = 0; i < 3; ++i) { yield return new WaitForSecondsRealtime(0.7f); ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(kk, "baslangic-" + i + ".png")); }
     }
 
     int m_AyakkabiAsama; float m_AyakkabiZaman;

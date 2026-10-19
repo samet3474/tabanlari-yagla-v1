@@ -381,7 +381,16 @@ public class TrackManager : MonoBehaviour
         }
 
         if (!m_IsMoving)
+        {
+            // geri sayımda da karakter ilk parçanın içindeki başlangıç noktasında dursun (k_TemaBaslangicMesafesi); yoksa alçak
+            // tema kamerası parçanın gerisindeki boşluğu görür. Yalnız koşu hiç ilerlememişken.
+            if (!m_IsTutorial && m_TotalWorldDistance <= 0.0f && m_Segments.Count > 0 && m_Segments[0] != null && m_CurrentThemeData != null && m_CurrentThemeData.seritAraligi > 0.0f)
+            {
+                m_Segments[0].GetPointAtInWorldUnit(m_CurrentSegmentDistance, out Vector3 basPos, out Quaternion basRot);
+                characterController.transform.SetPositionAndRotation(basPos, basRot);
+            }
             return;
+        }
 
         float scaledSpeed = m_Speed * Time.deltaTime;
         m_ScoreAccum += scaledSpeed;

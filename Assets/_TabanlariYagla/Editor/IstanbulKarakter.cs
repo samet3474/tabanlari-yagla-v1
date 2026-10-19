@@ -49,6 +49,9 @@ public static class IstanbulKarakter
         File.Copy(kaynak, fbx, true); AssetDatabase.ImportAsset(fbx, ImportAssetOptions.ForceUpdate);
 
         // içe aktarma: Generic iskelet, kemikler açık (süper ayakkabı ayağı izler), gömülü doku dışarı
+        // eski çıkarılmış doku aynı adla kalırsa yenisi yazılmaz (yeni model eski dokuyla görünür): önce silinir
+        foreach (var eski in AssetDatabase.FindAssets("t:Texture2D", new[] { klasor }).Select(AssetDatabase.GUIDToAssetPath).Where(p => !p.EndsWith("Ikon.png")).ToList())
+            AssetDatabase.DeleteAsset(eski);
         var mi = (ModelImporter)AssetImporter.GetAtPath(fbx);
         mi.ExtractTextures(klasor);
         AssetDatabase.Refresh();
@@ -85,8 +88,9 @@ public static class IstanbulKarakter
             .Select(AssetDatabase.LoadAssetAtPath<Texture2D>).FirstOrDefault(t => t != null && !t.name.EndsWith("Ikon"));
         if (doku != null)
         {
+            Genislet(AssetDatabase.GetAssetPath(doku));
             var ti = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(doku));
-            ti.maxTextureSize = 2048; ti.anisoLevel = 4; ti.mipMapBias = -0.5f; ti.filterMode = FilterMode.Trilinear; ti.SaveAndReimport(); // küçük görünürken de net (bulanık alt mip seviyesine geç düşer)
+            ti.maxTextureSize = 2048; ti.anisoLevel = 4; ti.mipMapBias = 0f; ti.mipmapFilter = TextureImporterMipFilter.KaiserFilter; ti.filterMode = FilterMode.Trilinear; ti.SaveAndReimport(); // Kaiser: küçülürken keskin; negatif sapma yamalar arası taşmayı (lekeleri) artırıyordu
         }
         string matYol = $"{klasor}/{ad}.mat";
         var mat = AssetDatabase.LoadAssetAtPath<Material>(matYol);
@@ -134,6 +138,7 @@ public static class IstanbulKarakter
         var gorsel = new GameObject("Gorsel").transform; gorsel.SetParent(kok.transform, false);
         foreach (Transform c in model.transform.Cast<Transform>().ToList()) c.SetParent(gorsel, false);
         kok.transform.localScale = Vector3.one * olcek;
+        gorsel.localPosition = new Vector3(0f, 0.05f, 0f); // Meshy pozlarında taban ~5 cm yere gömülüyor
         Object.DestroyImmediate(model);
         foreach (var r in kok.GetComponentsInChildren<Renderer>(true))
         {
@@ -162,6 +167,37 @@ public static class IstanbulKarakter
         EditorUtility.SetDirty(ayar);
         Out($"{ad}: prefab {prefab}, olcek {olcek:F3}, fiyat {k_Fiyat}, avatar {avatarGecerli}");
         return true;
+    }
+
+    // Meshy dokusu küçük yamalardan oluşur, aralarında saf siyah boşluk kalır; küçülünce (mip) siyah yamaya taşar ve
+    // karakterde koyu lekeler olur. Boşluklar komşu yamanın rengiyle 24 piksel genişletilir (dilation).
+    static void Genislet(string yol)
+    {
+        var tx = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        if (!tx.LoadImage(File.ReadAllBytes(yol))) return;
+        int w = tx.width, h = tx.height; var p = tx.GetPixels32();
+        var bos = new bool[p.Length]; int sayi = 0;
+        for (int i = 0; i < p.Length; ++i) if (p[i].r < 3 && p[i].g < 3 && p[i].b < 3) { bos[i] = true; sayi++; }
+        for (int tur = 0; tur < 24 && sayi > 0; ++tur)
+        {
+            var yeni = (bool[])bos.Clone();
+            for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+            {
+                int i = y * w + x; if (!bos[i]) continue;
+                int r = 0, g = 0, b = 0, n = 0;
+                if (x > 0 && !bos[i - 1]) { r += p[i - 1].r; g += p[i - 1].g; b += p[i - 1].b; n++; }
+                if (x < w - 1 && !bos[i + 1]) { r += p[i + 1].r; g += p[i + 1].g; b += p[i + 1].b; n++; }
+                if (y > 0 && !bos[i - w]) { r += p[i - w].r; g += p[i - w].g; b += p[i - w].b; n++; }
+                if (y < h - 1 && !bos[i + w]) { r += p[i + w].r; g += p[i + w].g; b += p[i + w].b; n++; }
+                if (n == 0) continue;
+                p[i] = new Color32((byte)(r / n), (byte)(g / n), (byte)(b / n), 255); yeni[i] = false; sayi--;
+            }
+            bos = yeni;
+        }
+        tx.SetPixels32(p); tx.Apply();
+        File.WriteAllBytes(yol, yol.EndsWith(".png") ? tx.EncodeToPNG() : tx.EncodeToJPG(95));
+        Object.DestroyImmediate(tx); AssetDatabase.ImportAsset(yol);
+        Out($"{Path.GetFileName(yol)}: yama boşlukları dolduruldu (kalan {sayi})");
     }
 
     // (klip, kırpma başı, kırpma sonu, hedef süre) — kedinin Cat_Jump 0,60 / Cat_Slide 1,03 / Cat_HitWall1 0,73 sn; koşu döngüsü
@@ -202,7 +238,8 @@ public static class IstanbulKarakter
         if (k.Contains("death")) return "Dusme";
         if (k.Contains("hit")) return "Carpma";
         if (k.Contains("idle")) return "Bekleme";
-        if (k.Contains("run") || k.Contains("start")) return "Kosu";
+        if (k.Contains("start")) return "Bekleme"; // geri sayımda kedi gibi hazır bekler, süre dolunca koşar (runStart)
+        if (k.Contains("run")) return "Kosu";
         return null;
     }
 
