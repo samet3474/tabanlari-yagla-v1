@@ -34,4 +34,12 @@ public class ThemeData : ScriptableObject
 	public Mesh skyMesh;
     public Mesh UIGroundMesh;
     public Color fogColor;
+
+    [Header("Track (0 = TrackManager defaults)")]
+    [Tooltip("Distance between lanes in metres for this theme; 0 keeps TrackManager.laneOffset.")]
+    public float seritAraligi;
+    [Tooltip("Added to the run camera's local position (relative to the runner) for this theme.")]
+    public Vector3 kameraOfset;
+    [Tooltip("Added to the run camera's downward pitch, degrees.")]
+    public float kameraEgimEk;
 }

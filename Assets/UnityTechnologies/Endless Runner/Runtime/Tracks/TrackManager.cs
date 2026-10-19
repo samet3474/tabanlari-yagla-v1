@@ -232,6 +232,7 @@ public class TrackManager : MonoBehaviour
             m_CurrentZone = 0;
             m_CurrentZoneDistance = 0;
             m_PreviousSegment = -1;
+            TemaPistiUygula();
 
             skyMeshFilter.sharedMesh = m_CurrentThemeData.skyMesh;
             RenderSettings.fogColor = m_CurrentThemeData.fogColor;
@@ -318,6 +319,7 @@ public class TrackManager : MonoBehaviour
         Addressables.ReleaseInstance(characterController.character.gameObject);
         characterController.character = null;
 
+        TemaPistiGeriAl();
         Camera.main.transform.SetParent(null);
         Camera.main.transform.position = m_CameraOriginalPos;
 
@@ -544,6 +546,7 @@ public class TrackManager : MonoBehaviour
         m_CurrentZone = 0;
         m_CurrentZoneDistance = 0;
         m_PreviousSegment = -1;
+        TemaPistiUygula();
 
         // The tutorial's segments were spawned empty. The ones that still start beyond the fog get their obstacles and
         // coins now, where they cannot be seen appearing; the nearer ones stay a short obstacle-free run-up, like the
@@ -555,6 +558,40 @@ public class TrackManager : MonoBehaviour
                 SpawnObstacle(m_Segments[i]);
             segmentStart += m_Segments[i].worldLength;
         }
+    }
+
+    // Theme-specific track: lane spacing and run camera (ThemeData.seritAraligi / kameraOfset / kameraEgimEk).
+    // Themes that leave them at 0 (Day, Night, tutorial) keep the scene values unchanged.
+    float m_VarsayilanSerit = -1.0f;
+    Vector3 m_UygulananKameraOfset;
+    float m_UygulananKameraEgim;
+
+    void TemaPistiUygula()
+    {
+        if (m_VarsayilanSerit < 0.0f)
+            m_VarsayilanSerit = laneOffset;
+        laneOffset = m_CurrentThemeData.seritAraligi > 0.0f ? m_CurrentThemeData.seritAraligi : m_VarsayilanSerit;
+
+        Transform cam = Camera.main != null ? Camera.main.transform : null;
+        if (cam != null && cam.parent == characterController.transform)
+        {
+            cam.localPosition += m_CurrentThemeData.kameraOfset - m_UygulananKameraOfset;
+            cam.localRotation = Quaternion.Euler(m_CurrentThemeData.kameraEgimEk - m_UygulananKameraEgim, 0.0f, 0.0f) * cam.localRotation;
+            m_UygulananKameraOfset = m_CurrentThemeData.kameraOfset;
+            m_UygulananKameraEgim = m_CurrentThemeData.kameraEgimEk;
+        }
+        characterController.SeritYenile();
+    }
+
+    void TemaPistiGeriAl()
+    {
+        Transform cam = Camera.main != null ? Camera.main.transform : null;
+        if (cam != null)
+            cam.localRotation = Quaternion.Euler(-m_UygulananKameraEgim, 0.0f, 0.0f) * cam.localRotation;
+        m_UygulananKameraOfset = Vector3.zero;
+        m_UygulananKameraEgim = 0.0f;
+        if (m_VarsayilanSerit >= 0.0f)
+            laneOffset = m_VarsayilanSerit;
     }
 
     public void ChangeZone()

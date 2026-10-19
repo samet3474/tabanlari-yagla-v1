@@ -112,8 +112,11 @@ public static class ParkurAdaletOlcum
         var temalar = AssetDatabase.FindAssets("t:ThemeData").Select(g => AssetDatabase.LoadAssetAtPath<ThemeData>(AssetDatabase.GUIDToAssetPath(g))).Where(t => t != null).ToList();
         Yaz($"HIZ ILERLEMESI: {s_MinSpeed} m/s baslangic, {(s_MinSpeed + s_MaxSpeed) * 0.5f} m/s ~{((s_MaxSpeed - s_MinSpeed) * 0.5f / 0.2f):F0}. sn, {s_MaxSpeed} m/s {((s_MaxSpeed - s_MinSpeed) / 0.2f):F0}. sn (TrackManager k_Acceleration=0.2)");
         var okunan = new HashSet<GameObject>();
+        float varsayilanSerit = s_LaneOffset;
         foreach (var tema in temalar)
         {
+            // temaya özel şerit aralığı (ThemeData.seritAraligi; 0 = sahnedeki TrackManager.laneOffset)
+            s_LaneOffset = tema.seritAraligi > 0 ? tema.seritAraligi : varsayilanSerit;
             if (tema.zones.All(z => z.length == 0)) { Yaz($"TEMA {tema.themeName} atlandi: bolge uzunluklari 0 (yalniz egitim, engeller elle yerlesir)"); continue; }
             var bolgeler = new List<(int uzunluk, SegmentTipi[] seg)>();
             var segOnbellek = new Dictionary<GameObject, SegmentTipi>();
@@ -129,7 +132,7 @@ public static class ParkurAdaletOlcum
                 bolgeler.Add((z.length, list.ToArray()));
             }
             Yaz("");
-            Yaz($"=== TEMA {tema.themeName} === bolge: " + string.Join(" | ", bolgeler.Select(b => $"{b.uzunluk} m [{string.Join(",", b.seg.Select(s => $"{s.ad} {s.uzunluk:F1}m konum={string.Join("/", s.konumMesafe.Select(k => k.ToString("F1")))}"))}]")));
+            Yaz($"=== TEMA {tema.themeName} === serit={s_LaneOffset} m (degisim {s_LaneOffset / s_LaneSpeed:F3} s) bolge: " + string.Join(" | ", bolgeler.Select(b => $"{b.uzunluk} m [{string.Join(",", b.seg.Select(s => $"{s.ad} {s.uzunluk:F1}m konum={string.Join("/", s.konumMesafe.Select(k => k.ToString("F1")))}"))}]")));
             foreach (var e in engelOnbellek.Values.Where(e => bolgeler.Any(b => b.seg.Any(s => s.engeller.Contains(e) || (s.tasarim != null && s.tasarim.Any(t => t.engel.Any(x => x.e == e)))))).OrderBy(e => e.ad))
                 Yaz($"  ENGEL {e.ad} ({e.tur}) x={e.b.min.x:F2}..{e.b.max.x:F2} y={e.b.min.y:F2}..{e.b.max.y:F2} z={e.b.min.z:F2}..{e.b.max.z:F2} tetikleyici={e.tetikSayisi} yok_sayilan=[{e.yokSayilan}]{(e.uzun ? " UZUN" : "")}{(float.IsNaN(e.rampaBas) ? "" : $" rampa_bas={e.rampaBas:F2}")}{(e.tavan > 0 ? $" tavan={e.tavan:F2}" : "")}{(e.hiz > 0 ? $" hareket={e.hiz} m/s {e.baslama} m kala" : "")}");
             var siralar = Uret(bolgeler, segSayisi, tohum);

@@ -6,6 +6,7 @@
 //             ?parcatest=K05       yalnız tek parça (I1…I6, K01…K13)
 //             &hiz=10|20|30        (isteğe bağlı) koşu bu hızda sabit kalır
 //             &olumsuz=1           (isteğe bağlı) çarpınca can gitmez (TrackManager.invincible)
+//             &otobasla=1          (isteğe bağlı) OYNA'ya basmadan koşu başlar (otomatik test)
 //   Masaüstü: -parcatest <değer> [-hiz <n>] [-olumsuz]
 // Yalnız bu sürecin belleğinde: İstanbul teması seçilir (yoksa eklenir), eğitim tamam sayılır, İstanbul bölgeleri ayarlanır.
 // Kayıt, tema dosyası ve prefablar değişmez (oyun kendi akışında kaydederse bu test adresinin deposuna yazılır).
@@ -115,6 +116,8 @@ public class ParcaTestAkisi : MonoBehaviour
         m_Hazir = true;
         m_Durum = $"PARCA TEST: {ozet}{(m_Hiz > 0 ? $" | hiz {m_Hiz:F0} m/s sabit" : "")}{(m_Olumsuz ? " | olumsuz" : "")} | OYNA'ya bas";
         Debug.Log("PARCATEST| " + m_Durum);
+        // &otobasla=1 / -otobasla: OYNA'ya basılmış gibi koşuyu başlat (otomatik testler için)
+        if (Param("otobasla") == "1") { yield return new WaitForSecondsRealtime(1f); loadout.StartGame(); Debug.Log("PARCATEST| otomatik basladi"); }
     }
 
     void Update()

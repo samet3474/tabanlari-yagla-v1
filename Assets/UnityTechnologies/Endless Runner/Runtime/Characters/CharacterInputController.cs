@@ -567,6 +567,12 @@ public class CharacterInputController : MonoBehaviour
         m_TargetPosition = new Vector3((m_CurrentLane - 1) * trackManager.laneOffset, 0, 0);
     }
 
+    // Şerit aralığı değişince (temaya göre) hedef şerit konumunu yeniden hesapla.
+    public void SeritYenile()
+    {
+        m_TargetPosition = new Vector3((m_CurrentLane - 1) * trackManager.laneOffset, 0, 0);
+    }
+
     // Yandan çarpma: karakter şerit değiştiriyor ve engelin önü karakterin önünün yeterince gerisinde kalmış
     // (karakter engelin yanından içeri giriyor). Önden çarpma (engel tam önünde) her zaman normal çarpmadır.
     public bool YandanCarpti(Collider engel)

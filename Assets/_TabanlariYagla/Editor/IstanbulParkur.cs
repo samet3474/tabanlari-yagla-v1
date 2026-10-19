@@ -42,9 +42,10 @@ public static class IstanbulParkur
 
     public const float k_Tavan = 2.4f;        // tramvay tavanı (yürünen yüzey)
     public const float k_TramvayBoy = 9f;
-    const float k_TramvayEn = 1.36f;          // şerit aralığı 1,5 m
+    public const float k_SeritAraligi = 2.3f;  // İstanbul şerit aralığı (IstanbulTheme.seritAraligi ile aynı; Subway gibi geniş)
+    const float k_TramvayEn = 2.0f;           // şeridi neredeyse doldurur
     public const float k_RampaBoy = 7.5f;
-    const float k_SeritEn = 1.4f;
+    const float k_SeritEn = 2.1f;
     const int k_EngelKatmani = 9, k_ZeminKatmani = 11;
     const int k_Sol = 1, k_Orta = 2, k_Sag = 4;
 
@@ -72,8 +73,8 @@ public static class IstanbulParkur
             satir = new[] { (12f, "Tramvay", k_Orta), (36f, "Bin", k_Sol) },
             altin = new[] { Duz(1, 6f, 27f), Capraz(1, 0, 28.5f, 33f), Duz(0, 34.5f, 51f) } },
         new Kombo { ad = "IstiklalK02", baslik = "K02 Zikzak", karar = "sag -> sol (iki serit) -> sag/orta: uc ardisik serit degisimi",
-            satir = new[] { (10f, "Bin", k_Sol | k_Orta), (27f, "WheelyBin", k_Orta | k_Sag), (44f, "RoadworksBarrier", k_Sol), (44f, "RoadworksCone", k_Orta) },
-            altin = new[] { Duz(1, 0f, 7.5f), Capraz(1, -1, 13.5f, 22.5f), Duz(-1, 24f, 28.5f), Capraz(-1, 1, 30f, 39f), Duz(1, 40.5f, 52.5f) } },
+            satir = new[] { (10f, "Bin", k_Sol | k_Orta), (29f, "WheelyBin", k_Orta | k_Sag), (47f, "RoadworksBarrier", k_Sol), (47f, "RoadworksCone", k_Orta) },
+            altin = new[] { Duz(1, 0f, 7.5f), Capraz(1, -1, 13.5f, 24f), Duz(-1, 25.5f, 30f), Capraz(-1, 1, 32f, 42f), Duz(1, 43.5f, 52.5f) } },
         new Kombo { ad = "IstiklalK03", baslik = "K03 Atla ve sap", karar = "tum serit alcak bariyer: zipla; inince sola gec; sonra soldaki tramvaydan kac",
             satir = new[] { (12f, "LowBarrier", k_Orta), (28f, "Bin", k_Orta), (28f, "WheelyBin", k_Sag), (44f, "Tramvay", k_Sol) },
             altin = new[] { Duz(0, 3f, 6f), Yay(0, 7.5f, 16.5f, 1.9f), Capraz(0, -1, 19.5f, 25.5f), Duz(-1, 27f, 37.5f), Capraz(-1, 0, 39f, 42f), Duz(0, 43.5f, 52.5f) } },
@@ -291,13 +292,13 @@ public static class IstanbulParkur
             root.layer = k_EngelKatmani;
             Yerlestir($"{k_Modeller}/Tramvay.fbx", mat, root.transform, "Tramvay", k_TramvayEn, k_TramvayBoy, 0f, k_Tavan, false);
             float govde = k_Tavan - 0.25f;
-            Tetik(root, new Vector3(0f, govde * 0.5f, k_TramvayBoy * 0.5f), new Vector3(1.3f, govde, k_TramvayBoy), root.GetComponent<BoxCollider>());
-            Zemin(root.transform, "TavanZemin", new Vector3(0f, k_Tavan, k_TramvayBoy * 0.5f), Quaternion.identity, new Vector3(1.4f, 0.2f, k_TramvayBoy));
+            Tetik(root, new Vector3(0f, govde * 0.5f, k_TramvayBoy * 0.5f), new Vector3(k_TramvayEn - 0.1f, govde, k_TramvayBoy), root.GetComponent<BoxCollider>());
+            Zemin(root.transform, "TavanZemin", new Vector3(0f, k_Tavan, k_TramvayBoy * 0.5f), Quaternion.identity, new Vector3(k_TramvayEn, 0.2f, k_TramvayBoy));
             if (rampali)
             {
                 Yerlestir($"{k_Modeller}/Rampa.fbx", rampaMat, root.transform, "Rampa", k_TramvayEn, k_RampaBoy, -k_RampaBoy, k_Tavan, true);
                 float aci = Mathf.Atan2(k_Tavan, k_RampaBoy) * Mathf.Rad2Deg, hip = Mathf.Sqrt(k_Tavan * k_Tavan + k_RampaBoy * k_RampaBoy);
-                Zemin(root.transform, "RampaZemin", new Vector3(0f, k_Tavan * 0.5f, -k_RampaBoy * 0.5f), Quaternion.Euler(-aci, 0f, 0f), new Vector3(1.4f, 0.1f, hip));
+                Zemin(root.transform, "RampaZemin", new Vector3(0f, k_Tavan * 0.5f, -k_RampaBoy * 0.5f), Quaternion.Euler(-aci, 0f, 0f), new Vector3(k_TramvayEn, 0.1f, hip));
                 // Rampaya yandan girilemez: yüzeyin tırmanma adımını (0,6 m) aştığı kısımda basamaklı tetikleyiciler,
                 // her biri başladığı yerdeki yüzeyin 0,3 m altında biter (rampada koşan çarpmaz).
                 float egim = k_Tavan / k_RampaBoy, bas = -k_RampaBoy + 0.6f / egim;
@@ -305,7 +306,7 @@ public static class IstanbulParkur
                 for (int i = 0; i < adim; ++i)
                 {
                     float z0 = bas + i * uz, ust = (z0 + k_RampaBoy) * egim - 0.3f;
-                    Tetik(root, new Vector3(0f, ust * 0.5f, z0 + uz * 0.5f), new Vector3(1.3f, ust, uz));
+                    Tetik(root, new Vector3(0f, ust * 0.5f, z0 + uz * 0.5f), new Vector3(k_TramvayEn - 0.1f, ust, uz));
                 }
             }
             if (hareketli)
@@ -340,7 +341,7 @@ public static class IstanbulParkur
             }
             kap.localScale = new Vector3(k_SeritEn / b.size.x, yOlcek, 1f);
             kap.localPosition = new Vector3(-b.center.x * kap.localScale.x, 0f, 0f);
-            Tetik(root, new Vector3(0f, (y0 + y1) * 0.5f, 0f), new Vector3(1.3f, y1 - y0, 0.3f), root.GetComponent<BoxCollider>());
+            Tetik(root, new Vector3(0f, (y0 + y1) * 0.5f, 0f), new Vector3(k_SeritEn - 0.1f, y1 - y0, 0.3f), root.GetComponent<BoxCollider>());
             root.layer = k_EngelKatmani;
             var gb = Kutu(Noktalar(kap.gameObject));
             Out($"engel {ad}: gorsel x={gb.min.x:F2}..{gb.max.x:F2} y={gb.min.y:F2}..{gb.max.y:F2}, tetikleyici y={y0}..{y1}");
@@ -405,6 +406,121 @@ public static class IstanbulParkur
         finally { Object.DestroyImmediate(inst); }
     }
 
+    // Sokak genişletme + raylar (-executeMethod IstanbulParkur.SokakGenislet): Istiklal01'in ağlarının kopyaları,
+    // kök uzayında x ekseninde çarpıtılır: |x| <= R yol bölgesi (R+D)/R oranında esner, dışı (binalar) D kadar dışarı
+    // kayar; yazılar (sprite) de kayar. Sonra her şeride ray yatağı + traversler + raylar eklenir (Subway gibi üç hat).
+    // Orijinal Day/Night ağları değişmez (kopyalar …/Parkur/Sokak altında). Tekrar çalıştırılırsa (Raylar varsa) atlanır.
+    const float k_SokakR = 3.3f, k_SokakD = 1.3f;
+    static float Cozgu(float x) => Mathf.Abs(x) <= k_SokakR ? x * (k_SokakR + k_SokakD) / k_SokakR : x + Mathf.Sign(x) * k_SokakD;
+
+    public static void SokakGenislet()
+    {
+        s_Hata = 0;
+        string klasor = k_Kok + "/Sokak";
+        if (!AssetDatabase.IsValidFolder(klasor)) AssetDatabase.CreateFolder(k_Kok, "Sokak");
+        var root = PrefabUtility.LoadPrefabContents(k_Istiklal);
+        try
+        {
+            if (root.transform.Find("Raylar") != null) Out("sokak zaten genis (Raylar var), atlandi");
+            else GenisletVeRayEkle(root);
+        }
+        catch (System.Exception e) { Fail(e.ToString()); }
+        finally { PrefabUtility.UnloadPrefabContents(root); AssetDatabase.SaveAssets(); }
+        Out($"bitti hata={s_Hata}");
+        if (Application.isBatchMode) EditorApplication.Exit(s_Hata == 0 ? 0 : 1);
+    }
+
+    static void GenisletVeRayEkle(GameObject root)
+    {
+        string klasor = k_Kok + "/Sokak";
+        {
+            foreach (var mf in root.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var src = mf.sharedMesh; if (src == null) continue;
+                var m = Object.Instantiate(src); m.name = src.name + "_genis";
+                var v = m.vertices;
+                Matrix4x4 kok = root.transform.worldToLocalMatrix * mf.transform.localToWorldMatrix, geri = kok.inverse;
+                for (int i = 0; i < v.Length; ++i) { var p = kok.MultiplyPoint3x4(v[i]); p.x = Cozgu(p.x); v[i] = geri.MultiplyPoint3x4(p); }
+                m.vertices = v; m.RecalculateBounds();
+                string yol = $"{klasor}/{m.name}.asset";
+                AssetDatabase.DeleteAsset(yol); AssetDatabase.CreateAsset(m, yol);
+                mf.sharedMesh = m;
+                Out($"ag genisletildi {src.name} -> {yol} x={m.bounds.min.x:F2}..{m.bounds.max.x:F2}");
+            }
+            foreach (var sr in root.GetComponentsInChildren<SpriteRenderer>(true))
+            {
+                var p = root.transform.InverseTransformPoint(sr.transform.position); p.x = Cozgu(p.x);
+                sr.transform.position = root.transform.TransformPoint(p);
+            }
+            var seg = root.GetComponent<TrackSegment>();
+            float z0 = seg.pathParent.GetChild(0).localPosition.z, z1 = seg.pathParent.GetChild(seg.pathParent.childCount - 1).localPosition.z;
+            var raylar = new GameObject("Raylar"); raylar.transform.SetParent(root.transform, false);
+            raylar.AddComponent<MeshFilter>().sharedMesh = RayAgi(klasor, z0, z1);
+            var mr = raylar.AddComponent<MeshRenderer>(); mr.sharedMaterial = RayMalzemesi(klasor);
+            mr.shadowCastingMode = ShadowCastingMode.Off; mr.receiveShadows = false; mr.lightProbeUsage = LightProbeUsage.Off; mr.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            PrefabUtility.SaveAsPrefabAsset(root, k_Istiklal);
+            Out($"Istiklal01 genisletildi (R={k_SokakR} D={k_SokakD}), raylar z={z0:F2}..{z1:F2}, serit={k_SeritAraligi}");
+        }
+    }
+
+    // Renk atlası (2x2): ray çeliği, travers, ray yatağı (balast), boş.
+    static Material RayMalzemesi(string klasor)
+    {
+        string png = $"{klasor}/RayRenk.png", matYol = $"{klasor}/Ray.mat";
+        var tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+        tex.SetPixels(new[] { new Color(0.62f, 0.62f, 0.66f), new Color(0.36f, 0.25f, 0.18f), new Color(0.50f, 0.40f, 0.33f), new Color(0.5f, 0.5f, 0.5f) });
+        tex.Apply(); File.WriteAllBytes(png, tex.EncodeToPNG()); Object.DestroyImmediate(tex);
+        AssetDatabase.ImportAsset(png);
+        var ti = (TextureImporter)AssetImporter.GetAtPath(png); ti.filterMode = FilterMode.Point; ti.mipmapEnabled = false; ti.wrapMode = TextureWrapMode.Clamp; ti.SaveAndReimport();
+        var mat = AssetDatabase.LoadAssetAtPath<Material>(matYol);
+        if (mat == null) { mat = new Material(Shader.Find("Unlit/CurvedUnlit")); AssetDatabase.CreateAsset(mat, matYol); }
+        mat.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(png); EditorUtility.SetDirty(mat);
+        return mat;
+    }
+
+    // Her şerit: balast yatağı (1,9 m), 0,75 m'de bir travers, iki ray (1,1 m açıklık).
+    static Mesh RayAgi(string klasor, float z0, float z1)
+    {
+        var v = new List<Vector3>(); var uv = new List<Vector2>(); var t = new List<int>();
+        void Kutu(Vector3 min, Vector3 max, Vector2 renk)
+        {
+            Vector3[] k = { new Vector3(min.x, min.y, min.z), new Vector3(max.x, min.y, min.z), new Vector3(max.x, max.y, min.z), new Vector3(min.x, max.y, min.z),
+                            new Vector3(min.x, min.y, max.z), new Vector3(max.x, min.y, max.z), new Vector3(max.x, max.y, max.z), new Vector3(min.x, max.y, max.z) };
+            int[][] yuz = { new[] { 3, 7, 6, 2 }, new[] { 0, 4, 7, 3 }, new[] { 1, 2, 6, 5 }, new[] { 0, 3, 2, 1 }, new[] { 4, 5, 6, 7 } }; // üst, sol, sağ, ön, arka
+            foreach (var y in yuz) { int b = v.Count; foreach (int i in y) { v.Add(k[i]); uv.Add(renk); } t.AddRange(new[] { b, b + 1, b + 2, b, b + 2, b + 3 }); }
+        }
+        Vector2 celik = new Vector2(0.25f, 0.25f), travers = new Vector2(0.75f, 0.25f), balast = new Vector2(0.25f, 0.75f);
+        for (int l = -1; l <= 1; ++l)
+        {
+            float x = l * k_SeritAraligi;
+            Kutu(new Vector3(x - 0.95f, 0.005f, z0), new Vector3(x + 0.95f, 0.02f, z1), balast);
+            for (float z = z0 + 0.3f; z < z1 - 0.1f; z += 0.75f) Kutu(new Vector3(x - 0.8f, 0.02f, z - 0.11f), new Vector3(x + 0.8f, 0.05f, z + 0.11f), travers);
+            foreach (float r in new[] { -0.55f, 0.55f }) Kutu(new Vector3(x + r - 0.04f, 0.05f, z0), new Vector3(x + r + 0.04f, 0.11f, z1), celik);
+        }
+        var m = new Mesh { name = "Raylar" }; m.SetVertices(v); m.SetUVs(0, uv); m.SetTriangles(t, 0); m.RecalculateNormals(); m.RecalculateBounds();
+        string yol = $"{klasor}/Raylar.asset"; AssetDatabase.DeleteAsset(yol); AssetDatabase.CreateAsset(m, yol);
+        return m;
+    }
+
+    // Salt okunur ölçüm (-executeMethod IstanbulParkur.SokakOlc): Istiklal01'in her çizicisinin kök uzayındaki x/y/z sınırları.
+    public static void SokakOlc()
+    {
+        var p = AssetDatabase.LoadAssetAtPath<GameObject>(k_Istiklal);
+        var go = (GameObject)PrefabUtility.InstantiatePrefab(p);
+        foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+        {
+            var b = r.bounds; var mf = r.GetComponent<MeshFilter>();
+            Out($"SOKAK {r.name} ({r.GetType().Name}) x={b.min.x:F2}..{b.max.x:F2} y={b.min.y:F2}..{b.max.y:F2} z={b.min.z:F2}..{b.max.z:F2} pivot={r.transform.position} mesh={(mf != null && mf.sharedMesh != null ? mf.sharedMesh.name + "/" + mf.sharedMesh.vertexCount + " v" : "-")}");
+        }
+        var cam = AssetDatabase.LoadAssetAtPath<SceneAsset>("Assets/UnityTechnologies/Endless Runner/Scenes/Main.unity");
+        UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/UnityTechnologies/Endless Runner/Scenes/Main.unity");
+        var c = Camera.main ?? Object.FindFirstObjectByType<Camera>(FindObjectsInactive.Include);
+        var ci = Object.FindFirstObjectByType<CharacterInputController>(FindObjectsInactive.Include);
+        var tm = Object.FindFirstObjectByType<TrackManager>(FindObjectsInactive.Include);
+        Out($"KAMERA pos={c.transform.position} rot={c.transform.eulerAngles} fov={c.fieldOfView} | karakter pos={ci.transform.position} | laneOffset={tm.laneOffset}");
+        if (Application.isBatchMode) EditorApplication.Exit(0);
+    }
+
     // ------------------------------------------------------------------------------------------------ görseller
     // Grafik açıkken (-nographics olmadan): her parça tepeden ve oyun kamerasından; engeller ve altınlar yerinde.
     public static void Gorseller()
@@ -426,12 +542,12 @@ public static class IstanbulParkur
             foreach (var s in tas.satirlar)
                 for (int lane = -1; lane <= 1; ++lane)
                     if ((s.seritler & (1 << (lane + 1))) != 0)
-                        ((GameObject)PrefabUtility.InstantiatePrefab(s.engel.editorAsset)).transform.position = Nokta(s.konum) + Vector3.right * lane * 1.5f;
+                        ((GameObject)PrefabUtility.InstantiatePrefab(s.engel.editorAsset)).transform.position = Nokta(s.konum) + Vector3.right * lane * k_SeritAraligi;
             foreach (var a in tas.altinlar)
                 for (float m = a.baslangic; m <= a.bitis + 0.001f; m += TasarimliSatir.k_AltinAraligi)
                 {
                     float o = a.bitis > a.baslangic ? (m - a.baslangic) / (a.bitis - a.baslangic) : 0f;
-                    ((GameObject)PrefabUtility.InstantiatePrefab(altin)).transform.position = Nokta(m) + Vector3.right * TasarimliSatir.AltinSeridi(a, o) * 1.5f + Vector3.up * TasarimliSatir.AltinYuksekligi(a, o);
+                    ((GameObject)PrefabUtility.InstantiatePrefab(altin)).transform.position = Nokta(m) + Vector3.right * TasarimliSatir.AltinSeridi(a, o) * k_SeritAraligi + Vector3.up * TasarimliSatir.AltinYuksekligi(a, o);
                 }
             RenderSettings.fog = false;
             Shader.SetGlobalFloat("_CurveStrength", 0f);
