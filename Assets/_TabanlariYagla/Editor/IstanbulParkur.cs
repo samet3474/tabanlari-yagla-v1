@@ -75,53 +75,53 @@ public static class IstanbulParkur
         new Kombo { ad = "IstiklalK01", baslik = "K01 Tramvay hatti", karar = "ortada duran tramvay: yana gec; sonra soldaki cop kutusu",
             satir = new[] { (12f, "Tramvay", k_Orta), (36f, "Bin", k_Sol) },
             altin = new[] { Duz(1, 6f, 27f), Capraz(1, 0, 28.5f, 33f), Duz(0, 34.5f, 51f) } },
-        new Kombo { ad = "IstiklalK02", cevre = "tasli", baslik = "K02 Zikzak", karar = "sag -> sol (iki serit) -> sag/orta: uc ardisik serit degisimi",
+        new Kombo { ad = "IstiklalK02", baslik = "K02 Zikzak", karar = "sag -> sol (iki serit) -> sag/orta: uc ardisik serit degisimi",
             satir = new[] { (10f, "Bin", k_Sol | k_Orta), (29f, "WheelyBin", k_Orta | k_Sag), (47f, "RoadworksBarrier", k_Sol), (47f, "RoadworksCone", k_Orta) },
             altin = new[] { Duz(1, 0f, 7.5f), Capraz(1, -1, 13.5f, 24f), Duz(-1, 25.5f, 30f), Capraz(-1, 1, 32f, 42f), Duz(1, 43.5f, 52.5f) } },
         new Kombo { ad = "IstiklalK03", baslik = "K03 Atla ve sap", karar = "tum serit alcak bariyer: zipla; inince sola gec; sonra soldaki tramvaydan kac",
             satir = new[] { (12f, "LowBarrier", k_Orta), (24f, "Bin", k_Orta), (24f, "WheelyBin", k_Sag), (38f, "Tramvay", k_Sol) },
             altin = new[] { Duz(0, 3f, 6f), Yay(0, 7.5f, 16.5f, 1.9f), Capraz(0, -1, 17f, 22f), Duz(-1, 23.5f, 32f), Capraz(-1, 0, 33.5f, 36.5f), Duz(0, 38f, 52.5f) } },
-        new Kombo { ad = "IstiklalK04", cevre = "tasli", baslik = "K04 Kay ve sap", karar = "tum serit yuksek bariyer: kay; sonra orta tramvay + sag koni: sola gec (ya da koniyi atla)",
+        new Kombo { ad = "IstiklalK04", baslik = "K04 Kay ve sap", karar = "tum serit yuksek bariyer: kay; sonra orta tramvay + sag koni: sola gec (ya da koniyi atla)",
             satir = new[] { (12f, "HighBarrier", k_Orta), (30f, "Tramvay", k_Orta), (30f, "RoadworksCone", k_Sag) },
             altin = new[] { Duz(0, 3f, 21f), Capraz(0, -1, 22.5f, 27f), Duz(-1, 28.5f, 48f) } },
         new Kombo { ad = "IstiklalK05", baslik = "K05 Zipla-kay koridoru", karar = "iki yanda tramvay; ortada once zipla, 14 m sonra kay; sonra orta cop kutusundan yana gec",
             satir = new[] { (8f, "Tramvay", k_Sol | k_Sag), (12f, "SeritZipla", k_Orta), (21f, "Tramvay", k_Sol | k_Sag), (26f, "SeritKay", k_Orta), (44f, "Bin", k_Orta) },
             altin = new[] { Duz(0, 0f, 7.5f), Yay(0, 8f, 16f, 1.6f), Duz(0, 18f, 30f), Capraz(0, -1, 33f, 39f), Duz(-1, 40.5f, 52.5f) } },
-        new Kombo { ad = "IstiklalK06", cevre = "tasli", baslik = "K06 Uc secenek", karar = "ayni sirada sol zipla / orta kay / sag tramvay; sonra sag acik ya da ortadaki koniyi atla",
+        new Kombo { ad = "IstiklalK06", baslik = "K06 Uc secenek", karar = "ayni sirada sol zipla / orta kay / sag tramvay; sonra sag acik ya da ortadaki koniyi atla",
             satir = new[] { (14f, "SeritZipla", k_Sol), (14f, "SeritKay", k_Orta), (14f, "Tramvay", k_Sag), (34f, "Bin", k_Sol), (34f, "RoadworksCone", k_Orta) },
             altin = new[] { Duz(0, 4.5f, 19.5f), Yay(-1, 10f, 18f, 1.6f), Capraz(0, 1, 25.5f, 30f), Duz(1, 31.5f, 52.5f) } },
         new Kombo { ad = "IstiklalK07", baslik = "K07 Kademeli kapanma", karar = "sol, sonra orta, sonra sag tramvay kapanir: soldaki tramvay bitince sola gec",
             satir = new[] { (6f, "Tramvay", k_Sol), (27f, "Tramvay", k_Orta), (40f, "Tramvay", k_Sag) },
             altin = new[] { Duz(0, 0f, 13.5f), Capraz(0, -1, 16.5f, 21f), Duz(-1, 22.5f, 52.5f) } },
-        new Kombo { ad = "IstiklalK08", cevre = "tasli", baslik = "K08 Cift engel acik kacis", karar = "iki serit kapali -> sag; sonra sag kapali -> orta koniyi atla ya da sola; sonra iki serit kay",
+        new Kombo { ad = "IstiklalK08", baslik = "K08 Cift engel acik kacis", karar = "iki serit kapali -> sag; sonra sag kapali -> orta koniyi atla ya da sola; sonra iki serit kay",
             satir = new[] { (10f, "Bin", k_Sol), (10f, "WheelyBin", k_Orta), (26f, "RoadworksBarrier", k_Sag), (26f, "RoadworksCone", k_Orta), (42f, "SeritKay", k_Sol | k_Orta) },
             altin = new[] { Duz(1, 0f, 19.5f), Capraz(1, 0, 21f, 24f), Yay(0, 24f, 30f, 1.6f), Duz(0, 31.5f, 37.5f), Duz(0, 39f, 45f), Duz(0, 46.5f, 52.5f) } },
         new Kombo { ad = "IstiklalK09", baslik = "K09 Rampa ve tavan", karar = "orta: rampadan iki vagonun tavanina cik (cok altin); ya da solda bariyeri atla",
             satir = new[] { (14f, "RampaliTramvay", k_Orta), (23.5f, "Tramvay", k_Orta), (20f, "SeritZipla", k_Sol), (18f, "Bin", k_Sag), (44f, "Bin", k_Sol | k_Sag) },
             altin = new[] { RampaAltin(0, 14f - k_RampaBoy, 8f, 12.5f), Duz(0, 15f, 31.5f, k_Tavan), Sutun(0, 27f), Yay(-1, 16f, 24f, 1.6f), Duz(0, 36f, 52.5f) } },
-        new Kombo { ad = "IstiklalK10", cevre = "tasli", baslik = "K10 Yol calismasi", karar = "bariyer+koni, kutu+bariyer, koni+kutu: her sirada farkli acik serit ya da zipla",
+        new Kombo { ad = "IstiklalK10", cevre = "kopru", baslik = "K10 Yol calismasi", karar = "bariyer+koni, kutu+bariyer, koni+kutu: her sirada farkli acik serit ya da zipla",
             satir = new[] { (10f, "RoadworksBarrier", k_Sol), (10f, "RoadworksCone", k_Orta), (24f, "WheelyBin", k_Sag), (24f, "RoadworksBarrier", k_Orta), (38f, "RoadworksCone", k_Sol), (38f, "Bin", k_Orta) },
             altin = new[] { Yay(0, 7f, 13f, 1.6f), Capraz(0, -1, 15f, 21f), Duz(-1, 22.5f, 34f), Yay(-1, 35f, 41f, 1.6f), Duz(-1, 43.5f, 52.5f) } },
-        new Kombo { ad = "IstiklalK11", baslik = "K11 Dar gecit", karar = "iki yanda tramvay: ortada kay; ikinci gecitte zipla ya da kay; sonra tum serit kay",
+        new Kombo { ad = "IstiklalK11", cevre = "kopru", baslik = "K11 Dar gecit", karar = "iki yanda tramvay: ortada kay; ikinci gecitte zipla ya da kay; sonra tum serit kay",
             satir = new[] { (8f, "Tramvay", k_Sol | k_Sag), (13f, "SeritKay", k_Orta), (26f, "Tramvay", k_Sol | k_Sag), (31f, "SeritZiplaKay", k_Orta), (46f, "HighBarrier", k_Orta) },
             altin = new[] { Duz(0, 3f, 24f), Yay(0, 27f, 35f, 1.9f), Duz(0, 37.5f, 52.5f) } },
-        new Kombo { ad = "IstiklalK12", cevre = "tasli", baslik = "K12 Uzun kombinasyon", kat = 4, karar = "sag'a gec; sagda rampadan tavana cik ya da ortada kay; tum serit bariyeri atla; sonra sola ya da koniyi atla",
+        new Kombo { ad = "IstiklalK12", cevre = "kopru", baslik = "K12 Uzun kombinasyon", kat = 4, karar = "sag'a gec; sagda rampadan tavana cik ya da ortada kay; tum serit bariyeri atla; sonra sola ya da koniyi atla",
             satir = new[] { (10f, "Bin", k_Sol | k_Orta), (22f, "Tramvay", k_Sol), (24f, "RampaliTramvay", k_Sag), (28f, "SeritKay", k_Orta), (52f, "LowBarrier", k_Orta), (64f, "WheelyBin", k_Orta), (64f, "RoadworksCone", k_Sag) },
             altin = new[] { Duz(1, 0f, 13.5f), RampaAltin(1, 24f - k_RampaBoy, 18f, 22.5f), Duz(1, 25.5f, 31.5f, k_Tavan), Sutun(1, 29f), Duz(0, 27f, 30f), Yay(1, 48f, 56f, 1.9f), Yay(1, 61f, 67f, 1.6f), Duz(1, 68f, 70.5f) } },
-        new Kombo { ad = "IstiklalK13", baslik = "K13 Karsidan tramvay", karar = "sagda duran tramvay, ortada kutu; soldan karsidan gelen tramvay: saga gec",
+        new Kombo { ad = "IstiklalK13", cevre = "kopru", baslik = "K13 Karsidan tramvay", karar = "sagda duran tramvay, ortada kutu; soldan karsidan gelen tramvay: saga gec",
             satir = new[] { (14f, "Tramvay", k_Sag), (30f, "Bin", k_Orta), (40f, "TramvayHareketli", k_Sol) },
             altin = new[] { Duz(0, 3f, 25.5f), Capraz(0, 1, 25.5f, 28.5f), Duz(1, 30f, 52.5f) } },
         // Subway Surfers tarzı uzun / paralel katarlar (vagonlar 9,5 m arayla; tavanlar aynı yükseklikte, tavandan tavana geçilir)
-        new Kombo { ad = "IstiklalK14", baslik = "K14 Tren tarlasi", karar = "uc seritte kademeli katarlar: soldaki rampadan tavana cik, tavandan tavana gecerek sikkeleri topla",
+        new Kombo { ad = "IstiklalK14", cevre = "kopru", baslik = "K14 Tren tarlasi", karar = "uc seritte kademeli katarlar: soldaki rampadan tavana cik, tavandan tavana gecerek sikkeleri topla",
             satir = new[] { (16f, "RampaliTramvay", k_Sol), (25.5f, "Tramvay", k_Sol), (35f, "Tramvay", k_Sol), (20f, "Tramvay", k_Orta), (29.5f, "Tramvay", k_Orta), (24f, "Tramvay", k_Sag), (33.5f, "Tramvay", k_Sag) },
             altin = new[] { RampaAltin(-1, 16f - k_RampaBoy, 10f, 14.5f), Duz(-1, 17f, 22f, k_Tavan), Capraz(-1, 0, 23.5f, 26.5f, k_Tavan), Duz(0, 28f, 32f, k_Tavan), Sutun(0, 30f), Capraz(0, 1, 33.5f, 36.5f, k_Tavan), Duz(1, 38f, 41f, k_Tavan) } },
-        new Kombo { ad = "IstiklalK15", cevre = "tasli", baslik = "K15 Katar ve secim", karar = "ortada uc vagon: solda kay+zipla ya da sagdaki rampadan tavana cik",
+        new Kombo { ad = "IstiklalK15", cevre = "tunel", baslik = "K15 Katar ve secim", karar = "ortada uc vagon: solda kay+zipla ya da sagdaki rampadan tavana cik",
             satir = new[] { (8f, "Tramvay", k_Orta), (17.5f, "Tramvay", k_Orta), (27f, "Tramvay", k_Orta), (14f, "SeritKay", k_Sol), (28f, "SeritZipla", k_Sol), (24f, "RampaliTramvay", k_Sag) },
             altin = new[] { Duz(-1, 3f, 18f), Yay(-1, 24f, 32f, 1.6f), RampaAltin(1, 24f - k_RampaBoy, 18f, 22.5f), Duz(1, 25f, 32f, k_Tavan), Duz(0, 40f, 52f) } },
-        new Kombo { ad = "IstiklalK16", cevre = "tasli", baslik = "K16 Karsidan tren ve katar", karar = "sagda iki vagon, solda karsidan gelen tramvay, ortada kutu: katar bitince saga gec",
+        new Kombo { ad = "IstiklalK16", cevre = "tunel", baslik = "K16 Karsidan tren ve katar", karar = "sagda iki vagon, solda karsidan gelen tramvay, ortada kutu: katar bitince saga gec",
             satir = new[] { (10f, "Tramvay", k_Sag), (19.5f, "Tramvay", k_Sag), (36f, "Bin", k_Orta), (46f, "TramvayHareketli", k_Sol) },
             altin = new[] { Duz(0, 3f, 31.5f), Capraz(0, 1, 31.5f, 34.5f), Duz(1, 36f, 52.5f) } },
-        new Kombo { ad = "IstiklalK17", baslik = "K17 Catidan catiya", karar = "ortadaki rampadan tavana cik; ortadaki katar bitmeden sol ya da sag katarin tavanina gec",
+        new Kombo { ad = "IstiklalK17", cevre = "tunel", baslik = "K17 Catidan catiya", karar = "ortadaki rampadan tavana cik; ortadaki katar bitmeden sol ya da sag katarin tavanina gec",
             satir = new[] { (14f, "RampaliTramvay", k_Orta), (23.5f, "Tramvay", k_Orta), (26f, "Tramvay", k_Sol | k_Sag), (35.5f, "Tramvay", k_Sol | k_Sag) },
             altin = new[] { RampaAltin(0, 14f - k_RampaBoy, 8f, 12.5f), Duz(0, 15f, 24f, k_Tavan), Sutun(0, 20f), Capraz(0, -1, 27f, 30f, k_Tavan), Duz(-1, 31.5f, 43f, k_Tavan) } },
         // İstanbul'a özgü çevre bölümleri (aynı adalet ölçüsüyle denetlenen düzenler)
@@ -496,7 +496,7 @@ public static class IstanbulParkur
     }
 
     // Her şerit: balast yatağı (1,9 m), 0,75 m'de bir travers, iki ray (1,1 m açıklık).
-    static Mesh RayAgi(string klasor, float z0, float z1)
+    static Mesh RayAgi(string klasor, float z0, float z1, string ad = "Raylar")
     {
         var v = new List<Vector3>(); var uv = new List<Vector2>(); var t = new List<int>();
         void Kutu(Vector3 min, Vector3 max, Vector2 renk)
@@ -516,7 +516,7 @@ public static class IstanbulParkur
             foreach (float r in new[] { -0.55f, 0.55f }) Kutu(new Vector3(x + r - 0.04f, 0.05f, z0), new Vector3(x + r + 0.04f, 0.11f, z1), celik);
         }
         var m = new Mesh { name = "Raylar" }; m.SetVertices(v); m.SetUVs(0, uv); m.SetTriangles(t, 0); m.RecalculateNormals(); m.RecalculateBounds();
-        string yol = $"{klasor}/Raylar.asset"; AssetDatabase.DeleteAsset(yol); AssetDatabase.CreateAsset(m, yol);
+        m.name = ad; string yol = $"{klasor}/{ad}.asset"; AssetDatabase.DeleteAsset(yol); AssetDatabase.CreateAsset(m, yol);
         return m;
     }
 
@@ -551,6 +551,37 @@ public static class IstanbulParkur
             var r = new Vector2(((renk % 4) + 0.5f) / 4f, ((renk / 4) + 0.5f) / 4f); int s = v.Count;
             v.Add(a); v.Add(b); v.Add(c); uv.Add(r); uv.Add(r); uv.Add(r); t.AddRange(new[] { s, s + 1, s + 2, s, s + 2, s + 1 });
         }
+        // dikey çokgen prizma (silindir) ve koni: uzak silüetler için
+        public void Silindir(Vector3 alt, float r, float h, int n, int renk)
+        {
+            var c = new Vector2(((renk % 4) + 0.5f) / 4f, ((renk / 4) + 0.5f) / 4f);
+            for (int i = 0; i < n; ++i)
+            {
+                float a0 = i * 2f * Mathf.PI / n, a1 = (i + 1) * 2f * Mathf.PI / n;
+                Vector3 p0 = alt + new Vector3(Mathf.Cos(a0) * r, 0, Mathf.Sin(a0) * r), p1 = alt + new Vector3(Mathf.Cos(a1) * r, 0, Mathf.Sin(a1) * r);
+                int s = v.Count; v.AddRange(new[] { p0, p0 + Vector3.up * h, p1 + Vector3.up * h, p1 }); uv.AddRange(new[] { c, c, c, c });
+                t.AddRange(new[] { s, s + 1, s + 2, s, s + 2, s + 3, s, s + 2, s + 1, s, s + 3, s + 2 });
+                Ucgen(alt + Vector3.up * h, p0 + Vector3.up * h, p1 + Vector3.up * h, renk);
+            }
+        }
+        public void Koni(Vector3 alt, float r, float h, int n, int renk)
+        {
+            for (int i = 0; i < n; ++i)
+            {
+                float a0 = i * 2f * Mathf.PI / n, a1 = (i + 1) * 2f * Mathf.PI / n;
+                Ucgen(alt + new Vector3(Mathf.Cos(a0) * r, 0, Mathf.Sin(a0) * r), alt + Vector3.up * h, alt + new Vector3(Mathf.Cos(a1) * r, 0, Mathf.Sin(a1) * r), renk);
+            }
+        }
+        // yarım küreye yakın kubbe: daralan halkalar
+        public void Kubbe(Vector3 alt, float r, int renk)
+        {
+            const int k = 5; float y0 = 0;
+            for (int i = 0; i < k; ++i)
+            {
+                float a = (i + 1) * Mathf.PI / 2f / k, ri = r * Mathf.Cos(i * Mathf.PI / 2f / k), yi = r * Mathf.Sin(a) - y0;
+                Silindir(alt + Vector3.up * y0, ri, yi, 16, renk); y0 += yi;
+            }
+        }
         // x'e göre simetrik çift kutu (sol ve sağ)
         public void Cift(float x0, float x1, float y0, float y1, float z0, float z1, int renk)
         { Kutu(new Vector3(x0, y0, z0), new Vector3(x1, y1, z1), renk); Kutu(new Vector3(-x0, y0, z0), new Vector3(-x1, y1, z1), renk); }
@@ -561,6 +592,18 @@ public static class IstanbulParkur
             string yol = $"{klasor}/{ad}.asset"; AssetDatabase.DeleteAsset(yol); AssetDatabase.CreateAsset(m, yol);
             return m;
         }
+    }
+
+    // İstiklal tramvayına özgü hafif katener: direkler arasında gergi teli (7,3 m), her şeridin üstünde kontak teli (6,9 m)
+    // ve aralarında askılar. Ağır kiriş yok; kameranın (koşuda ~4,8 m, tavanda ~6 m) üstünde kalır, görüşü kapatmaz.
+    static void IstiklalKatener(Yapici y, float z0, float z1, float direkX)
+    {
+        for (float z = z0 + 4.5f; z < z1; z += 9f)
+        {
+            y.Kutu(new Vector3(-direkX, 7.28f, z - 0.015f), new Vector3(direkX, 7.31f, z + 0.015f), P_Tel);
+            for (int l = -1; l <= 1; ++l) y.Kutu(new Vector3(l * k_SeritAraligi - 0.012f, 6.9f, z - 0.012f), new Vector3(l * k_SeritAraligi + 0.012f, 7.29f, z + 0.012f), P_Tel);
+        }
+        for (int l = -1; l <= 1; ++l) y.Kutu(new Vector3(l * k_SeritAraligi - 0.018f, 6.88f, z0), new Vector3(l * k_SeritAraligi + 0.018f, 6.92f, z1), P_Tel);
     }
 
     static Material PaletMalzemesi()
@@ -609,19 +652,20 @@ public static class IstanbulParkur
     static Mesh TunelAgi(float z0, float z1, string ad)
     {
         var y = new Yapici();
-        y.Cift(4.5f, 4.9f, 0f, 4.6f, z0, z1, P_Krem);
+        y.Cift(4.5f, 4.9f, 0f, 5.6f, z0, z1, P_Krem);
         y.Cift(4.45f, 4.5f, 1.0f, 1.5f, z0 + 1.2f, z1 - 1.2f, P_Iznik);
-        y.Cift(3.4f, 4.9f, 4.6f, 5.0f, z0, z1, P_Krem);
-        y.Cift(2.6f, 4.9f, 5.0f, 5.6f, z0, z1, P_Krem);
-        y.Kutu(new Vector3(-4.9f, 6.2f, z0), new Vector3(4.9f, 6.5f, z1), P_Tavan);
-        y.Cift(1.4f, 4.9f, 5.6f, 6.2f, z0, z1, P_Tavan);
+        y.Cift(4.45f, 4.5f, 2.6f, 2.9f, z0 + 1.2f, z1 - 1.2f, P_Iznik);
+        y.Cift(3.4f, 4.9f, 5.6f, 6.0f, z0, z1, P_Krem);
+        y.Cift(2.6f, 4.9f, 6.0f, 6.6f, z0, z1, P_Krem);
+        y.Kutu(new Vector3(-4.9f, 7.2f, z0), new Vector3(4.9f, 7.5f, z1), P_Tavan);
+        y.Cift(1.4f, 4.9f, 6.6f, 7.2f, z0, z1, P_Tavan);
         for (float z = z0 + 3f; z < z1 - 2f; z += 4f)
-            for (int l = -1; l <= 1; ++l) y.Kutu(new Vector3(l * k_SeritAraligi - 0.15f, 6.1f, z), new Vector3(l * k_SeritAraligi + 0.15f, 6.2f, z + 1.5f), P_Isik);
-        foreach (float pz in ModelVar("Tunel") ? new[] { z1 - 1.2f } : new[] { z0, z1 - 1.2f })
+            for (int l = -1; l <= 1; ++l) y.Kutu(new Vector3(l * k_SeritAraligi - 0.15f, 7.1f, z), new Vector3(l * k_SeritAraligi + 0.15f, 7.2f, z + 1.5f), P_Isik);
+        foreach (float pz in new[] { z0, z1 - 1.2f }) // Meshy portalı kapalı bir kütle (açıklığı yok), yolu kapatıyor: iki uçta da taş portal
         {
-            y.Cift(4.9f, 6.2f, 0f, 7.6f, pz, pz + 1.2f, P_Tas);
-            y.Kutu(new Vector3(-6.2f, 6.3f, pz), new Vector3(6.2f, 7.6f, pz + 1.2f), P_Tas);
-            y.Kutu(new Vector3(-6.2f, 7.6f, pz - 0.1f), new Vector3(6.2f, 7.9f, pz + 1.3f), P_TasKoyu);
+            y.Cift(4.9f, 6.2f, 0f, 8.6f, pz, pz + 1.2f, P_Tas);
+            y.Kutu(new Vector3(-6.2f, 7.3f, pz), new Vector3(6.2f, 8.6f, pz + 1.2f), P_Tas);
+            y.Kutu(new Vector3(-6.2f, 8.6f, pz - 0.1f), new Vector3(6.2f, 8.9f, pz + 1.3f), P_TasKoyu);
         }
         return y.Bitir(k_Kok + "/Sokak", ad);
     }
@@ -640,6 +684,26 @@ public static class IstanbulParkur
             y.Cift(4.75f, 4.9f, 1.0f, 4.4f, z - 0.08f, z + 0.08f, P_Siyah);
             y.Cift(4.3f, 4.95f, 4.2f, 4.5f, z - 0.18f, z + 0.18f, P_Siyah);
             y.Cift(4.35f, 4.6f, 3.95f, 4.2f, z - 0.15f, z + 0.15f, P_Isik);
+        }
+        // köprünün iki yanında ince direkler ve İstiklal'deki gibi hafif katener
+        for (float z = z0 + 4.5f; z < z1; z += 9f) y.Cift(3.4f, 3.52f, 0f, 7.6f, z - 0.06f, z + 0.06f, P_Yesil);
+        IstiklalKatener(y, z0, z1, 3.46f);
+        // Haliç silüeti: çift parçalarda Galata Kulesi (sağ), tek parçalarda Yeni Cami (sol) — uzakta
+        float zm = z1 + 15f; // ileride ama dünya eğriliğiyle batmayacak kadar yakın, dar portre görüşe girer
+        int h = 0; foreach (char ch in ad) h += ch;
+        if (h % 2 == 0)
+        {
+            var k = new Vector3(20f, -4f, zm);
+            y.Silindir(k, 4.2f, 30f, 16, P_Tas); y.Silindir(k + Vector3.up * 30f, 4.9f, 1.2f, 16, P_TasKoyu);
+            y.Silindir(k + Vector3.up * 31.2f, 4.0f, 4.5f, 16, P_Krem); y.Koni(k + Vector3.up * 35.7f, 4.6f, 10f, 16, P_TasKoyu);
+        }
+        else
+        {
+            var c = new Vector3(-26f, -4f, zm);
+            y.Kutu(c + new Vector3(-12f, 0, -9f), c + new Vector3(12f, 14f, 9f), P_Tas);
+            y.Kubbe(c + Vector3.up * 14f, 8.5f, P_Direk);
+            foreach (float dz in new[] { -6f, 6f }) foreach (float dx in new[] { -9f, 9f }) y.Kubbe(c + new Vector3(dx, 14f, dz), 3f, P_Direk);
+            foreach (float dx in new[] { -13.5f, 13.5f }) { var m = c + new Vector3(dx, 0, -9.5f); y.Silindir(m, 0.9f, 34f, 10, P_Krem); y.Silindir(m + Vector3.up * 26f, 1.3f, 0.6f, 10, P_Tas); y.Koni(m + Vector3.up * 34f, 1.0f, 6f, 10, P_Direk); }
         }
         y.Cift(5.1f, 70f, -4.0f, -3.9f, z0, z1, P_Su);
         for (float z = z0 + 2f; z < z1; z += 6f) y.Cift(8f, 40f, -3.89f, -3.88f, z, z + 0.4f, P_SuAcik);
@@ -752,27 +816,13 @@ public static class IstanbulParkur
         var root = PrefabUtility.LoadPrefabContents(k_Istiklal);
         try
         {
-            var eski = root.transform.Find("Katener"); if (eski != null) Object.DestroyImmediate(eski.gameObject);
+            foreach (var ad in new[] { "Katener", "Raylar", "Kaldirim", "SokakSusu", "TurkBayragi" })
+            { var eski = root.transform.Find(ad); if (eski != null) Object.DestroyImmediate(eski.gameObject); }
             var seg = root.GetComponent<TrackSegment>();
             float z0 = seg.pathParent.GetChild(0).localPosition.z, z1 = seg.pathParent.GetChild(seg.pathParent.childCount - 1).localPosition.z;
-            bool model = ModelVar("Katener") && s_KatenerMat != null;
-            var kat = Cizici(root.transform, "Katener", null, PaletMalzemesi());
-            float telY = 5.2f;
-            if (model)
-            {
-                var don = KatenerDonus();
-                for (float z = z0 + 1f; z < z1; z += 9f)
-                {
-                    var k = ModelKoy("Katener", s_KatenerMat, kat.transform, don, 0, 8.9f, new Vector3(0, 0, z));
-                    var b = KutuKap(k, k.GetChild(0).gameObject);
-                    if (b.size.y < 6.2f) { k.localScale = new Vector3(k.localScale.x, k.localScale.y * 6.2f / b.size.y, k.localScale.z); b = KutuKap(k, k.GetChild(0).gameObject); k.localPosition += new Vector3(0, -b.min.y, 0); }
-                    telY = Mathf.Max(5.1f, b.max.y * 0.72f);
-                }
-            }
-            kat.GetComponent<MeshFilter>().sharedMesh = KatenerAgi(z0, z1, model, telY);
-            // raylar da (parçalı kutularla) yeniden üretilir
-            var ray = root.transform.Find("Raylar"); if (ray != null) ray.GetComponent<MeshFilter>().sharedMesh = RayAgi(k_Kok + "/Sokak", z0, z1);
-            Out($"katener: model={model} tel={telY:F2} m");
+            // İstiklal Caddesi: Arnavut kaldırımı, gömülü raylar, ince katener, bayraklar (Meshy direk geçidi kullanılmaz)
+            TasliSokak(root, z0, z1);
+            Out("istiklal tabani: tasli + ince katener");
             PrefabUtility.SaveAsPrefabAsset(root, k_Istiklal);
             Out("katener eklendi");
         }
@@ -784,32 +834,30 @@ public static class IstanbulParkur
     static void CevreUygula(GameObject inst, string cevre, float z0, float z1)
     {
         if (cevre == "sokak") return;
-        if (cevre == "tasli")
-        {
-            var silT = new List<GameObject>();
-            foreach (var t in inst.GetComponentsInChildren<Transform>(true)) if (t.name == "Raylar" || t.name == "Katener") silT.Add(t.gameObject);
-            foreach (var g in silT) if (g != null) Object.DestroyImmediate(g);
-            TasliSokak(inst, z0, z1);
-            return;
-        }
+        if (cevre == "tasli") return; // taban sokak zaten taşlı
         var sil = new List<GameObject>();
         foreach (var t in inst.GetComponentsInChildren<Transform>(true))
         {
             string n = t.name;
-            bool tunelSil = n == "IstiklalSokak" || n == "FarBackBuilding02" || n.StartsWith("Graffiti") || n == "StreetLight" || n == "Katener";
-            bool kopruSil = n == "IstiklalSokak" || n.StartsWith("Graffiti") || n == "StreetLight" || n == "Road02" || n == "Yol";
+            bool susle = n == "Kaldirim" || n == "SokakSusu" || n == "TurkBayragi" || n == "Katener" || n == "Raylar";
+            bool tunelSil = susle || n == "IstiklalSokak" || n == "FarBackBuilding02" || n.StartsWith("Graffiti") || n == "StreetLight";
+            bool kopruSil = susle || n == "IstiklalSokak" || n.StartsWith("Graffiti") || n == "StreetLight" || n == "Road02" || n == "Yol";
             if (cevre == "tunel" ? tunelSil : kopruSil) sil.Add(t.gameObject);
         }
         foreach (var g in sil) if (g != null) Object.DestroyImmediate(g);
         var mat = PaletMalzemesi();
+        // köprü ve tünelde Subway gibi balastlı üç ray hattı
+        Cizici(inst.transform, "Raylar", RayAgi(k_Kok + "/Sokak", z0, z1, inst.name + "_Raylar"), RayMalzemesi(k_Kok + "/Sokak"));
         if (cevre == "tunel")
         {
             Cizici(inst.transform, "Tunel", TunelAgi(z0, z1, inst.name + "_Tunel"), mat);
-            if (ModelVar("Tunel") && s_TunelMat != null)
+            if (false && ModelVar("Tunel") && s_TunelMat != null) // bkz. TunelAgi: model yolu kapatıyor
             {
                 // Meshy portalının cephesi +z'de ve modelin içinde ~28 m tünel var: 180° çevir, kemer açıklığı üç şeridi
                 // (tramvay dahil ±3,3 m) rahat geçirsin diye toplam genişlik 16,7 m; zemini yolun biraz altına göm.
                 var k = ModelKoy("Tunel", s_TunelMat, inst.transform, Quaternion.Euler(0, 180, 0), 0, 16.7f, new Vector3(0, -0.4f, z0));
+                // model ~28 m derin bir dağ kütlesi: içi görüşü kapatmasın diye yalnızca girişte 1,5 m'lik cephe olarak bırakılır
+                var b0 = KutuKap(k, k.GetChild(0).gameObject); k.localScale = Vector3.Scale(k.localScale, new Vector3(1f, 1f, 1.5f / b0.size.z));
                 var b = KutuKap(k, k.GetChild(0).gameObject); k.localPosition += new Vector3(0, 0, z0 - 0.5f - b.min.z);
             }
         }
@@ -974,10 +1022,10 @@ public static class IstanbulParkur
             }
         for (float z = z0 + 4.5f; z < z1; z += 9f)
         {
-            yp.Cift(4.2f, 4.32f, 0f, 6.0f, z - 0.06f, z + 0.06f, P_Yesil);
-            yp.Cift(4.17f, 4.35f, 6.0f, 6.2f, z - 0.09f, z + 0.09f, P_Isik);
-            // üçgen bayrak dizisi: iki direk arasında sarkan ip (5,6 m → ortada 5,3 m), altında üçgenler
-            const int parca = 16; Vector3 Ip(float u) => new Vector3(Mathf.Lerp(-4.2f, 4.2f, u), 5.6f - 0.3f * Mathf.Sin(u * Mathf.PI), z);
+            yp.Cift(4.2f, 4.32f, 0f, 7.6f, z - 0.06f, z + 0.06f, P_Yesil);
+            yp.Cift(4.17f, 4.35f, 7.6f, 7.8f, z - 0.09f, z + 0.09f, P_Isik);
+            // üçgen bayrak dizisi: iki direk arasında sarkan ip (6,4 m → ortada 6,1 m), altında üçgenler (kameranın üstünde)
+            const int parca = 16; Vector3 Ip(float u) => new Vector3(Mathf.Lerp(-4.2f, 4.2f, u), 6.4f - 0.3f * Mathf.Sin(u * Mathf.PI), z);
             for (int i = 0; i < parca; ++i)
             {
                 Vector3 a = Ip(i / (float)parca), b = Ip((i + 1) / (float)parca);
@@ -987,13 +1035,14 @@ public static class IstanbulParkur
                 yp.Ucgen(a + new Vector3(0.04f, 0, 0), b - new Vector3(0.04f, 0, 0), orta + new Vector3(0, -0.34f, 0), renk[i % renk.Length]);
             }
         }
+        IstiklalKatener(yp, z0, z1, 4.26f);
         Cizici(inst.transform, "SokakSusu", yp.Bitir(klasor, inst.name + "_SokakSusu"), PaletMalzemesi());
         // Türk bayrağı: her ikinci dizinin ortasında, ipten sarkan
         var bv = new Yapici();
         var bayrak = new List<Vector3>(); var buv = new List<Vector2>(); var bt = new List<int>();
         for (float z = z0 + 4.5f; z < z1; z += 18f)
         {
-            int s = bayrak.Count; float yy = 5.3f;
+            int s = bayrak.Count; float yy = 6.1f;
             bayrak.AddRange(new[] { new Vector3(-0.45f, yy - 0.62f, z), new Vector3(-0.45f, yy - 0.02f, z), new Vector3(0.45f, yy - 0.02f, z), new Vector3(0.45f, yy - 0.62f, z) });
             buv.AddRange(new[] { new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0) });
             bt.AddRange(new[] { s, s + 1, s + 2, s, s + 2, s + 3, s, s + 2, s + 1, s, s + 3, s + 2 });

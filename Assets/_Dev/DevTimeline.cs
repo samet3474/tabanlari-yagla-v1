@@ -54,7 +54,8 @@ public class DevTimeline : MonoBehaviour
         var go = new GameObject("DevTimeline");
         DontDestroyOnLoad(go);
         instance = go.AddComponent<DevTimeline>();
-        instance.m_Visible = !url.Contains("tl=0");
+        // web test sürümünde katman varsayılan kapalı (oyuncu görmesin); ?tl=1 ile açılır, iki parmakla aç/kapa
+        instance.m_Visible = web ? url.Contains("tl=1") : true;
         if (!UnityEngine.InputSystem.EnhancedTouch.EnhancedTouchSupport.enabled)
             UnityEngine.InputSystem.EnhancedTouch.EnhancedTouchSupport.Enable();
         instance.Log("ACILIS " + (web ? "web " + url : "masaustu") + (url.Contains("kayitsil=1") ? " (kayit sifirlandi)" : ""));

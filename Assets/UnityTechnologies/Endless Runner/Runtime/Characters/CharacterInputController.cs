@@ -100,7 +100,7 @@ public class CharacterInputController : MonoBehaviour
     protected const float k_ZeminIsini = 6f;        // ray starts this far above the feet
     protected const float k_TirmanmaAdimi = 0.6f;   // highest step climbed without jumping
     protected const float k_Yercekimi = 30f;        // m/s² when falling off a surface
-    protected const float k_KameraTakip = 0.75f;    // share of the surface height the camera rises with
+    protected const float k_KameraTakip = 0.5f;     // share of the surface height the camera rises with
     protected float m_Taban;                        // current standing height
     protected float m_DusmeHizi;
     protected float m_ZiplamaTabani;                // standing height the current jump started from

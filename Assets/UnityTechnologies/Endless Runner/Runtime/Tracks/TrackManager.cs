@@ -560,6 +560,23 @@ public class TrackManager : MonoBehaviour
         }
     }
 
+    // Preload: segment prefabs of a theme are loaded once in the background (menu) and kept, so the first run's
+    // segments instantiate without waiting for the bundle download. Only themes with designed pieces need it, but
+    // loading any theme's prefabs is harmless (they are loaded at run start anyway).
+    static readonly HashSet<object> s_OnYuklenen = new HashSet<object>();
+    public static void TemaOnYukle(ThemeData tema)
+    {
+        if (tema == null || tema.zones == null || tema.seritAraligi <= 0.0f) // yalnız özel pistli temalar (İstanbul)
+            return;
+        foreach (ThemeZone z in tema.zones)
+            foreach (AssetReference r in z.prefabList)
+            {
+                if (r == null || !r.RuntimeKeyIsValid() || !s_OnYuklenen.Add(r.RuntimeKey))
+                    continue;
+                Addressables.LoadAssetAsync<GameObject>(r.RuntimeKey); // tutamaç bırakılmaz: paket ve önek bellekte kalır
+            }
+    }
+
     // Theme-specific track: lane spacing and run camera (ThemeData.seritAraligi / kameraOfset / kameraEgimEk).
     // Themes that leave them at 0 (Day, Night, tutorial) keep the scene values unchanged.
     float m_VarsayilanSerit = -1.0f;

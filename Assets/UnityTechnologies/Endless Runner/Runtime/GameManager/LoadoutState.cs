@@ -289,6 +289,9 @@ public class LoadoutState : AState
 
 		skyMeshFilter.sharedMesh = t.skyMesh;
         UIGroundFilter.sharedMesh = t.UIGroundMesh;
+
+        // Seçili temanın parçalarını menüdeyken arka planda yükle: ilk koşuda harita gecikmesin (web'de paket indirme).
+        TrackManager.TemaOnYukle(t);
 	}
 
     public IEnumerator PopulateCharacters()
