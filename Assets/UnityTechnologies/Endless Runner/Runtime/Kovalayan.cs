@@ -18,6 +18,8 @@ public class Kovalayan : MonoBehaviour
     Vector3 m_KopekTaban;
     float m_KopekEvre;
     bool m_Basladi;
+    Renderer[] m_Cizici;
+    MaterialPropertyBlock m_Blok;
 
     public void Baslat(CharacterInputController kosucu)
     {
@@ -39,14 +41,19 @@ public class Kovalayan : MonoBehaviour
         if (kosuyor && !m_Basladi) { m_Basladi = true; m_YakinBitis = Time.time + k_YakinSure; } // geri sayım sonrası
         if (!m_Basladi) m_YakinBitis = Time.time + k_YakinSure;
         // can bittiyse yetişir (koşu durur): karakterin hemen arkasına gelir
-        float hedef = m_Kosucu.currentLife <= 0 ? 1.0f : (Time.time < m_YakinBitis ? k_Yakin : k_Uzak);
-        m_Mesafe = Mathf.MoveTowards(m_Mesafe, hedef, (hedef < m_Mesafe ? 6f : 2.5f) * Time.deltaTime);
+        bool yakalandi = m_Kosucu.currentLife <= 0;
+        float hedef = yakalandi ? 0.45f : (Time.time < m_YakinBitis ? k_Yakin : k_Uzak);
+        if (yakalandi && m_Mesafe > 3f) m_Mesafe = 3f; // kameranın hemen arkasından girer (oyun sonu 2 sn sonra açılır)
+        // yakalanınca koşu durur ama polis koşup yetişir (Subway'deki gibi)
+        m_Mesafe = Mathf.MoveTowards(m_Mesafe, hedef, (yakalandi ? 3.5f : hedef < m_Mesafe ? 6f : 2.5f) * Time.deltaTime);
         Yerlestir();
-        if (polisAnimator != null) polisAnimator.speed = kosuyor ? Mathf.Lerp(1f, 1.5f, m_Kosucu.trackManager.speedRatio) : 0.4f;
+        bool yetisti = yakalandi && m_Mesafe <= hedef + 0.01f;
+        if (polisAnimator != null) polisAnimator.speed = kosuyor ? Mathf.Lerp(1f, 1.5f, m_Kosucu.trackManager.speedRatio) : (yakalandi && !yetisti ? 1.1f : 0f);
+        Yakala(yetisti);
         if (kopek != null)
         {
             // dörtnala: ön ve arka bacak çiftleri karşıt evrede, çift içinde hafif gecikme; gövde hafif sekip öne-arkaya sallanır
-            m_KopekEvre += (kosuyor ? 13f * Mathf.Lerp(1f, 1.4f, m_Kosucu.trackManager.speedRatio) : 0f) * Time.deltaTime;
+            m_KopekEvre += ((kosuyor || (yakalandi && !yetisti)) ? 13f * Mathf.Lerp(1f, 1.4f, m_Kosucu.trackManager.speedRatio) : 0f) * Time.deltaTime;
             float f = m_KopekEvre;
             kopek.localPosition = m_KopekTaban + Vector3.up * (Mathf.Abs(Mathf.Sin(f)) * kopekSekme);
             kopek.localRotation = Quaternion.Euler(Mathf.Sin(f + 1.2f) * 5f, 0f, 0f);
@@ -56,7 +63,31 @@ public class Kovalayan : MonoBehaviour
                         kopekBacaklari[i].localRotation = Quaternion.Euler(Mathf.Sin(f + (i >= 2 ? Mathf.PI : 0f) + (i % 2) * 0.35f) * 38f, 0f, 0f);
         }
         bool gorunur = m_Mesafe < k_Uzak - 0.5f;
-        foreach (var r in GetComponentsInChildren<Renderer>()) r.enabled = gorunur;
+        if (m_Cizici == null) { m_Cizici = GetComponentsInChildren<Renderer>(); m_Blok = new MaterialPropertyBlock(); m_Blok.SetFloat("_BlinkingValue", 0f); }
+        foreach (var r in m_Cizici) { r.enabled = gorunur; r.SetPropertyBlock(m_Blok); } // koşucunun çarpma sonrası yanıp sönmesi kovalayana geçmesin
+    }
+
+    // yakalama: polis kollarını öne uzatıp karakteri tutar, karakter hafifçe yerden kalkar
+    float m_Kaldir;
+    Transform m_SolKol, m_SagKol;
+    void Yakala(bool aktif)
+    {
+        float onceki = m_Kaldir;
+        m_Kaldir = Mathf.MoveTowards(m_Kaldir, aktif ? 1f : 0f, Time.deltaTime * 2.5f);
+        if (m_Kaldir <= 0f) { if (onceki > 0f && m_Kosucu.character != null) m_Kosucu.character.transform.localPosition = Vector3.zero; return; }
+        if (m_SolKol == null && polisAnimator != null)
+            foreach (var t in polisAnimator.GetComponentsInChildren<Transform>()) { if (t.name == "LeftArm") m_SolKol = t; else if (t.name == "RightArm") m_SagKol = t; }
+        var ileri = transform.forward;
+        foreach (var kol in new[] { m_SolKol, m_SagKol })
+            if (kol != null && kol.childCount > 0)
+            {
+                // kol kemiğini koşucuya doğru (ileri, omuz hizasında) çevir
+                Vector3 simdi = (kol.GetChild(0).position - kol.position).normalized;
+                Vector3 hedefYon = (ileri + Vector3.up * 0.15f).normalized;
+                kol.rotation = Quaternion.Slerp(Quaternion.identity, Quaternion.FromToRotation(simdi, hedefYon), m_Kaldir) * kol.rotation;
+            }
+        var ch = m_Kosucu.character;
+        if (ch != null) ch.transform.localPosition = Vector3.up * (0.3f * m_Kaldir);
     }
 
     void Yerlestir()

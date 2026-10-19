@@ -160,11 +160,28 @@ public class TrackManager : MonoBehaviour
         m_IsMoving = false;
     }
 
+    // Duraklatmadan dönüş: 3-2-1 sonra koşu sürer
+    public void DevamGeriSayim() { StartCoroutine(DevamGeriSayimRutin()); }
+    IEnumerator DevamGeriSayimRutin()
+    {
+        m_TimeToStart = 3f;
+        while (m_TimeToStart >= 0)
+        {
+            yield return null;
+            m_TimeToStart -= Time.deltaTime * k_CountdownSpeed;
+        }
+        m_TimeToStart = -1;
+        StartMove(false);
+    }
+
     IEnumerator WaitToStart()
     {
         characterController.character.animator.Play(s_StartHash);
-        float length = k_CountdownToStartLength;
+        // Subway gibi: koşu hemen başlar; geri sayım yalnız eğitimde ve ikinci şansta (devam) ve duraklatmadan dönüşte
+        float length = (m_IsTutorial || m_Rerun) ? k_CountdownToStartLength : 0f;
         m_TimeToStart = length;
+        // geri sayım yoksa ilk yol parçaları yüklenene kadar bekle (yoksa boş yolda koşu başlar)
+        while (m_Segments.Count < 2) yield return null;
 
         while (m_TimeToStart >= 0)
         {
@@ -403,6 +420,7 @@ public class TrackManager : MonoBehaviour
             return;
         }
 
+        if (m_Segments.Count == 0) return;
         float scaledSpeed = m_Speed * Time.deltaTime;
         m_ScoreAccum += scaledSpeed;
         m_CurrentZoneDistance += scaledSpeed;

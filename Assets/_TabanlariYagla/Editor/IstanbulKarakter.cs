@@ -114,7 +114,28 @@ public static class IstanbulKarakter
         var klipVarlik = AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<AnimationClip>().Where(c => !c.name.StartsWith("__preview")).ToDictionary(c => c.name);
         // oyun zıplama/kaymayı kedinin klip sürelerine göre oynatır (JumpSpeed): Meshy klipleri işe yarayan bölümüne kırpılıp
         // aynı süreye getirilir; yoksa zıplama bittiğinde klip daha üçte birindedir
+        // Zıplama: ayrı "Jump Run" klibi (ileriye bakar; Regular_Jump gövdeyi yana çeviriyordu). Havada kalınan aralık
+        // kalça yüksekliğinden bulunur ve 0,6 sn'ye getirilir.
+        string zk = Path.Combine(k_Kaynak, ad.ToLowerInvariant(), ad + "_Ziplama.fbx");
+        if (File.Exists(zk))
+        {
+            string zfbx = $"{klasor}/{ad}_ZiplamaKaynak.fbx";
+            File.Copy(zk, zfbx, true); AssetDatabase.ImportAsset(zfbx, ImportAssetOptions.ForceUpdate);
+            var zmi = (ModelImporter)AssetImporter.GetAtPath(zfbx);
+            zmi.animationType = ModelImporterAnimationType.Generic; zmi.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+            zmi.materialImportMode = ModelImporterMaterialImportMode.None; zmi.importBlendShapes = false; zmi.motionNodeName = "";
+            var zkl = zmi.defaultClipAnimations; foreach (var k in zkl) { k.name = "ZiplamaKosu"; k.loopTime = false; k.keepOriginalOrientation = true; k.keepOriginalPositionY = true; k.keepOriginalPositionXZ = true; }
+            zmi.clipAnimations = zkl; zmi.SaveAndReimport();
+            foreach (var t in AssetDatabase.FindAssets("t:Texture2D", new[] { klasor }).Select(AssetDatabase.GUIDToAssetPath).Where(p => p.Contains("ZiplamaKaynak")).ToList()) AssetDatabase.DeleteAsset(t);
+            var zc = AssetDatabase.LoadAllAssetsAtPath(zfbx).OfType<AnimationClip>().FirstOrDefault(c => !c.name.StartsWith("__"));
+            if (zc != null)
+            {
+                var (b0, b1) = HavaAraligi(zc);
+                klipVarlik["Ziplama"] = Zamanla(zc, b0, b1, 0.6f, $"{klasor}/{ad}_Ziplama.anim");
+            }
+        }
         foreach (var (adi, bas, son, sure) in k_Zamanlama)
+            if (adi == "Ziplama" && File.Exists(zk)) continue; else
             if (klipVarlik.TryGetValue(adi, out var ham)) klipVarlik[adi] = Zamanla(ham, bas, son, sure, $"{klasor}/{ad}_{adi}.anim");
         var temel = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(k_Denetleyici);
         var ust = new AnimatorOverrideController(temel) { name = ad + "Animasyon" };
@@ -207,6 +228,26 @@ public static class IstanbulKarakter
         File.WriteAllBytes(yol, yol.EndsWith(".png") ? tx.EncodeToPNG() : tx.EncodeToJPG(95));
         Object.DestroyImmediate(tx); AssetDatabase.ImportAsset(yol);
         Out($"{Path.GetFileName(yol)}: yama boşlukları dolduruldu (kalan {sayi})");
+    }
+
+    // Kalçanın yukarı ekseni (en büyük ortalama konum bileşeni) boyunca tabanın %25 üstünde kalınan aralık, 0,08 sn paylı
+    static (float, float) HavaAraligi(AnimationClip c)
+    {
+        var baglar = AnimationUtility.GetCurveBindings(c).Where(b => b.path.EndsWith("Hips") && b.propertyName.StartsWith("m_LocalPosition.")).ToList();
+        AnimationCurve yuk = null; float enB = -1;
+        foreach (var b in baglar) { var e = AnimationUtility.GetEditorCurve(c, b); float o = Mathf.Abs(e.Evaluate(0)); if (o > enB) { enB = o; yuk = e; } }
+        if (yuk == null) return (0f, c.length);
+        int n = 60; float mn = float.MaxValue, mx = float.MinValue;
+        for (int i = 0; i <= n; ++i) { float v = yuk.Evaluate(c.length * i / n); mn = Mathf.Min(mn, v); mx = Mathf.Max(mx, v); }
+        // eksen ters olabilir: tepe, ilk karedeki değerden en uzak uç
+        float ilk = yuk.Evaluate(0); bool artan = Mathf.Abs(mx - ilk) >= Mathf.Abs(mn - ilk);
+        float esik = artan ? mn + (mx - mn) * 0.25f : mx - (mx - mn) * 0.25f;
+        float bas = -1, son = -1;
+        for (int i = 0; i <= n; ++i) { float t = c.length * i / n, v = yuk.Evaluate(t); bool hava = artan ? v > esik : v < esik; if (hava && bas < 0) bas = t; if (hava) son = t; }
+        if (bas < 0) return (0f, c.length);
+        bas = Mathf.Max(0f, bas - 0.08f); son = Mathf.Min(c.length, son + 0.08f);
+        Out($"{c.name}: hava {bas:F2}-{son:F2} / {c.length:F2} sn");
+        return (bas, son);
     }
 
     // (klip, kırpma başı, kırpma sonu, hedef süre) — kedinin Cat_Jump 0,60 / Cat_Slide 1,03 / Cat_HitWall1 0,73 sn; koşu döngüsü

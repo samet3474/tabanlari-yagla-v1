@@ -8,6 +8,9 @@ using UnityEngine.UI;
 public class SubwayHud : MonoBehaviour
 {
     static Sprite s_Hap, s_Yildiz, s_Altin;
+    // Subway ölçüsü: haplar ekran yüksekliğinin ~%4'ü (telefonda önceki boyut iri duruyordu)
+    const float k_Olcek = 0.6f;
+    RectTransform m_Sag;
     Text m_Rekor;
     Image m_Simge;
     GameState m_Gs;
@@ -29,6 +32,9 @@ public class SubwayHud : MonoBehaviour
         rt.SetAsFirstSibling();
         if (s_Hap == null) { s_Hap = HapSprite(); s_Yildiz = YildizSprite(); s_Altin = AltinSprite(); }
         Font font = gs.scoreText.font;
+        m_Sag = new GameObject("Sag", typeof(RectTransform)).GetComponent<RectTransform>();
+        m_Sag.SetParent(transform, false); m_Sag.anchorMin = m_Sag.anchorMax = m_Sag.pivot = new Vector2(1f, 1f);
+        m_Sag.anchoredPosition = new Vector2(-12f, -14f); m_Sag.sizeDelta = Vector2.zero; m_Sag.localScale = Vector3.one * k_Olcek;
 
         // eski kapları sonra gizlemek için not al
         Transform eskiSkor = gs.scoreText.transform.parent, eskiCarpan = gs.multiplierText.transform.parent, eskiAltin = gs.coinText.transform.parent;
@@ -66,7 +72,7 @@ public class SubwayHud : MonoBehaviour
         {
             var l = gs.lifeRectTransform;
             l.anchorMin = l.anchorMax = new Vector2(0f, 1f); l.pivot = new Vector2(0f, 1f);
-            l.anchoredPosition = new Vector2(28f, -140f); l.localScale = Vector3.one * 0.6f;
+            l.anchoredPosition = new Vector2(22f, -118f); l.localScale = Vector3.one * 0.45f;
         }
         if (gs.powerupZone != null)
         {
@@ -101,7 +107,7 @@ public class SubwayHud : MonoBehaviour
     RectTransform Hap(string ad, Vector2 konum, Vector2 boyut)
     {
         var go = new GameObject(ad, typeof(RectTransform), typeof(Image));
-        var r = (RectTransform)go.transform; r.SetParent(transform, false);
+        var r = (RectTransform)go.transform; r.SetParent(m_Sag, false);
         r.anchorMin = r.anchorMax = new Vector2(1f, 1f); r.pivot = new Vector2(1f, 1f);
         r.anchoredPosition = konum; r.sizeDelta = boyut;
         var im = go.GetComponent<Image>(); im.sprite = s_Hap; im.type = Image.Type.Sliced; im.color = new Color(0.1f, 0.1f, 0.16f, 0.62f); im.raycastTarget = false;

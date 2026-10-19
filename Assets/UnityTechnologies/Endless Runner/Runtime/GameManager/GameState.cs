@@ -364,7 +364,8 @@ public class GameState : AState
 		wholeUI.gameObject.SetActive(true);
 		if (m_WasMoving)
 		{
-			trackManager.StartMove(false);
+			// eğitimde yönergeler kesilmesin: anında; koşuda Subway gibi 3-2-1
+			if (trackManager.isTutorial) trackManager.StartMove(false); else trackManager.DevamGeriSayim();
 		}
 
 		AudioListener.pause = false;

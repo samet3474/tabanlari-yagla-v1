@@ -136,13 +136,23 @@ public class ParcaTestAkisi : MonoBehaviour
     int m_AyakkabiAsama; float m_AyakkabiZaman;
     int m_KareSayisi; float m_KareZaman;
     int m_HareketAsama, m_HareketKare, m_SeritSayac;
+    bool m_CanAyarlandi;
+    int m_SonKare;
 
     void Update()
     {
+        // -kare: can bitince (yakalanma sahnesi) 2,5 sn boyunca 0,1 sn arayla kare
+        if (m_Hazir && m_TM != null && m_TM.worldDistance > 5f && m_TM.characterController.currentLife <= 0 && Param("kare") != null && Param("kare") != "1" && m_SonKare < 25 && Time.time - m_KareZaman >= 0.1f)
+        {
+            m_KareZaman = Time.time;
+            ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(Param("kare"), "son-" + (m_SonKare++).ToString("00") + ".png"));
+        }
         if (!m_Hazir || m_TM == null || !m_TM.isMoving) return;
         if (m_Hiz > 0f && m_SpeedField != null) m_SpeedField.SetValue(m_TM, Mathf.Clamp(m_Hiz, m_TM.minSpeed, m_TM.maxSpeed));
 
         var cc = m_TM.characterController;
+        // -can N: koşu başında can sayısı (yakalanma sahnesini denemek için)
+        if (!m_CanAyarlandi && Param("can") != null && int.TryParse(Param("can"), out var canN)) { cc.currentLife = canN; m_CanAyarlandi = true; }
         // -serit: 40 m'den sonra her 15 m'de bir sola/sağa geç (kamera şerit takibini görmek için)
         if (Param("serit") != null && m_TM.worldDistance > 40f + m_SeritSayac * 15f) { cc.ChangeLane(m_SeritSayac % 4 < 2 ? -1 : 1); m_SeritSayac++; }
         // -hareket <klasör>: 25 m'de zıpla, 45 m'de kay; her birinde 0,1 sn arayla 8 kare (Windows)
