@@ -90,7 +90,7 @@ public static class IstanbulKarakter
         {
             Genislet(AssetDatabase.GetAssetPath(doku));
             var ti = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(doku));
-            ti.maxTextureSize = 2048; ti.anisoLevel = 4; ti.mipMapBias = 0f; ti.mipmapFilter = TextureImporterMipFilter.KaiserFilter; ti.filterMode = FilterMode.Trilinear; ti.SaveAndReimport(); // Kaiser: küçülürken keskin; negatif sapma yamalar arası taşmayı (lekeleri) artırıyordu
+            ti.maxTextureSize = 2048; ti.textureCompression = TextureImporterCompression.CompressedHQ; ti.anisoLevel = 4; ti.mipMapBias = 0f; ti.mipmapFilter = TextureImporterMipFilter.KaiserFilter; ti.filterMode = FilterMode.Trilinear; ti.SaveAndReimport(); // Kaiser: küçülürken keskin; negatif sapma yamalar arası taşmayı (lekeleri) artırıyordu
         }
         string matYol = $"{klasor}/{ad}.mat";
         var mat = AssetDatabase.LoadAssetAtPath<Material>(matYol);
@@ -125,6 +125,13 @@ public static class IstanbulKarakter
             Out($"{ad}: {n} -> {hedef}");
         }
         ust.ApplyOverrides(liste);
+        // ayak IK: Humanoid yeniden hedeflemede ayaklar yere düz otursun (kedi Generic, etkilenmez)
+        var temelAc = temel as UnityEditor.Animations.AnimatorController;
+        if (temelAc != null)
+        {
+            foreach (var katman in temelAc.layers) AyakIK(katman.stateMachine);
+            EditorUtility.SetDirty(temelAc);
+        }
         string ustYol = $"{klasor}/{ad}Animasyon.overrideController";
         AssetDatabase.DeleteAsset(ustYol); AssetDatabase.CreateAsset(ust, ustYol);
 
@@ -226,6 +233,12 @@ public static class IstanbulKarakter
         AssetDatabase.DeleteAsset(yol); AssetDatabase.CreateAsset(yeni, yol);
         Out($"{ham.name}: {bas:F2}-{son:F2} sn -> {sure:F2} sn ({yol})");
         return yeni;
+    }
+
+    static void AyakIK(UnityEditor.Animations.AnimatorStateMachine sm)
+    {
+        foreach (var d in sm.states) d.state.iKOnFeet = true;
+        foreach (var alt in sm.stateMachines) AyakIK(alt.stateMachine);
     }
 
     // CharacterAnimation klip adı → Meshy hareketi
@@ -385,6 +398,31 @@ public static class IstanbulKarakterTani4
                 Debug.Log($"TANI4| {c.name} {c.length:F2} sn loop={c.isLooping}");
         foreach (var c in AssetDatabase.LoadAllAssetsAtPath("Assets/_TabanlariYagla/Karakterler/Samet/Samet.fbx").OfType<AnimationClip>().Where(c => !c.name.StartsWith("__")))
             Debug.Log($"TANI4| Samet {c.name} {c.length:F2} sn loop={c.isLooping}");
+        if (Application.isBatchMode) EditorApplication.Exit(0);
+    }
+}
+
+// Menü önizlemesi (-executeMethod IstanbulKarakterOnizleme.Cek, grafik açık): bekleme pozunda, menü kamerası yakınlığında
+public static class IstanbulKarakterOnizleme
+{
+    public static void Cek()
+    {
+        UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene);
+        Shader.SetGlobalFloat("_CurveStrength", 0f); RenderSettings.fog = false;
+        int i = 0;
+        foreach (var ad in new[] { "Samet", "Berivan" })
+        {
+            var go = (GameObject)Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/_TabanlariYagla/Karakterler/{ad}/{ad}.prefab"));
+            go.transform.position = new Vector3(i++ * 1.6f - 0.8f, 0, 0); go.transform.rotation = Quaternion.Euler(0, 160, 0);
+            var an = go.GetComponentInChildren<Animator>(); an.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            an.Rebind(); an.Play("Idle", 0, 0.3f); an.Update(0.05f);
+        }
+        var cam = new GameObject("k").AddComponent<Camera>();
+        cam.transform.position = new Vector3(0, 0.9f, 3.4f); cam.transform.rotation = Quaternion.Euler(5, 180, 0); cam.fieldOfView = 40;
+        cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.35f, 0.37f, 0.45f);
+        var rt = new RenderTexture(1200, 1000, 24) { antiAliasing = 4 }; cam.targetTexture = rt; cam.Render();
+        RenderTexture.active = rt; var tx = new Texture2D(1200, 1000, TextureFormat.RGB24, false); tx.ReadPixels(new Rect(0, 0, 1200, 1000), 0, 0); tx.Apply();
+        System.IO.File.WriteAllBytes("../_araclar/parkur/karakter-menu-onizleme.png", tx.EncodeToPNG());
         if (Application.isBatchMode) EditorApplication.Exit(0);
     }
 }

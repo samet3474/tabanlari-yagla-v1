@@ -323,6 +323,7 @@ public class TrackManager : MonoBehaviour
         Addressables.ReleaseInstance(characterController.character.gameObject);
         characterController.character = null;
 
+        characterController.KameraYanSifirla();
         TemaPistiGeriAl();
         Camera.main.transform.SetParent(null);
         Camera.main.transform.position = m_CameraOriginalPos;

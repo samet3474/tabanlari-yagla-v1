@@ -125,6 +125,7 @@ public class ParcaTestAkisi : MonoBehaviour
         m_Durum = $"PARCA TEST: {ozet}{(m_Hiz > 0 ? $" | hiz {m_Hiz:F0} m/s sabit" : "")}{(m_Olumsuz ? " | olumsuz" : "")} | OYNA'ya bas";
         Debug.Log("PARCATEST| " + m_Durum);
         // &otobasla=1 / -otobasla: OYNA'ya basılmış gibi koşuyu başlat (otomatik testler için)
+        if (Param("otobasla") == "1" && Param("kare") != null && Param("kare") != "1") { yield return new WaitForSecondsRealtime(2.5f); ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(Param("kare"), "menu.png")); }
         if (Param("otobasla") == "1") { yield return new WaitForSecondsRealtime(1f); loadout.StartGame(); Debug.Log("PARCATEST| otomatik basladi"); }
         // -kare <klasör>: geri sayım sırasında da 3 kare (karakter beklemede mi, koşuyor mu)
         string kk = Param("kare");
@@ -134,7 +135,7 @@ public class ParcaTestAkisi : MonoBehaviour
 
     int m_AyakkabiAsama; float m_AyakkabiZaman;
     int m_KareSayisi; float m_KareZaman;
-    int m_HareketAsama, m_HareketKare;
+    int m_HareketAsama, m_HareketKare, m_SeritSayac;
 
     void Update()
     {
@@ -142,6 +143,8 @@ public class ParcaTestAkisi : MonoBehaviour
         if (m_Hiz > 0f && m_SpeedField != null) m_SpeedField.SetValue(m_TM, Mathf.Clamp(m_Hiz, m_TM.minSpeed, m_TM.maxSpeed));
 
         var cc = m_TM.characterController;
+        // -serit: 40 m'den sonra her 15 m'de bir sola/sağa geç (kamera şerit takibini görmek için)
+        if (Param("serit") != null && m_TM.worldDistance > 40f + m_SeritSayac * 15f) { cc.ChangeLane(m_SeritSayac % 4 < 2 ? -1 : 1); m_SeritSayac++; }
         // -hareket <klasör>: 25 m'de zıpla, 45 m'de kay; her birinde 0,1 sn arayla 8 kare (Windows)
         string hk = Param("hareket");
         if (hk != null && hk != "1")

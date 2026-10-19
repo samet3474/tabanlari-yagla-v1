@@ -202,6 +202,7 @@ public class CharacterInputController : MonoBehaviour
 		AyakkabiCikar();
 		// TrackManager puts the camera back to its original place at the end of each run.
 		m_KameraYukselme = 0f;
+		m_KameraYan = 0f;
 
         currentLife = maxLife;
 
@@ -481,6 +482,7 @@ public class CharacterInputController : MonoBehaviour
 
         characterCollider.transform.localPosition = Vector3.MoveTowards(characterCollider.transform.localPosition, verticalTargetPosition, laneChangeSpeed * Time.deltaTime);
         KameraYukselt();
+        KameraYanVeYatma();
 
         // Put blob shadow under the character.
         RaycastHit hit;
@@ -537,6 +539,37 @@ public class CharacterInputController : MonoBehaviour
             return;
         cam.transform.localPosition += Vector3.up * (hedef - m_KameraYukselme);
         m_KameraYukselme = hedef;
+    }
+
+    // Subway gibi: kamera şerit değişimini (karakterin yan konumunu) yumuşakça izler, karakter dönüş yönüne yatar.
+    // Yalnız şerit genişliği ayarlı temalarda (İstanbul); diğer temalar eskisi gibi.
+    const float k_KameraYanTakip = 0.85f, k_YatmaAci = 14f;
+    float m_KameraYan;
+    protected void KameraYanVeYatma()
+    {
+        if (trackManager == null || trackManager.currentTheme == null || trackManager.currentTheme.seritAraligi <= 0f) return;
+        Camera cam = Camera.main;
+        if (cam != null && cam.transform.parent == transform)
+        {
+            float hedef = characterCollider.transform.localPosition.x * k_KameraYanTakip;
+            float yeni = Mathf.Lerp(m_KameraYan, hedef, 1f - Mathf.Exp(-10f * Time.deltaTime));
+            cam.transform.localPosition += Vector3.right * (yeni - m_KameraYan);
+            m_KameraYan = yeni;
+        }
+        if (character != null)
+        {
+            float fark = characterCollider.transform.localPosition.x - m_TargetPosition.x; // >0: sola gidiyor
+            float aci = Mathf.Clamp(fark * k_YatmaAci, -k_YatmaAci, k_YatmaAci);
+            character.transform.localRotation = Quaternion.Euler(0f, -aci * 1.4f, aci);
+        }
+    }
+
+    public void KameraYanSifirla()
+    {
+        Camera cam = Camera.main;
+        if (cam != null && cam.transform.parent == transform) cam.transform.localPosition -= Vector3.right * m_KameraYan;
+        m_KameraYan = 0f;
+        if (character != null) character.transform.localRotation = Quaternion.identity;
     }
 
     public void Jump()
