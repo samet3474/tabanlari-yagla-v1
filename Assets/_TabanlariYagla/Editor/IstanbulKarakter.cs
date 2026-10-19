@@ -58,7 +58,9 @@ public static class IstanbulKarakter
         mi = (ModelImporter)AssetImporter.GetAtPath(fbx);
         // Humanoid: Meshy hareketleri farklı bir dinlenme pozuna göre yazılmış; Generic'te beden ~0,6 m havada kalıyordu.
         // Humanoid yeniden hedefleme kendi iskeletine uyarlar, ayaklara göre yere oturtur.
-        mi.animationType = ModelImporterAnimationType.Human;
+        // Generic: Meshy hareketleri bu iskelet için yazıldı, yeniden hedefleme yok. (Humanoid eşleme omurgayı ters sırayla
+        // bağlayıp gövdeyi ve ayakları büküyordu.) Animator ölçeksiz Gorsel alt nesnesinde, beden yerde kalır.
+        mi.animationType = ModelImporterAnimationType.Generic;
         mi.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
         mi.optimizeGameObjects = false;
         mi.importCameras = false; mi.importLights = false; mi.importBlendShapes = false;
@@ -77,7 +79,7 @@ public static class IstanbulKarakter
             k.loopTime = dongu; k.loopPose = dongu;
             // kök: dönüş ve yükseklik pozda (yükseklik ayaklara göre), ileri kayma ayrılır ve uygulanmaz → yerinde, yerde
             k.lockRootRotation = true; k.lockRootHeightY = true; k.lockRootPositionXZ = false;
-            k.keepOriginalOrientation = true; k.keepOriginalPositionY = false; k.heightFromFeet = true; k.keepOriginalPositionXZ = false;
+            k.keepOriginalOrientation = true; k.keepOriginalPositionY = true; k.keepOriginalPositionXZ = true;
         }
         mi.clipAnimations = klipler;
         mi.SaveAndReimport();
@@ -413,7 +415,7 @@ public static class IstanbulKarakterOnizleme
         foreach (var ad in new[] { "Samet", "Berivan" })
         {
             var go = (GameObject)Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/_TabanlariYagla/Karakterler/{ad}/{ad}.prefab"));
-            go.transform.position = new Vector3(i++ * 1.6f - 0.8f, 0, 0); go.transform.rotation = Quaternion.Euler(0, 160, 0);
+            go.transform.position = new Vector3(i++ * 1.6f - 0.8f, 0, 0); go.transform.rotation = Quaternion.Euler(0, i == 1 ? 15 : -15, 0);
             var an = go.GetComponentInChildren<Animator>(); an.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             an.Rebind(); an.Play("Idle", 0, 0.3f); an.Update(0.05f);
         }
@@ -423,6 +425,44 @@ public static class IstanbulKarakterOnizleme
         var rt = new RenderTexture(1200, 1000, 24) { antiAliasing = 4 }; cam.targetTexture = rt; cam.Render();
         RenderTexture.active = rt; var tx = new Texture2D(1200, 1000, TextureFormat.RGB24, false); tx.ReadPixels(new Rect(0, 0, 1200, 1000), 0, 0); tx.Apply();
         System.IO.File.WriteAllBytes("../_araclar/parkur/karakter-menu-onizleme.png", tx.EncodeToPNG());
+        if (Application.isBatchMode) EditorApplication.Exit(0);
+    }
+}
+
+// Süper ayakkabı yan görünüş (-executeMethod IstanbulAyakkabiYan.Cek, grafik açık): koşunun 4 anında, yandan ve arkadan
+public static class IstanbulAyakkabiYan
+{
+    public static void Cek()
+    {
+        UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene);
+        Shader.SetGlobalFloat("_CurveStrength", 0f); RenderSettings.fog = false;
+        var giy = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_TabanlariYagla/Istanbul/Parkur/Bonus/IstanbulAyakkabiGiyilen.prefab");
+        var kosu = AssetDatabase.LoadAssetAtPath<AnimationClip>("Assets/_TabanlariYagla/Karakterler/Samet/Samet_Kosu.anim");
+        var rt = new RenderTexture(400, 500, 24) { antiAliasing = 4 };
+        var sonuc = new Texture2D(1600, 1000, TextureFormat.RGB24, false);
+        for (int a = 0; a < 4; ++a)
+            for (int g = 0; g < 2; ++g)
+            {
+                var go = (GameObject)Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_TabanlariYagla/Karakterler/Samet/Samet.prefab"));
+                var gorsel = go.transform.Find("Gorsel").gameObject;
+                kosu.SampleAnimation(gorsel, kosu.length * a / 4f);
+                foreach (var ad in new[] { "LeftFoot", "RightFoot" })
+                {
+                    var ayak = go.GetComponentsInChildren<Transform>().First(t => t.name == ad);
+                    var s = (GameObject)Object.Instantiate(giy, go.transform, false);
+                    if (!SuperAyakkabi.KemigeBagla(go.transform, s.transform, ayak)) Debug.Log("YAN| baglanamadi " + ad);
+                }
+                var cam = new GameObject("k").AddComponent<Camera>(); cam.fieldOfView = 35;
+                cam.transform.position = g == 0 ? new Vector3(3.2f, 0.6f, 0.2f) : new Vector3(0, 1.6f, -3.0f);
+                cam.transform.LookAt(new Vector3(0, 0.45f, 0));
+                cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.55f, 0.6f, 0.68f);
+                cam.targetTexture = rt; cam.Render(); RenderTexture.active = rt;
+                var tx = new Texture2D(400, 500, TextureFormat.RGB24, false); tx.ReadPixels(new Rect(0, 0, 400, 500), 0, 0); tx.Apply();
+                sonuc.SetPixels(a * 400, (1 - g) * 500, 400, 500, tx.GetPixels());
+                Object.DestroyImmediate(cam.gameObject); Object.DestroyImmediate(go);
+            }
+        sonuc.Apply();
+        System.IO.File.WriteAllBytes("../_araclar/parkur/ayakkabi-yan.png", sonuc.EncodeToPNG());
         if (Application.isBatchMode) EditorApplication.Exit(0);
     }
 }

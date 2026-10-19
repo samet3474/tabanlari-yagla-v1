@@ -251,9 +251,11 @@ public class CharacterInputController : MonoBehaviour
         for (int i = 0; i < ayaklar.Length; ++i)
         {
             if (ayaklar[i] == null) continue;
-            // karakterin altında (onunla silinir); ayak kemiğini konumca izler, yönü hep koşu yönü (AyakTakip)
+            // ayak kemiğine bağlanır: ayağın her dönüşünü birebir izler. Kemiğe göre konum ve açı bağlanma pozundan
+            // (bindpose) bir kez hesaplanır: tabanı ayağın altında, burnu karakterin ilerisinde.
             var a = Instantiate(bonus.giyilenModel, character.transform, false);
-            a.AddComponent<AyakTakip>().ayak = ayaklar[i];
+            if (!SuperAyakkabi.KemigeBagla(character.transform, a.transform, ayaklar[i]))
+                a.AddComponent<AyakTakip>().ayak = ayaklar[i]; // kemiği deriye bağlı olmayan modeller (kedi): yalnız konum izler
             m_GiyilenAyakkabi[i] = a;
         }
     }

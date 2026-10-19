@@ -31,6 +31,46 @@ public class SuperAyakkabi : MonoBehaviour
         }
     }
 
+    // Giyilen ayakkabıyı ayak kemiğine bağlar (konum/açı bindpose'dan); karakter: koşucunun kökü (yukarı/ileri yönü)
+    public static bool KemigeBagla(Transform karakter, Transform ayakkabi, Transform ayak)
+    {
+        foreach (var smr in karakter.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            int i = System.Array.IndexOf(smr.bones, ayak);
+            if (i < 0 || smr.sharedMesh == null || i >= smr.sharedMesh.bindposes.Length) continue;
+            Matrix4x4 bp = smr.sharedMesh.bindposes[i];          // ağ uzayı -> kemik uzayı (bağlanma pozunda)
+            Matrix4x4 kemikAg = bp.inverse;                       // kemik -> ağ uzayı
+            // ağ uzayında yukarı ve ileri: karakterin yönleri, ağ çizicisinin uzayına çevrilir (çizici canlandırılmaz)
+            Vector3 yukariAg = smr.transform.InverseTransformDirection(karakter.up).normalized;
+            Vector3 ileriAg = smr.transform.InverseTransformDirection(karakter.forward).normalized;
+            Vector3 ayakAg = kemikAg.GetColumn(3);
+            // taban: ağın en alçak noktası (yukarı yönünde), ayak bileğinin hizasında; ayakkabı biraz öne kaydırılır
+            var sinir = smr.sharedMesh.bounds; float altY = float.MaxValue;
+            foreach (var k in new[] { sinir.min, sinir.max, new Vector3(sinir.min.x, sinir.min.y, sinir.max.z), new Vector3(sinir.min.x, sinir.max.y, sinir.min.z), new Vector3(sinir.max.x, sinir.min.y, sinir.min.z), new Vector3(sinir.min.x, sinir.max.y, sinir.max.z), new Vector3(sinir.max.x, sinir.min.y, sinir.max.z), new Vector3(sinir.max.x, sinir.max.y, sinir.min.z) })
+                altY = Mathf.Min(altY, Vector3.Dot(k, yukariAg));
+            float bilekY = Vector3.Dot(ayakAg, yukariAg);
+            Vector3 tabanAg = ayakAg - yukariAg * (bilekY - altY - 0.01f / Mathf.Max(1e-4f, smr.transform.lossyScale.y));
+            // ileri: bilek ile parmak kemiğinin ortası (ayakkabı ayağı sarsın, bilekte değil)
+            int p = -1; for (int j = 0; j < smr.bones.Length; ++j) if (smr.bones[j] != null && smr.bones[j].parent == ayak && smr.bones[j].name.Contains("Toe")) { p = j; break; }
+            if (p >= 0 && p < smr.sharedMesh.bindposes.Length)
+            {
+                Vector3 parmakAg = smr.sharedMesh.bindposes[p].inverse.GetColumn(3);
+                tabanAg += ileriAg * (Vector3.Dot(parmakAg - ayakAg, ileriAg) * 0.5f);
+            }
+            // ağ uzayındaki ofset kemik uzayına
+            Vector3 yerelKonum = bp.MultiplyPoint3x4(tabanAg);
+            Quaternion yerelDonus = Quaternion.LookRotation(bp.MultiplyVector(ileriAg).normalized, bp.MultiplyVector(yukariAg).normalized);
+            Vector3 dunyaOlcek = ayakkabi.lossyScale;
+            ayakkabi.SetParent(ayak, false);
+            ayakkabi.localPosition = yerelKonum; ayakkabi.localRotation = yerelDonus;
+            Vector3 ks = ayak.lossyScale;
+            ayakkabi.localScale = new Vector3(dunyaOlcek.x / ks.x, dunyaOlcek.y / ks.y, dunyaOlcek.z / ks.z);
+            return true;
+        }
+        return false;
+    }
+
+
     // ---- sol alttaki süre göstergesi (simge + azalan çubuk), koşu ekranının üstünde
     static GameObject s_Gosterge;
     static Image s_Dolgu;
@@ -87,14 +127,19 @@ public class SuperAyakkabi : MonoBehaviour
     }
 }
 
-// Giyilen ayakkabı: ayak kemiğinin konumunu izler, dönmez (iri ayakkabı koşu yönüne bakar).
+// Giyilen ayakkabı: ayağı (ayak bileği + parmak kemiği) sarar. Tabanı ayağın en alçak kemiğinin biraz altında, burnu ayağın
+// baktığı yönde (bilekten parmağa), yalnız yatay döner; böylece bacak boyunca dikilmez.
 public class AyakTakip : MonoBehaviour
 {
     public Transform ayak;
+    public Transform parmak;
     void LateUpdate()
     {
         if (ayak == null) return;
-        transform.position = ayak.position + Vector3.down * 0.04f;
-        transform.rotation = transform.parent != null ? transform.parent.rotation : Quaternion.identity;
+        Vector3 ileri = transform.parent != null ? transform.parent.forward : Vector3.forward; ileri.y = 0f;
+        Vector3 bilek = ayak.position, uc = parmak != null ? parmak.position : bilek + ileri.normalized * 0.1f;
+        float taban = Mathf.Min(bilek.y, uc.y) - 0.03f;
+        Vector3 orta = (bilek + uc) * 0.5f;
+        transform.SetPositionAndRotation(new Vector3(orta.x, taban, orta.z), Quaternion.LookRotation(ileri.normalized, Vector3.up));
     }
 }
