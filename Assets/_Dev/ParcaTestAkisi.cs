@@ -129,6 +129,8 @@ public class ParcaTestAkisi : MonoBehaviour
     }
 
     int m_AyakkabiAsama; float m_AyakkabiZaman;
+    int m_KareSayisi; float m_KareZaman;
+    int m_HareketAsama, m_HareketKare;
 
     void Update()
     {
@@ -136,6 +138,24 @@ public class ParcaTestAkisi : MonoBehaviour
         if (m_Hiz > 0f && m_SpeedField != null) m_SpeedField.SetValue(m_TM, Mathf.Clamp(m_Hiz, m_TM.minSpeed, m_TM.maxSpeed));
 
         var cc = m_TM.characterController;
+        // -hareket <klasör>: 25 m'de zıpla, 45 m'de kay; her birinde 0,1 sn arayla 8 kare (Windows)
+        string hk = Param("hareket");
+        if (hk != null && hk != "1")
+        {
+            if (m_HareketAsama == 0 && m_TM.worldDistance > 25f) { cc.Jump(); m_HareketAsama = 1; m_HareketKare = 0; m_KareZaman = Time.time; Debug.Log("PARCATEST| hareket zipla"); }
+            else if (m_HareketAsama == 1 && m_HareketKare >= 8 && m_TM.worldDistance > 45f) { cc.Slide(); m_HareketAsama = 2; m_HareketKare = 0; m_KareZaman = Time.time; Debug.Log("PARCATEST| hareket kay"); }
+            if ((m_HareketAsama == 1 || m_HareketAsama == 2) && m_HareketKare < 8 && Time.time - m_KareZaman >= 0.1f)
+            {
+                m_KareZaman = Time.time;
+                ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(hk, (m_HareketAsama == 1 ? "zipla-" : "kay-") + (m_HareketKare++).ToString("00") + ".png"));
+            }
+        }
+        // -kare <klasör>: 25 m'den sonra 0,1 sn arayla 12 kare (koşu animasyonunu incelemek için, Windows)
+        if (m_KareSayisi < 12 && Param("kare") != null && Param("kare") != "1" && m_TM.worldDistance > 25f && Time.time - m_KareZaman >= 0.1f)
+        {
+            m_KareZaman = Time.time;
+            ScreenCapture.CaptureScreenshot(System.IO.Path.Combine(Param("kare"), "kosu-" + (m_KareSayisi++).ToString("00") + ".png"));
+        }
         // &ayakkabi=1 / -ayakkabi <klasör>: koşunun başında süper ayakkabıyı giydirir; Windows'ta klasöre 3 ekran görüntüsü
         if (m_AyakkabiAsama == 0 && Param("ayakkabi") != null && m_TM.worldDistance > 20f && m_TM.currentTheme.superAyakkabi != null)
         {

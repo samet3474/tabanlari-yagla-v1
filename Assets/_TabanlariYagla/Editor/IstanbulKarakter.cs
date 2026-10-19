@@ -53,13 +53,16 @@ public static class IstanbulKarakter
         mi.ExtractTextures(klasor);
         AssetDatabase.Refresh();
         mi = (ModelImporter)AssetImporter.GetAtPath(fbx);
-        mi.animationType = ModelImporterAnimationType.Generic;
+        // Humanoid: Meshy hareketleri farklı bir dinlenme pozuna göre yazılmış; Generic'te beden ~0,6 m havada kalıyordu.
+        // Humanoid yeniden hedefleme kendi iskeletine uyarlar, ayaklara göre yere oturtur.
+        mi.animationType = ModelImporterAnimationType.Human;
         mi.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
         mi.optimizeGameObjects = false;
         mi.importCameras = false; mi.importLights = false; mi.importBlendShapes = false;
         mi.materialImportMode = ModelImporterMaterialImportMode.None;
-        string kalca = mi.transformPaths.FirstOrDefault(p => p.EndsWith("/Hips") || p == "Hips");
-        if (kalca != null) mi.motionNodeName = kalca;
+        // kök hareketi düğümü yok: kalça ayırmak bedeni ~0,6 m yukarı itiyordu; ileri kayma IstanbulKarakterKlip'te silinir
+        mi.motionNodeName = "";
+        string kalca = "(yok)";
         var klipler = mi.defaultClipAnimations;
         Out($"{ad}: {klipler.Length} klip [{string.Join(", ", klipler.Select(k => k.name))}] kalca={kalca}");
         if (klipler.Length < k_Hareket.Length) { Out($"{ad}: eksik klip"); return false; }
@@ -69,10 +72,9 @@ public static class IstanbulKarakter
             if (i < k_Hareket.Length) k.name = k_Hareket[i];
             bool dongu = k.name == "Kosu" || k.name == "Bekleme" || k.name == "Dans";
             k.loopTime = dongu; k.loopPose = dongu;
-            // kalçanın ileri/yan kayması kök hareketi olarak ayrılır (Animator uygulamaz): yerinde koşar;
-            // dönüş ve yükseklik pozda kalır
+            // kök: dönüş ve yükseklik pozda (yükseklik ayaklara göre), ileri kayma ayrılır ve uygulanmaz → yerinde, yerde
             k.lockRootRotation = true; k.lockRootHeightY = true; k.lockRootPositionXZ = false;
-            k.keepOriginalOrientation = true; k.keepOriginalPositionY = true;
+            k.keepOriginalOrientation = true; k.keepOriginalPositionY = false; k.heightFromFeet = true; k.keepOriginalPositionXZ = false;
         }
         mi.clipAnimations = klipler;
         mi.SaveAndReimport();
@@ -84,12 +86,14 @@ public static class IstanbulKarakter
         if (doku != null)
         {
             var ti = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(doku));
-            ti.maxTextureSize = 2048; ti.SaveAndReimport(); // yakın kamerada net görünsün
+            ti.maxTextureSize = 2048; ti.anisoLevel = 4; ti.mipMapBias = -0.5f; ti.filterMode = FilterMode.Trilinear; ti.SaveAndReimport(); // küçük görünürken de net (bulanık alt mip seviyesine geç düşer)
         }
         string matYol = $"{klasor}/{ad}.mat";
         var mat = AssetDatabase.LoadAssetAtPath<Material>(matYol);
-        if (mat == null) { mat = new Material(kediMat.shader); AssetDatabase.CreateAsset(mat, matYol); }
-        mat.shader = kediMat.shader; mat.CopyPropertiesFromMaterial(kediMat); mat.mainTexture = doku;
+        // Subway tarzı net görünüm: ışık, kenar parlaması, dış çizgi (kedinin düz gölgelendiricisi yerine)
+        var netShader = Shader.Find("TabanlariYagla/KarakterNet") ?? kediMat.shader;
+        if (mat == null) { mat = new Material(netShader); AssetDatabase.CreateAsset(mat, matYol); }
+        mat.shader = netShader; mat.mainTexture = doku;
         EditorUtility.SetDirty(mat);
 
         // simge (mağaza): Meshy görseli
@@ -102,6 +106,10 @@ public static class IstanbulKarakter
 
         // animasyonlar: CharacterAnimation'daki her klibe karşılık gelen hareket
         var klipVarlik = AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<AnimationClip>().Where(c => !c.name.StartsWith("__preview")).ToDictionary(c => c.name);
+        // oyun zıplama/kaymayı kedinin klip sürelerine göre oynatır (JumpSpeed): Meshy klipleri işe yarayan bölümüne kırpılıp
+        // aynı süreye getirilir; yoksa zıplama bittiğinde klip daha üçte birindedir
+        foreach (var (adi, bas, son, sure) in k_Zamanlama)
+            if (klipVarlik.TryGetValue(adi, out var ham)) klipVarlik[adi] = Zamanla(ham, bas, son, sure, $"{klasor}/{ad}_{adi}.anim");
         var temel = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(k_Denetleyici);
         var ust = new AnimatorOverrideController(temel) { name = ad + "Animasyon" };
         var liste = new List<KeyValuePair<AnimationClip, AnimationClip>>();
@@ -121,11 +129,11 @@ public static class IstanbulKarakter
         foreach (Transform c in kok.transform.Cast<Transform>().ToList()) Object.DestroyImmediate(c.gameObject);
         var model = (GameObject)Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(fbx));
         float boy = Boy(model), olcek = boy > 0.01f ? kediBoy * 1.15f / boy : 1f;
-        foreach (Transform c in model.transform.Cast<Transform>().ToList())
-        {
-            c.SetParent(kok.transform, false);
-            c.localScale *= olcek; c.localPosition *= olcek;
-        }
+        // görünüm ve Animator "Gorsel" alt nesnesinde: Humanoid Animator ölçekli kökteyken beden ~0,6 m havada kalıyordu;
+        // ölçeksiz alt nesnede ayaklar yere basar
+        var gorsel = new GameObject("Gorsel").transform; gorsel.SetParent(kok.transform, false);
+        foreach (Transform c in model.transform.Cast<Transform>().ToList()) c.SetParent(gorsel, false);
+        kok.transform.localScale = Vector3.one * olcek;
         Object.DestroyImmediate(model);
         foreach (var r in kok.GetComponentsInChildren<Renderer>(true))
         {
@@ -133,7 +141,8 @@ public static class IstanbulKarakter
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             if (r is SkinnedMeshRenderer smr) smr.updateWhenOffscreen = true;
         }
-        var an = kok.GetComponent<Animator>();
+        var eskiAn = kok.GetComponent<Animator>(); var kip = eskiAn.cullingMode; Object.DestroyImmediate(eskiAn);
+        var an = gorsel.gameObject.AddComponent<Animator>(); an.cullingMode = kip;
         an.avatar = AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<Avatar>().FirstOrDefault();
         an.runtimeAnimatorController = ust;
         an.applyRootMotion = false;
@@ -153,6 +162,34 @@ public static class IstanbulKarakter
         EditorUtility.SetDirty(ayar);
         Out($"{ad}: prefab {prefab}, olcek {olcek:F3}, fiyat {k_Fiyat}, avatar {avatarGecerli}");
         return true;
+    }
+
+    // (klip, kırpma başı, kırpma sonu, hedef süre) — kedinin Cat_Jump 0,60 / Cat_Slide 1,03 / Cat_HitWall1 0,73 sn; koşu döngüsü
+    // Subway temposunda biraz hızlandırılır
+    static readonly (string, float, float, float)[] k_Zamanlama =
+    {
+        ("Ziplama", 0.40f, 1.20f, 0.60f), ("Kayma", 0.15f, 1.30f, 1.03f), ("Carpma", 0f, 1.10f, 0.73f), ("Kosu", 0f, 0.533f, 0.42f),
+    };
+
+    static AnimationClip Zamanla(AnimationClip ham, float bas, float son, float sure, string yol)
+    {
+        son = Mathf.Min(son, ham.length); float olcek = (son - bas) / sure;
+        var yeni = new AnimationClip { name = ham.name, frameRate = 30f };
+        int n = Mathf.CeilToInt(sure * 30f);
+        foreach (var b in AnimationUtility.GetCurveBindings(ham))
+        {
+            var e = AnimationUtility.GetEditorCurve(ham, b); var anahtar = new Keyframe[n + 1];
+            for (int i = 0; i <= n; ++i) { float t = sure * i / n; anahtar[i] = new Keyframe(t, e.Evaluate(bas + t * olcek)); }
+            var c = new AnimationCurve(anahtar);
+            for (int i = 0; i < c.length; ++i) c.SmoothTangents(i, 0f);
+            AnimationUtility.SetEditorCurve(yeni, b, c);
+        }
+        var ayar = AnimationUtility.GetAnimationClipSettings(ham);
+        ayar.startTime = 0f; ayar.stopTime = sure;
+        AnimationUtility.SetAnimationClipSettings(yeni, ayar);
+        AssetDatabase.DeleteAsset(yol); AssetDatabase.CreateAsset(yeni, yol);
+        Out($"{ham.name}: {bas:F2}-{son:F2} sn -> {sure:F2} sn ({yol})");
+        return yeni;
     }
 
     // CharacterAnimation klip adı → Meshy hareketi
@@ -179,5 +216,138 @@ public static class IstanbulKarakter
         var b = rs[0].bounds; foreach (var r in rs) b.Encapsulate(r.bounds);
         return b.size.y;
         } finally { if (varlik) Object.DestroyImmediate(go); }
+    }
+}
+
+// Tanı (-executeMethod IstanbulKarakterTani.Olc): her karakterin koşu durumunda en alçak noktası (ayak tabanı) zamanla.
+public static class IstanbulKarakterTani
+{
+    public static void Olc()
+    {
+        foreach (var yol in new[] { "Assets/UnityTechnologies/Endless Runner/Prefabs/Characters/Cat/character.prefab", "Assets/_TabanlariYagla/Karakterler/Samet/Samet.prefab", "Assets/_TabanlariYagla/Karakterler/Berivan/Berivan.prefab" })
+        {
+            var go = (GameObject)Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(yol));
+            var an = go.GetComponentInChildren<Animator>();
+            an.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            var rs = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            foreach (var r in rs) r.updateWhenOffscreen = true;
+            string Alt() { float al = float.MaxValue; foreach (var r in rs) { var m = new Mesh(); r.BakeMesh(m, true); foreach (var v in m.vertices) al = Mathf.Min(al, r.transform.TransformPoint(v).y); Object.DestroyImmediate(m); } return al.ToString("F2"); }
+            string poz = Alt();
+            an.Rebind(); an.Play("Idle", 0, 0.3f); an.Update(0.01f); string bekle = Alt();
+            Debug.Log($"TANI| {System.IO.Path.GetFileName(yol)} duruspozu_alt={poz} bekleme_alt={bekle}");
+            an.Rebind(); an.SetBool("Moving", true); an.Play("runLoop", 0, 0f); an.Update(0f);
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < 12; ++i)
+            {
+                an.Update(0.06f);
+                float alt = float.MaxValue, ust = float.MinValue;
+                foreach (var r in rs) { var m = new Mesh(); r.BakeMesh(m, true); foreach (var v in m.vertices) { var w = r.transform.TransformPoint(v); alt = Mathf.Min(alt, w.y); ust = Mathf.Max(ust, w.y); } Object.DestroyImmediate(m); }
+                var kalca = go.GetComponentsInChildren<Transform>().FirstOrDefault(t => t.name == "Hips");
+                sb.Append($" [{alt:F2}..{ust:F2} kalca {(kalca ? kalca.position.y : -1):F2}]");
+            }
+            Debug.Log($"TANI| {System.IO.Path.GetFileName(yol)} durum={an.GetCurrentAnimatorStateInfo(0).shortNameHash}{sb}");
+            Object.DestroyImmediate(go);
+        }
+        if (Application.isBatchMode) EditorApplication.Exit(0);
+    }
+}
+
+
+// İçe aktarımda karakter kliplerinin kalça konumundan yalnız ileri kayma ekseni sabitlenir (net yer değiştirmesi en
+// büyük eksen): karakter yerinde koşar, yukarı-aşağı sekme ve yana salınım kalır. Oyun ilerlemeyi kendisi verir.
+public class IstanbulKarakterKlip : AssetPostprocessor
+{
+    void OnPostprocessAnimation(GameObject kok, AnimationClip klip)
+    {
+        if (!assetPath.StartsWith("Assets/_TabanlariYagla/Karakterler/")) return;
+        // iskeletin üst düğümü (Armature) için yazılan konum/ölçek/dönüş eğrileri içe aktarma artığı: ölçeği ezip bedeni
+        // ~0,6 m kaldırıyordu; silinir (düğüm prefabdaki hâlinde kalır)
+        foreach (var b in AnimationUtility.GetCurveBindings(klip).Where(b => !b.path.Contains("/") && !b.path.EndsWith("Hips") && b.type == typeof(Transform)).ToList())
+        { AnimationUtility.SetEditorCurve(klip, b, null); Debug.Log($"KARAKTER| {klip.name}: ust dugum egrisi silindi {b.path}.{b.propertyName}"); }
+        var baglar = AnimationUtility.GetCurveBindings(klip).Where(b => b.path.EndsWith("Hips") && b.propertyName.StartsWith("m_LocalPosition.")).ToList();
+        // yukarı ekseni: duruş pozunda kalçanın en büyük konum bileşeni (kalça yüksekliği); o eksene dokunulmaz
+        var kalca = kok.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "Hips");
+        string yukari = null;
+        if (kalca != null) { var p = kalca.localPosition; yukari = Mathf.Abs(p.x) >= Mathf.Abs(p.y) && Mathf.Abs(p.x) >= Mathf.Abs(p.z) ? "x" : Mathf.Abs(p.y) >= Mathf.Abs(p.z) ? "y" : "z"; }
+        EditorCurveBinding? ileri = null; float enBuyuk = 0f;
+        foreach (var b in baglar)
+        {
+            if (yukari != null && b.propertyName.EndsWith("." + yukari)) continue;
+            var e = AnimationUtility.GetEditorCurve(klip, b);
+            if (e == null || e.length < 2) continue;
+            float d = Mathf.Abs(e.keys[e.length - 1].value - e.keys[0].value);
+            if (d > enBuyuk) { enBuyuk = d; ileri = b; }
+        }
+        if (ileri == null) return;
+        var c = AnimationUtility.GetEditorCurve(klip, ileri.Value);
+        float ilk = c.keys[0].value;
+        AnimationUtility.SetEditorCurve(klip, ileri.Value, AnimationCurve.Constant(0f, klip.length, ilk));
+        Debug.Log($"KARAKTER| {klip.name}: kalca {ileri.Value.propertyName} sabitlendi (kayma {enBuyuk:F2}, yukari={yukari})");
+    }
+}
+
+public static class IstanbulKarakterTani2
+{
+    public static void Olc()
+    {
+        var fbx = "Assets/_TabanlariYagla/Karakterler/Samet/Samet.fbx";
+        var kosu = AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<AnimationClip>().First(c => c.name == "Kosu");
+        foreach (var b in AnimationUtility.GetCurveBindings(kosu).Where(b => b.path.Split('/').Length <= 2).Take(12))
+        {
+            var c = AnimationUtility.GetEditorCurve(kosu, b);
+            Debug.Log($"TANI2| egri {b.path} {b.propertyName} ilk={c.keys[0].value:F3} son={c.keys[c.length - 1].value:F3}");
+        }
+        var go = (GameObject)Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_TabanlariYagla/Karakterler/Samet/Samet.prefab"));
+        foreach (var t in go.GetComponentsInChildren<Transform>(true).Where(t => t.parent == go.transform || t.name == "Hips"))
+            Debug.Log($"TANI2| dugum {AnimationUtility.CalculateTransformPath(t, go.transform)} lp={t.localPosition} lr={t.localEulerAngles} ls={t.localScale}");
+        var smr = go.GetComponentInChildren<SkinnedMeshRenderer>();
+        Debug.Log($"TANI2| smr kok kemik={(smr.rootBone ? AnimationUtility.CalculateTransformPath(smr.rootBone, go.transform) : "yok")} kemik={smr.bones.Length} ilk={(smr.bones.Length > 0 && smr.bones[0] ? AnimationUtility.CalculateTransformPath(smr.bones[0], go.transform) : "-")}");
+        kosu.SampleAnimation(go, 0.1f);
+        var h = go.GetComponentsInChildren<Transform>().First(t => t.name == "Hips");
+        Debug.Log($"TANI2| ornek sonrasi hips lp={h.localPosition} dunya={h.position}");
+        Object.DestroyImmediate(go);
+        if (Application.isBatchMode) EditorApplication.Exit(0);
+    }
+}
+
+public static class IstanbulKarakterTani3
+{
+    public static void Olc()
+    {
+        var fbx = "Assets/_TabanlariYagla/Karakterler/Samet/Samet.fbx";
+        foreach (var klip in AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<AnimationClip>().Where(c => !c.name.StartsWith("__")))
+        {
+            var go = (GameObject)Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_TabanlariYagla/Karakterler/Samet/Samet.prefab"));
+            var an = go.GetComponentInChildren<Animator>();
+            var ac = UnityEditor.Animations.AnimatorController.CreateAnimatorControllerAtPath("Assets/_gecici_tani.controller");
+            ac.layers[0].stateMachine.AddState("s").motion = klip;
+            an.runtimeAnimatorController = ac; an.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            an.Rebind(); an.Update(0f);
+            var rs = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            float enAlt = 9, enUst = -9; var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < 10; ++i)
+            {
+                an.Update(klip.length / 10f);
+                float al = 9, us = -9;
+                foreach (var r in rs) { var m = new Mesh(); r.BakeMesh(m, true); foreach (var v in m.vertices) { float y = r.transform.TransformPoint(v).y; al = Mathf.Min(al, y); us = Mathf.Max(us, y); } Object.DestroyImmediate(m); }
+                sb.Append($" {al:F2}"); enAlt = Mathf.Min(enAlt, al); enUst = Mathf.Max(enUst, us);
+            }
+            Debug.Log($"TANI3| {klip.name} sure={klip.length:F2} humanoid={klip.humanMotion} alt:{sb} | ust max {enUst:F2}");
+            Object.DestroyImmediate(go); AssetDatabase.DeleteAsset("Assets/_gecici_tani.controller");
+        }
+        if (Application.isBatchMode) EditorApplication.Exit(0);
+    }
+}
+
+public static class IstanbulKarakterTani4
+{
+    public static void Olc()
+    {
+        foreach (var yol in new[] { "Assets/UnityTechnologies/Endless Runner/Art/Animations/Cat_Jump.fbx", "Assets/UnityTechnologies/Endless Runner/Art/Animations/Cat_Slide.fbx", "Assets/UnityTechnologies/Endless Runner/Art/Animations/Cat_RunShort.fbx", "Assets/UnityTechnologies/Endless Runner/Art/Animations/Cat_HitWall1.fbx", "Assets/UnityTechnologies/Endless Runner/Art/Animations/Cat_Death.fbx" })
+            foreach (var c in AssetDatabase.LoadAllAssetsAtPath(yol).OfType<AnimationClip>().Where(c => !c.name.StartsWith("__")))
+                Debug.Log($"TANI4| {c.name} {c.length:F2} sn loop={c.isLooping}");
+        foreach (var c in AssetDatabase.LoadAllAssetsAtPath("Assets/_TabanlariYagla/Karakterler/Samet/Samet.fbx").OfType<AnimationClip>().Where(c => !c.name.StartsWith("__")))
+            Debug.Log($"TANI4| Samet {c.name} {c.length:F2} sn loop={c.isLooping}");
+        if (Application.isBatchMode) EditorApplication.Exit(0);
     }
 }

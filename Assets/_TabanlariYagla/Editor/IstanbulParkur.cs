@@ -939,9 +939,9 @@ public static class IstanbulParkur
         hti.textureType = TextureImporterType.Sprite; hti.alphaIsTransparency = true; hti.textureCompression = TextureImporterCompression.Uncompressed; hti.SaveAndReimport();
         var hale = AssetDatabase.LoadAssetAtPath<Sprite>(haleYol);
 
-        // ayağa takılan: 0,75 m boy (Subway gibi ayağın iki katı iri), tabanı y=0 (ayak kemiğinin biraz altında)
+        // ayağa takılan: 0,55 m boy (Subway gibi iri ama karakteri ezmeyen), tabanı y=0 (ayak kemiğinin biraz altında)
         var giy = new GameObject("IstanbulAyakkabiGiyilen");
-        ModelKoy("Ayakkabi", mat, giy.transform, don, 2, 0.75f, Vector3.zero);
+        ModelKoy("Ayakkabi", mat, giy.transform, don, 2, 0.55f, Vector3.zero);
         var giyPrefab = PrefabUtility.SaveAsPrefabAsset(giy, $"{klasor}/IstanbulAyakkabiGiyilen.prefab");
         Object.DestroyImmediate(giy);
 
