@@ -172,6 +172,7 @@ public class GameState : AState
         m_GameoverSelectionDone = false;
 
         StartGame();
+        SubwayHud.Uygula(this);
     }
 
     public override void Exit(AState to)
@@ -398,8 +399,8 @@ public class GameState : AState
 			}
 		}
 
-        scoreText.text = trackManager.score.ToString();
-        multiplierText.text = "x " + trackManager.multiplier;
+        scoreText.text = trackManager.score.ToString("000000");
+        multiplierText.text = "x" + trackManager.multiplier;
 
 		distanceText.text = Mathf.FloorToInt(trackManager.worldDistance).ToString() + "m";
 
