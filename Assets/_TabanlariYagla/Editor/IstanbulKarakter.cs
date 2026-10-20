@@ -176,6 +176,11 @@ public static class IstanbulKarakter
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             if (r is SkinnedMeshRenderer smr) smr.updateWhenOffscreen = true;
         }
+        // menüde ve koşuda yere basan ayak düz dursun
+        var duz = gorsel.gameObject.AddComponent<AyakDuzle>();
+        var tum = gorsel.GetComponentsInChildren<Transform>(true);
+        duz.ayaklar = new[] { tum.FirstOrDefault(x => x.name == "LeftFoot"), tum.FirstOrDefault(x => x.name == "RightFoot") };
+        duz.parmaklar = new[] { tum.FirstOrDefault(x => x.name == "LeftToeBase"), tum.FirstOrDefault(x => x.name == "RightToeBase") };
         var eskiAn = kok.GetComponent<Animator>(); var kip = eskiAn.cullingMode; Object.DestroyImmediate(eskiAn);
         var an = gorsel.gameObject.AddComponent<Animator>(); an.cullingMode = kip;
         an.avatar = AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<Avatar>().FirstOrDefault();

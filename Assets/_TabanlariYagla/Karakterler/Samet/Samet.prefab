@@ -744,6 +744,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8553383255971535520}
+  - component: {fileID: 2217070254889445834}
   - component: {fileID: 2524422030904253247}
   m_Layer: 0
   m_Name: Gorsel
@@ -769,6 +770,24 @@ Transform:
   - {fileID: 5543176367086738443}
   m_Father: {fileID: 532621327757757318}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2217070254889445834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8026940228588683304}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a348eb7b10a67b64faf04e5c504d834d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityTechnologies.EndlessRunner::AyakDuzle
+  ayaklar:
+  - {fileID: 4196076101928059951}
+  - {fileID: 3193780156530916160}
+  parmaklar:
+  - {fileID: 1678187869606980803}
+  - {fileID: 1879064500683788876}
 --- !u!95 &2524422030904253247
 Animator:
   serializedVersion: 7

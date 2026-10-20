@@ -144,6 +144,8 @@ public static class IstanbulParkur
             var tramvayMat = ModelAl("tramvay/Tramvay.fbx", "tramvay/Tramvay_base_color.png", "Tramvay");
             var rampaMat = ModelAl("rampa/Rampa.fbx", "rampa/Rampa_base_color.png", "Rampa");
             if (File.Exists(Path.Combine(k_Kaynak, "altin/Altin.fbx"))) s_AltinMat = ModelAl("altin/Altin.fbx", "altin/Altin_base_color.png", "Altin");
+            // Subway gibi parlak, net altın
+            var ap = Shader.Find("TabanlariYagla/AltinParlak"); if (s_AltinMat != null && ap != null) { s_AltinMat.shader = ap; EditorUtility.SetDirty(s_AltinMat); }
             if (File.Exists(Path.Combine(k_Kaynak, "tunel/Tunel.fbx"))) s_TunelMat = ModelAl("tunel/Tunel.fbx", "tunel/Tunel_base_color.png", "Tunel");
             if (File.Exists(Path.Combine(k_Kaynak, "kopru/Kopru.fbx"))) s_KopruMat = ModelAl("kopru/Kopru.fbx", "kopru/Kopru_base_color.png", "Kopru");
             if (File.Exists(Path.Combine(k_Kaynak, "galata/Galata.fbx"))) s_GalataMat = ModelAl("galata/Galata.fbx", "galata/Galata_base_color.png", "Galata");
@@ -1231,13 +1233,24 @@ public static class IstanbulParkur
         Cizici(inst.transform, "Kaldirim", m, TasMalzemesi());
 
         var yp = new Yapici();
+        // yol yalnız üç şerit genişliğinde görünsün: dış şeridin 1,15 m ötesinden itibaren 25 cm yüksek koyu kaldırım
+        yp.Cift(k_SeritAraligi + 1.15f, 4.6f, 0.05f, 0.3f, z0, z1, P_TasKoyu);
+        yp.Cift(k_SeritAraligi + 1.15f, k_SeritAraligi + 1.3f, 0.05f, 0.34f, z0, z1, P_Krem);
+        // Subway gibi her şerit ayrı bir hat: koyu yatak, traversler, birbirine yakın iki ray (şerit aralarında taş kalır;
+        // eşit aralıklı ray çizgileri yolu 4-5 şeritli gösteriyordu)
         for (int l = -1; l <= 1; ++l)
-            foreach (float r in new[] { -0.55f, 0.55f })
+        {
+            float cx = l * k_SeritAraligi;
+            yp.Kutu(new Vector3(cx - 0.85f, 0.05f, z0), new Vector3(cx + 0.85f, 0.056f, z1), P_TasKoyu);
+            for (float z = z0 + 0.3f; z < z1; z += 0.7f)
+                yp.Kutu(new Vector3(cx - 0.72f, 0.056f, z), new Vector3(cx + 0.72f, 0.07f, z + 0.2f), P_Direk);
+            foreach (float r in new[] { -0.42f, 0.42f })
             {
-                float x = l * k_SeritAraligi + r;
-                yp.Kutu(new Vector3(x - 0.07f, 0.05f, z0), new Vector3(x + 0.07f, 0.054f, z1), P_Tel);
-                yp.Kutu(new Vector3(x - 0.035f, 0.054f, z0), new Vector3(x + 0.035f, 0.07f, z1), P_Direk);
+                float x = cx + r;
+                yp.Kutu(new Vector3(x - 0.06f, 0.07f, z0), new Vector3(x + 0.06f, 0.08f, z1), P_Tel);
+                yp.Kutu(new Vector3(x - 0.03f, 0.08f, z0), new Vector3(x + 0.03f, 0.11f, z1), P_Isik);
             }
+        }
         for (float z = z0 + 4.5f; z < z1; z += 9f)
         {
             yp.Cift(4.18f, 4.34f, 0f, 10.6f, z - 0.08f, z + 0.08f, P_Yesil);

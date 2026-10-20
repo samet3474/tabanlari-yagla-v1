@@ -571,6 +571,7 @@ public class CharacterInputController : MonoBehaviour
     // kendi hızlarını JumpSpeed ile alır; onların sırasında 1x. İnişte kısa bir çökme (yaylanma).
     const float k_KosuTempoMax = 1.6f, k_InisSure = 0.14f;
     float m_InisZaman = -1f; bool m_OncekiHavada;
+    float m_SekEvre, m_Sek;
     protected void KosuTemposu()
     {
         if (character == null || character.animator == null || trackManager == null || trackManager.currentTheme == null || trackManager.currentTheme.seritAraligi <= 0f) return;
@@ -581,6 +582,15 @@ public class CharacterInputController : MonoBehaviour
         float t = m_InisZaman < 0f ? 1f : (Time.time - m_InisZaman) / k_InisSure;
         float c = t < 1f ? Mathf.Sin(t * Mathf.PI) * 0.12f : 0f;
         character.transform.localScale = new Vector3(1f + c * 0.5f, 1f - c, 1f + c * 0.5f);
+        // Subway'deki süper ayakkabı gibi: süre boyunca yerde küçük sekmelerle koşar (zıplama ve kaymada değil)
+        float sek = 0f;
+        if (superAyakkabiKalan > 0f && m_IsRunning && !m_Jumping && !m_Sliding)
+        {
+            m_SekEvre += Time.deltaTime * Mathf.Lerp(9f, 12f, trackManager.speedRatio);
+            sek = Mathf.Abs(Mathf.Sin(m_SekEvre)) * 0.35f;
+        }
+        m_Sek = Mathf.MoveTowards(m_Sek, sek, Time.deltaTime * 4f);
+        character.transform.localPosition = Vector3.up * Mathf.Max(sek, m_Sek * (sek > 0f ? 1f : 0f));
     }
 
     public void KameraYanSifirla()
